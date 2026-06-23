@@ -14,7 +14,7 @@ import type {
 import type { Country, CountryWithUniversities } from "@/types/country";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
