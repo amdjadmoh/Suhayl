@@ -1,11 +1,12 @@
-import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Globe, AlertCircle } from "lucide-react"
+import { useParams, Link, useNavigate } from "react-router-dom"
+import { ArrowLeft, Globe, AlertCircle, Pencil, Trash2, Loader2 } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import { useCountryWithUniversities } from "@/lib/api"
+import { toast } from "sonner"
+import { useCountryWithUniversities, useDeleteCountry } from "@/lib/api"
 import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
 import type { Country } from "@/types/country"
 import type { University } from "@/types/university"
@@ -17,6 +18,18 @@ export default function CountryDetail(): React.ReactElement {
   const { data, isLoading, isError, error } = useCountryWithUniversities(
     id ?? ""
   )
+  const deleteMutation = useDeleteCountry()
+
+  async function handleDelete(): Promise<void> {
+    if (!id) return
+    try {
+      await deleteMutation.mutateAsync(id)
+      toast.success("Country deleted")
+      navigate("/countries")
+    } catch {
+      toast.error("Failed to delete country")
+    }
+  }
 
   if (isLoading) {
     return (
@@ -66,14 +79,36 @@ export default function CountryDetail(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          {COUNTRY_FLAGS[country.name] ?? <Globe className="h-6 w-6" />}
-          {country.name}
-        </h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            {COUNTRY_FLAGS[country.name] ?? <Globe className="h-6 w-6" />}
+            {country.name}
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/countries/${country._id}/edit`}>
+              <Pencil className="mr-1 h-4 w-4" /> Edit
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+            )}
+            Delete
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

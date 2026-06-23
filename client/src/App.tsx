@@ -6,6 +6,7 @@ import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Countries from "@/pages/Countries";
 import CountryDetail from "@/pages/CountryDetail";
+import AddEditCountry from "@/pages/AddEditCountry";
 import Universities from "@/pages/Universities";
 import AddEditUniversity from "@/pages/AddEditUniversity";
 import UniversityDetail from "@/pages/UniversityDetail";
@@ -31,7 +32,9 @@ export default function App(): React.ReactElement {
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="countries" element={<Countries />} />
+              <Route path="countries/new" element={<AddEditCountry />} />
               <Route path="countries/:id" element={<CountryDetail />} />
+              <Route path="countries/:id/edit" element={<AddEditCountry />} />
               <Route path="universities" element={<Universities />} />
               <Route path="universities/new" element={<AddEditUniversity />} />
               <Route path="universities/:id" element={<UniversityDetail />} />

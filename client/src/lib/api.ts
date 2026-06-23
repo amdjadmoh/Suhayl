@@ -177,3 +177,58 @@ export function useCountryWithUniversities(
     enabled: id.length > 0,
   })
 }
+
+export async function createCountry(data: Partial<Country>): Promise<Country> {
+  const response = await api.post("/countries", data)
+  return response.data
+}
+
+export async function updateCountry(
+  id: string,
+  data: Partial<Country>
+): Promise<Country> {
+  const response = await api.put(`/countries/${id}`, data)
+  return response.data
+}
+
+export async function deleteCountry(id: string): Promise<void> {
+  await api.delete(`/countries/${id}`)
+}
+
+export function useCreateCountry(): UseMutationResult<
+  Country,
+  Error,
+  Partial<Country>
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: createCountry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["countries"] })
+    },
+  })
+}
+
+export function useUpdateCountry(): UseMutationResult<
+  Country,
+  Error,
+  { id: string; data: Partial<Country> }
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }) => updateCountry(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["countries"] })
+    },
+  })
+}
+
+export function useDeleteCountry(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteCountry,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["countries"] })
+    },
+  })
+}
