@@ -42,3 +42,4 @@ Desktop.ini
 # Playwright / test artifacts
 .playwright-mcp/
 *.png
+!client/public/*.png

@@ -5,7 +5,7 @@ import {
   COUNTRY_FLAGS,
   APPLICATION_STATUSES,
 } from "@/lib/constants";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -71,6 +71,10 @@ function UniversityCard({
   const recsTotal = progress.recommendationsRequested || 0;
   const recsGot = progress.recommendationsReceived || 0;
 
+  const isWishlist = university.applicationStatus === "Wishlist";
+  const isPreparing = university.applicationStatus === "Preparing";
+  const isLocked = !isWishlist && !isPreparing;
+
   return (
     <div className="group relative block rounded-lg border bg-card p-3 transition-all hover:border-primary/30 shadow-sm flex flex-col">
       {isUpdating && (
@@ -134,242 +138,225 @@ function UniversityCard({
         </select>
       </div>
 
-      {/* Progress Checklist */}
-      <div className="flex-1 text-xs space-y-3 pt-2">
-        <h5 className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Progress Checklist</h5>
-
-        {/* Documents */}
-        {docsTotal > 0 && (
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-muted-foreground">
-              <span>Documents</span>
-              <span>{docsGot} / {docsTotal}</span>
-            </div>
-            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary transition-all" style={{ width: `${docsPercent}%` }} />
-            </div>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {university.requiredDocuments.map((doc) => {
-                const checked = progress.documentsObtained?.includes(doc);
-                return (
-                  <label key={doc} className="flex items-center gap-1 bg-secondary hover:bg-secondary/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      className="w-3 h-3 cursor-pointer accent-primary"
-                      checked={checked}
-                      onChange={(e) => {
-                        const newDocs = e.target.checked
-                          ? [...(progress.documentsObtained || []), doc]
-                          : (progress.documentsObtained || []).filter(d => d !== doc);
-                        handleUpdate({ documentsObtained: newDocs });
-                      }}
-                    />
-                    <span className="truncate max-w-[120px]">{doc}</span>
-                  </label>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Language Tests */}
-        {(university.ieltsRequirement || university.toeflRequirement) && (
-          <div className="space-y-1">
-            {university.ieltsRequirement ? (
-              <div className="flex items-center gap-2 justify-between">
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-3 h-3 accent-primary"
-                    checked={progress.ieltsTaken}
-                    onChange={(e) => handleUpdate({ ieltsTaken: e.target.checked })}
-                  />
-                  <span>IELTS</span>
-                </label>
-                {progress.ieltsTaken && (
-                  <input
-                    type="number"
-                    step="0.5"
-                    placeholder="Score"
-                    className="w-16 h-6 px-1 text-xs border rounded bg-transparent text-right"
-                    value={progress.ieltsScore || ""}
-                    onChange={(e) => handleUpdate({ ieltsScore: parseFloat(e.target.value) || undefined })}
-                  />
-                )}
-              </div>
-            ) : null}
-
-            {university.toeflRequirement ? (
-              <div className="flex items-center gap-2 justify-between">
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-3 h-3 accent-primary"
-                    checked={progress.toeflTaken}
-                    onChange={(e) => handleUpdate({ toeflTaken: e.target.checked })}
-                  />
-                  <span>TOEFL</span>
-                </label>
-                {progress.toeflTaken && (
-                  <input
-                    type="number"
-                    placeholder="Score"
-                    className="w-16 h-6 px-1 text-xs border rounded bg-transparent text-right"
-                    value={progress.toeflScore || ""}
-                    onChange={(e) => handleUpdate({ toeflScore: parseInt(e.target.value) || undefined })}
-                  />
-                )}
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        {/* GPA */}
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            className="w-3 h-3 accent-primary"
-            checked={progress.gpaVerified}
-            onChange={(e) => handleUpdate({ gpaVerified: e.target.checked })}
-          />
-          <span>GPA Verified</span>
-        </label>
-
-        {/* Recommendations */}
-        <div className="space-y-1">
-          <div className="flex justify-between items-center text-muted-foreground">
-            <span>Recommendations</span>
-            <span>{recsGot} / {Math.max(recsTotal, recsGot, 1)}</span>
-          </div>
+      {/* Progress Checklist — only for Preparing+ */}
+      {!isWishlist && (
+        <div className="flex-1 text-xs space-y-3 pt-2">
           <div className="flex items-center gap-2">
-            <div className="flex items-center border rounded">
-              <button
-                className="px-2 hover:bg-muted"
-                onClick={() => handleUpdate({ recommendationsRequested: Math.max(0, recsTotal - 1) })}
-              >-</button>
-              <span className="w-4 text-center">{recsTotal}</span>
-              <button
-                className="px-2 hover:bg-muted"
-                onClick={() => handleUpdate({ recommendationsRequested: recsTotal + 1 })}
-              >+</button>
-            </div>
-            <span className="text-[10px] text-muted-foreground uppercase">Req</span>
-
-            <div className="flex items-center border rounded ml-auto">
-              <button
-                className="px-2 hover:bg-muted"
-                onClick={() => handleUpdate({ recommendationsReceived: Math.max(0, recsGot - 1) })}
-              >-</button>
-              <span className="w-4 text-center">{recsGot}</span>
-              <button
-                className="px-2 hover:bg-muted"
-                onClick={() => handleUpdate({ recommendationsReceived: recsGot + 1 })}
-              >+</button>
-            </div>
-            <span className="text-[10px] text-muted-foreground uppercase">Got</span>
+            <h5 className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
+              Progress
+            </h5>
+            {isLocked && (
+              <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                Locked
+              </Badge>
+            )}
           </div>
-        </div>
 
-        {/* SOP */}
-        <div className="flex items-center justify-between">
-          <span>Statement of Purpose</span>
-          <select
-            className="text-xs border rounded p-0.5 bg-transparent"
-            value={progress.sopStatus}
-            onChange={(e) => handleUpdate({ sopStatus: e.target.value as any })}
-          >
-            <option value="not_started">Not Started</option>
-            <option value="draft">Drafting</option>
-            <option value="final">Final</option>
-          </select>
-        </div>
-
-        {/* Application Fee */}
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            className="w-3 h-3 accent-primary"
-            checked={progress.applicationFeePaid}
-            onChange={(e) => handleUpdate({ applicationFeePaid: e.target.checked })}
-          />
-          <span>Fee Paid</span>
-        </label>
-
-        {/* Submission Date */}
-        <div className="flex items-center justify-between">
-          <span>Submitted On</span>
-          <input
-            type="date"
-            className="text-xs border rounded p-0.5 bg-transparent w-24"
-            value={progress.applicationSubmittedDate?.split('T')[0] || ""}
-            onChange={(e) => handleUpdate({ applicationSubmittedDate: e.target.value || undefined })}
-          />
-        </div>
-
-        {/* Visa */}
-        <div className="space-y-1">
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-3 h-3 accent-primary"
-              checked={progress.visaApplied}
-              onChange={(e) => handleUpdate({ visaApplied: e.target.checked })}
-            />
-            <span>Visa Applied</span>
-          </label>
-          {progress.visaApplied && (
-            <label className="flex items-center gap-1.5 cursor-pointer ml-4">
-              <input
-                type="checkbox"
-                className="w-3 h-3 accent-primary"
-                checked={progress.visaApproved || false}
-                onChange={(e) => handleUpdate({ visaApproved: e.target.checked })}
-              />
-              <span>Visa Approved</span>
-            </label>
+          {/* Documents */}
+          {docsTotal > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span>Documents</span>
+                <span>{docsGot} / {docsTotal}</span>
+              </div>
+              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary transition-all" style={{ width: `${docsPercent}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {university.requiredDocuments.map((doc) => {
+                  const checked = progress.documentsObtained?.includes(doc);
+                  if (isLocked) {
+                    return (
+                      <Badge
+                        key={doc}
+                        variant={checked ? "default" : "outline"}
+                        className={
+                          checked
+                            ? "bg-emerald-100 text-emerald-700 text-[10px]"
+                            : "text-[10px] text-muted-foreground"
+                        }
+                      >
+                        {checked ? "✓" : "○"} {doc}
+                      </Badge>
+                    )
+                  }
+                  return (
+                    <label key={doc} className="flex items-center gap-1 bg-secondary hover:bg-secondary/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        className="w-3 h-3 cursor-pointer accent-primary"
+                        checked={checked}
+                        onChange={(e) => {
+                          const newDocs = e.target.checked
+                            ? [...(progress.documentsObtained || []), doc]
+                            : (progress.documentsObtained || []).filter(d => d !== doc);
+                          handleUpdate({ documentsObtained: newDocs });
+                        }}
+                      />
+                      <span className="truncate max-w-[120px]">{doc}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
           )}
-        </div>
 
-        {/* Interview */}
-        <div className="space-y-1 border-t pt-1">
-          <div className="flex items-center justify-between">
-            <span>Interview</span>
-            <input
-              type="date"
-              className="text-xs border rounded p-0.5 bg-transparent w-24"
-              value={progress.interviewScheduled?.split('T')[0] || ""}
-              onChange={(e) => handleUpdate({ interviewScheduled: e.target.value || undefined })}
-            />
-          </div>
-          {progress.interviewScheduled && (
+          {/* Language Tests */}
+          {(university.ieltsRequirement || university.toeflRequirement) && (
+            <div className="space-y-1">
+              {university.ieltsRequirement ? (
+                <div className="flex items-center gap-2 justify-between">
+                  {isLocked ? (
+                    <span>IELTS: {progress.ieltsTaken && progress.ieltsScore ? `${progress.ieltsScore}` : "Not taken"}</span>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.ieltsTaken}
+                          onChange={(e) => handleUpdate({ ieltsTaken: e.target.checked })} />
+                        <span>IELTS</span>
+                      </label>
+                      {progress.ieltsTaken && (
+                        <input type="number" step="0.5" placeholder="Score"
+                          className="w-16 h-6 px-1 text-xs border rounded bg-transparent text-right"
+                          value={progress.ieltsScore || ""}
+                          onChange={(e) => handleUpdate({ ieltsScore: parseFloat(e.target.value) || undefined })} />
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : null}
+              {university.toeflRequirement ? (
+                <div className="flex items-center gap-2 justify-between">
+                  {isLocked ? (
+                    <span>TOEFL: {progress.toeflTaken && progress.toeflScore ? `${progress.toeflScore}` : "Not taken"}</span>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.toeflTaken}
+                          onChange={(e) => handleUpdate({ toeflTaken: e.target.checked })} />
+                        <span>TOEFL</span>
+                      </label>
+                      {progress.toeflTaken && (
+                        <input type="number" placeholder="Score"
+                          className="w-16 h-6 px-1 text-xs border rounded bg-transparent text-right"
+                          value={progress.toeflScore || ""}
+                          onChange={(e) => handleUpdate({ toeflScore: parseInt(e.target.value) || undefined })} />
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* GPA */}
+          {isLocked ? (
+            <span>GPA: {progress.gpaVerified ? "Verified" : "Not verified"}</span>
+          ) : (
             <label className="flex items-center gap-1.5 cursor-pointer">
-              <input
-                type="checkbox"
-                className="w-3 h-3 accent-primary"
-                checked={progress.interviewCompleted}
-                onChange={(e) => handleUpdate({ interviewCompleted: e.target.checked })}
-              />
-              <span>Interview Completed</span>
+              <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.gpaVerified}
+                onChange={(e) => handleUpdate({ gpaVerified: e.target.checked })} />
+              <span>GPA Verified</span>
             </label>
           )}
+
+          {/* Recommendations */}
+          {isLocked ? (
+            <span>Recommendations: {recsGot}/{recsTotal} received</span>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span>Recommendations</span>
+                <span>{recsGot} / {Math.max(recsTotal, recsGot, 1)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center border rounded">
+                  <button className="px-2 hover:bg-muted" onClick={() => handleUpdate({ recommendationsRequested: Math.max(0, recsTotal - 1) })}>-</button>
+                  <span className="w-4 text-center">{recsTotal}</span>
+                  <button className="px-2 hover:bg-muted" onClick={() => handleUpdate({ recommendationsRequested: recsTotal + 1 })}>+</button>
+                </div>
+                <span className="text-[10px] text-muted-foreground uppercase">Req</span>
+                <div className="flex items-center border rounded ml-auto">
+                  <button className="px-2 hover:bg-muted" onClick={() => handleUpdate({ recommendationsReceived: Math.max(0, recsGot - 1) })}>-</button>
+                  <span className="w-4 text-center">{recsGot}</span>
+                  <button className="px-2 hover:bg-muted" onClick={() => handleUpdate({ recommendationsReceived: recsGot + 1 })}>+</button>
+                </div>
+                <span className="text-[10px] text-muted-foreground uppercase">Got</span>
+              </div>
+            </div>
+          )}
+
+          {/* SOP */}
+          {isLocked ? (
+            <span>SOP: {progress.sopStatus === "not_started" ? "Not started" : progress.sopStatus === "draft" ? "Draft" : "Final"}</span>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span>Statement of Purpose</span>
+              <select className="text-xs border rounded p-0.5 bg-transparent"
+                value={progress.sopStatus}
+                onChange={(e) => handleUpdate({ sopStatus: e.target.value as any })}>
+                <option value="not_started">Not Started</option>
+                <option value="draft">Drafting</option>
+                <option value="final">Final</option>
+              </select>
+            </div>
+          )}
+
+          {/* Application Fee */}
+          {isLocked ? (
+            <span>Fee: {progress.applicationFeePaid ? "Paid" : "Unpaid"}</span>
+          ) : (
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.applicationFeePaid}
+                onChange={(e) => handleUpdate({ applicationFeePaid: e.target.checked })} />
+              <span>Fee Paid</span>
+            </label>
+          )}
+
+          {/* Submission Date */}
+          <div className="flex items-center justify-between">
+            <span>Submitted On</span>
+            {isLocked ? (
+              <span className="font-medium">{progress.applicationSubmittedDate ? new Date(progress.applicationSubmittedDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+            ) : (
+              <input type="date" className="text-xs border rounded p-0.5 bg-transparent w-24"
+                value={progress.applicationSubmittedDate?.split('T')[0] || ""}
+                onChange={(e) => handleUpdate({ applicationSubmittedDate: e.target.value || undefined })} />
+            )}
+          </div>
+
+          {/* Visa & Interview — always editable */}
+          <div className="space-y-1 border-t pt-1.5">
+            <h6 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Visa & Interview</h6>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.visaApplied}
+                onChange={(e) => handleUpdate({ visaApplied: e.target.checked })} />
+              <span>Visa Applied</span>
+            </label>
+            {progress.visaApplied && (
+              <label className="flex items-center gap-1.5 cursor-pointer ml-4">
+                <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.visaApproved || false}
+                  onChange={(e) => handleUpdate({ visaApproved: e.target.checked })} />
+                <span>Visa Approved</span>
+              </label>
+            )}
+            <div className="flex items-center justify-between">
+              <span>Interview</span>
+              <input type="date" className="text-xs border rounded p-0.5 bg-transparent w-24"
+                value={progress.interviewScheduled?.split('T')[0] || ""}
+                onChange={(e) => handleUpdate({ interviewScheduled: e.target.value || undefined })} />
+            </div>
+            {progress.interviewScheduled && (
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" className="w-3 h-3 accent-primary" checked={progress.interviewCompleted}
+                  onChange={(e) => handleUpdate({ interviewCompleted: e.target.checked })} />
+                <span>Interview Completed</span>
+              </label>
+            )}
+          </div>
         </div>
-
-      </div>
+      )}
     </div>
-  );
-}
-
-function ColumnSkeleton(): React.ReactElement {
-  return (
-    <Card className="min-w-[300px] flex-1">
-      <CardHeader className="pb-3">
-        <Skeleton className="h-5 w-24" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <Skeleton className="h-[400px] w-full" />
-        <Skeleton className="h-[400px] w-full" />
-      </CardContent>
-    </Card>
   );
 }
 
@@ -378,6 +365,31 @@ export default function ApplicationsTracker(): React.ReactElement {
   const updateMutation = useUpdateUniversity();
 
   const universities = data?.universities ?? [];
+
+  // Group by status
+  const byStatus: Record<string, typeof universities> = {};
+  APPLICATION_STATUSES.forEach((status) => {
+    byStatus[status] = universities.filter((u) => u.applicationStatus === status);
+  });
+
+  // Default to first status that has universities, or Wishlist
+  const [selectedStatus, setSelectedStatus] = useState(() => {
+    const firstWithData = APPLICATION_STATUSES.find(
+      (s) => (byStatus[s]?.length ?? 0) > 0
+    );
+    return firstWithData ?? "Wishlist";
+  });
+
+  // Keep selectedStatus in sync if data changes and current status becomes empty
+  const currentCount = byStatus[selectedStatus]?.length ?? 0;
+  if (currentCount === 0 && universities.length > 0) {
+    const firstWithData = APPLICATION_STATUSES.find(
+      (s) => (byStatus[s]?.length ?? 0) > 0
+    );
+    if (firstWithData && firstWithData !== selectedStatus) {
+      setSelectedStatus(firstWithData);
+    }
+  }
 
   function handleStatusChange(id: string, newStatus: string): void {
     updateMutation.mutate(
@@ -433,17 +445,6 @@ export default function ApplicationsTracker(): React.ReactElement {
     );
   }
 
-  // Group universities by status
-  const byStatus: Record<string, typeof universities> = {};
-  APPLICATION_STATUSES.forEach((status) => {
-    byStatus[status] = universities.filter((u) => u.applicationStatus === status);
-  });
-
-  // Count total applications (exclude Wishlist)
-  const activeApplications = universities.filter(
-    (u) => u.applicationStatus !== "Wishlist"
-  ).length;
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -454,9 +455,7 @@ export default function ApplicationsTracker(): React.ReactElement {
           </h1>
           <p className="text-sm text-muted-foreground">
             {universities.length} universit
-            {universities.length === 1 ? "y" : "ies"} tracked ·{" "}
-            {activeApplications} active application
-            {activeApplications === 1 ? "" : "s"}
+            {universities.length === 1 ? "y" : "ies"} tracked
           </p>
         </div>
         <Link
@@ -468,35 +467,42 @@ export default function ApplicationsTracker(): React.ReactElement {
         </Link>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards + Status Filter */}
       {!isLoading && universities.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {APPLICATION_STATUSES.map((status) => {
             const count = byStatus[status]?.length ?? 0;
+            const isActive = selectedStatus === status;
             return (
-              <Card key={status} className={count === 0 ? "opacity-60" : ""}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      variant="secondary"
-                      className={STATUS_COLORS[status]}
-                    >
-                      {status}
-                    </Badge>
-                    <span className="text-2xl font-bold">{count}</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  isActive
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border hover:border-primary/30 hover:bg-muted/50"
+                } ${count === 0 ? "opacity-50" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant="secondary"
+                    className={STATUS_COLORS[status]}
+                  >
+                    {status}
+                  </Badge>
+                  <span className="text-xl font-bold">{count}</span>
+                </div>
+              </button>
             );
           })}
         </div>
       )}
 
-      {/* Kanban Board */}
+      {/* Selected Status Universities */}
       {isLoading ? (
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <ColumnSkeleton key={i} />
+            <Skeleton key={i} className="h-[350px]" />
           ))}
         </div>
       ) : universities.length === 0 ? (
@@ -507,60 +513,33 @@ export default function ApplicationsTracker(): React.ReactElement {
             <p className="mb-4 text-sm text-muted-foreground">
               Add your first university to start tracking applications
             </p>
-            <Link
-              to="/universities"
-              className="text-primary hover:underline"
-            >
+            <Link to="/universities" className="text-primary hover:underline">
               Go to Universities
             </Link>
           </CardContent>
         </Card>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-250px)] min-h-[600px]">
-          {APPLICATION_STATUSES.map((status) => {
-            const statusUniversities = byStatus[status] ?? [];
-            return (
-              <div
-                key={status}
-                className="min-w-[320px] flex-1 max-w-[380px] h-full flex flex-col"
-              >
-                <Card className="h-full flex flex-col border-muted bg-muted/20">
-                  <CardHeader className="pb-3 shrink-0">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className={STATUS_COLORS[status]}
-                        >
-                          {status}
-                        </Badge>
-                      </CardTitle>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        {statusUniversities.length}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3 overflow-y-auto flex-1 pb-4">
-                    {statusUniversities.length === 0 ? (
-                      <p className="text-center text-xs text-muted-foreground py-4">
-                        No universities
-                      </p>
-                    ) : (
-                      statusUniversities.map((u) => (
-                        <UniversityCard
-                          key={u._id}
-                          university={u}
-                          onStatusChange={handleStatusChange}
-                          onProgressUpdate={handleProgressUpdate}
-                        />
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            );
-          })}
-        </div>
+        <>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className={STATUS_COLORS[selectedStatus]}>
+              {selectedStatus}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {byStatus[selectedStatus]?.length ?? 0} universit
+              {(byStatus[selectedStatus]?.length ?? 0) === 1 ? "y" : "ies"}
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {byStatus[selectedStatus]?.map((u) => (
+              <UniversityCard
+                key={u._id}
+                university={u}
+                onStatusChange={handleStatusChange}
+                onProgressUpdate={handleProgressUpdate}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
