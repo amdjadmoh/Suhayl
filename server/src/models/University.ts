@@ -16,6 +16,27 @@ const APPLICATION_STATUSES = [
 ] as const
 type ApplicationStatus = (typeof APPLICATION_STATUSES)[number]
 
+const SOP_STATUSES = ["not_started", "draft", "final"] as const
+type SopStatus = (typeof SOP_STATUSES)[number]
+
+export interface IApplicationProgress {
+  documentsObtained: readonly string[]
+  ieltsTaken: boolean
+  ieltsScore?: number
+  toeflTaken: boolean
+  toeflScore?: number
+  gpaVerified: boolean
+  recommendationsRequested: number
+  recommendationsReceived: number
+  sopStatus: SopStatus
+  applicationFeePaid: boolean
+  applicationSubmittedDate?: Date
+  visaApplied: boolean
+  visaApproved?: boolean
+  interviewScheduled?: Date
+  interviewCompleted: boolean
+}
+
 export interface IUniversity {
   readonly name: string
   readonly country: string
@@ -38,6 +59,7 @@ export interface IUniversity {
   readonly scholarshipDetails?: string
   readonly websiteUrl?: string
   readonly notes?: string
+  readonly applicationProgress: IApplicationProgress
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -79,6 +101,33 @@ const universitySchema = new Schema<IUniversityDocument>(
     scholarshipDetails: { type: String },
     websiteUrl: { type: String },
     notes: { type: String },
+    applicationProgress: {
+      type: new Schema<IApplicationProgress>(
+        {
+          documentsObtained: { type: [String], default: [] },
+          ieltsTaken: { type: Boolean, default: false },
+          ieltsScore: { type: Number },
+          toeflTaken: { type: Boolean, default: false },
+          toeflScore: { type: Number },
+          gpaVerified: { type: Boolean, default: false },
+          recommendationsRequested: { type: Number, default: 0 },
+          recommendationsReceived: { type: Number, default: 0 },
+          sopStatus: {
+            type: String,
+            enum: SOP_STATUSES,
+            default: "not_started",
+          },
+          applicationFeePaid: { type: Boolean, default: false },
+          applicationSubmittedDate: { type: Date },
+          visaApplied: { type: Boolean, default: false },
+          visaApproved: { type: Boolean },
+          interviewScheduled: { type: Date },
+          interviewCompleted: { type: Boolean, default: false },
+        },
+        { _id: false }
+      ),
+      default: {},
+    },
   },
   { timestamps: true }
 )

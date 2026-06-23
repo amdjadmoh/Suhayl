@@ -1,37 +1,26 @@
-import { Link } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCountries } from "@/lib/api";
-import { COUNTRY_FLAGS } from "@/lib/constants";
+import { Link } from "react-router-dom"
+import { AlertCircle, Globe, Lock, Unlock } from "lucide-react"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useCountries } from "@/lib/api"
+import { COUNTRY_FLAGS } from "@/lib/constants"
+import type { Country } from "@/types/country"
 
-type Country = {
-  _id: string;
-  name: string;
-  currency: string;
-  livingCostEstimate: number;
-  visaRequirements: string;
-  visaAcceptanceRate: number;
-  visaBankAccountAmount: number;
-  visaBankAccountLocked: boolean;
-  notes?: string;
-};
-
-export default function Countries() {
-  const { data: countries, isLoading, isError } = useCountries();
+export default function Countries(): React.ReactElement {
+  const { data: countries, isLoading, isError } = useCountries()
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Countries</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-48 w-full" />
+            <Skeleton key={i} className="h-52 w-full" />
           ))}
         </div>
       </div>
-    );
+    )
   }
 
   if (isError) {
@@ -40,67 +29,85 @@ export default function Countries() {
         <h1 className="text-2xl font-bold tracking-tight">Countries</h1>
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-5 w-5" />
-          <p>Failed to load countries. Please try again later.</p>
+          <p>Failed to load countries.</p>
         </div>
       </div>
-    );
+    )
+  }
+
+  function formatCurrency(amount: number, currency: string): string {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount)
+    } catch {
+      return `${amount} ${currency}`
+    }
   }
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight">Countries</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {countries?.map((country: Country) => {
-          const formatCurrency = (amount: number) => {
-            try {
-              return new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: country.currency || "USD",
-                maximumFractionDigits: 0,
-              }).format(amount);
-            } catch (e) {
-              return `${amount} ${country.currency}`;
-            }
-          };
-
-          return (
-            <Link 
-              key={country._id} 
-              to={`/countries/${country._id}`} 
-              className="block outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg transition-transform hover:-translate-y-1"
-            >
-              <Card className="h-full hover:bg-muted/50 transition-colors">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    {COUNTRY_FLAGS[country.name] && <span>{COUNTRY_FLAGS[country.name]}</span>}
-                    {country.name}
-                  </CardTitle>
-                  <Badge variant="secondary">{country.currency}</Badge>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Acceptance Rate:</span>
-                    <span className="font-medium">{country.visaAcceptanceRate}%</span>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {countries?.map((country) => (
+          <Link
+            key={country._id}
+            to={`/countries/${country._id}`}
+            className="block outline-none rounded-xl transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Card className="h-full hover:border-primary/30 hover:shadow-md transition-all">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <span className="text-xl">
+                    {COUNTRY_FLAGS[country.name] ?? <Globe className="h-5 w-5 text-muted-foreground" />}
+                  </span>
+                  {country.name}
+                </CardTitle>
+                <Badge variant="outline">{country.currency}</Badge>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Visa Rate</p>
+                    <p className="font-semibold text-emerald-600">
+                      {country.visaAcceptanceRate}%
+                    </p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Bank Account:</span>
-                    <span className="font-medium">
-                      {formatCurrency(country.visaBankAccountAmount)}
-                      <span className="text-muted-foreground ml-1">
-                        {country.visaBankAccountLocked ? "(Locked)" : "(Unlocked)"}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Living Cost</p>
+                    <p className="font-semibold">
+                      {formatCurrency(country.livingCostEstimate, country.currency)}/mo
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Bank Account</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">
+                        {formatCurrency(country.visaBankAccountAmount, country.currency)}/year
                       </span>
-                    </span>
+                      {country.visaBankAccountLocked ? (
+                        <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 text-xs">
+                          <Lock className="h-3 w-3" /> Blocked
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1 bg-emerald-100 text-emerald-700 text-xs">
+                          <Unlock className="h-3 w-3" /> Regular
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Living Cost:</span>
-                    <span className="font-medium">{formatCurrency(country.livingCostEstimate)} / mo</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
+                </div>
+                <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground border-t pt-2">
+                  {country.visaRequirements}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
-  );
+  )
 }

@@ -23,6 +23,7 @@ import {
   Globe,
   AlertCircle,
   Loader2,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -365,6 +366,199 @@ export default function UniversityDetail(): React.ReactElement {
           </CardContent>
         </Card>
       )}
+
+      {/* Application Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5" />
+            Application Progress
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Documents
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="h-2 flex-1 rounded-full bg-muted">
+                  <div
+                    className="h-2 rounded-full bg-primary transition-all"
+                    style={{
+                      width: `${u.requiredDocuments.length > 0 ? Math.round((u.applicationProgress.documentsObtained.length / u.requiredDocuments.length) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-xs font-medium">
+                  {u.applicationProgress.documentsObtained.length}/{u.requiredDocuments.length}
+                </span>
+              </div>
+              {u.requiredDocuments.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {u.requiredDocuments.map((doc) => {
+                    const obtained =
+                      u.applicationProgress.documentsObtained.includes(doc)
+                    return (
+                      <Badge
+                        key={doc}
+                        variant={obtained ? "default" : "outline"}
+                        className={
+                          obtained
+                            ? "bg-emerald-100 text-emerald-700 text-xs"
+                            : "text-xs text-muted-foreground"
+                        }
+                      >
+                        {obtained ? "✓" : "○"} {doc}
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Language Tests
+              </p>
+              <div className="space-y-1 text-xs">
+                {u.ieltsRequirement && (
+                  <div className="flex justify-between">
+                    <span>IELTS (req: {u.ieltsRequirement})</span>
+                    {u.applicationProgress.ieltsTaken &&
+                    u.applicationProgress.ieltsScore ? (
+                      <span className="font-medium text-emerald-600">
+                        {u.applicationProgress.ieltsScore}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Not taken</span>
+                    )}
+                  </div>
+                )}
+                {u.toeflRequirement && (
+                  <div className="flex justify-between">
+                    <span>TOEFL (req: {u.toeflRequirement})</span>
+                    {u.applicationProgress.toeflTaken &&
+                    u.applicationProgress.toeflScore ? (
+                      <span className="font-medium text-emerald-600">
+                        {u.applicationProgress.toeflScore}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Not taken</span>
+                    )}
+                  </div>
+                )}
+                {!u.ieltsRequirement && !u.toeflRequirement && (
+                  <span className="text-muted-foreground">
+                    No test requirements
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Checklist
+              </p>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span>GPA Verified</span>
+                  {u.applicationProgress.gpaVerified ? (
+                    <span className="text-emerald-600">✓</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </div>
+                <div className="flex justify-between">
+                  <span>Recommendations</span>
+                  <span className="font-medium">
+                    {u.applicationProgress.recommendationsReceived}/
+                    {u.applicationProgress.recommendationsRequested}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>SOP</span>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      u.applicationProgress.sopStatus === "final"
+                        ? "bg-emerald-100 text-emerald-700 text-xs"
+                        : u.applicationProgress.sopStatus === "draft"
+                          ? "bg-amber-100 text-amber-700 text-xs"
+                          : "text-xs"
+                    }
+                  >
+                    {u.applicationProgress.sopStatus.replace("_", " ")}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span>Application Fee</span>
+                  {u.applicationProgress.applicationFeePaid ? (
+                    <span className="text-emerald-600">Paid</span>
+                  ) : (
+                    <span className="text-muted-foreground">Unpaid</span>
+                  )}
+                </div>
+                {u.applicationProgress.applicationSubmittedDate && (
+                  <div className="flex justify-between">
+                    <span>Submitted</span>
+                    <span className="font-medium">
+                      {formatDate(
+                        u.applicationProgress.applicationSubmittedDate,
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {(u.applicationProgress.visaApplied ||
+              u.applicationProgress.interviewScheduled) && (
+              <div>
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                  Visa & Interview
+                </p>
+                <div className="space-y-1 text-xs">
+                  {u.applicationProgress.visaApplied && (
+                    <div className="flex justify-between">
+                      <span>Visa Applied</span>
+                      <span className="text-emerald-600">✓</span>
+                    </div>
+                  )}
+                  {u.applicationProgress.visaApproved !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Visa Approved</span>
+                      {u.applicationProgress.visaApproved ? (
+                        <span className="text-emerald-600">✓</span>
+                      ) : (
+                        <span className="text-amber-600">Pending</span>
+                      )}
+                    </div>
+                  )}
+                  {u.applicationProgress.interviewScheduled && (
+                    <div className="flex justify-between">
+                      <span>Interview</span>
+                      <span className="font-medium">
+                        {formatDate(
+                          u.applicationProgress.interviewScheduled,
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Interview Done</span>
+                    {u.applicationProgress.interviewCompleted ? (
+                      <span className="text-emerald-600">✓</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Scholarship + Application + Notes */}
       <div className="grid gap-6 lg:grid-cols-2">

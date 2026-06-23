@@ -67,11 +67,6 @@ export async function getStats(): Promise<UniversityStats> {
   return response.data;
 }
 
-export async function getCountries(): Promise<string[]> {
-  const response = await api.get("/universities/countries");
-  return response.data;
-}
-
 export function useUniversities(
   params?: UniversityQueryParams,
 ): UseQueryResult<{ universities: University[]; total: number }> {
@@ -93,14 +88,6 @@ export function useStats(): UseQueryResult<UniversityStats> {
   return useQuery({
     queryKey: ["universities", "stats"],
     queryFn: getStats,
-  });
-}
-
-export function useCountries(): UseQueryResult<string[]> {
-  return useQuery({
-    queryKey: ["universities", "countries"],
-    queryFn: getCountries,
-    staleTime: 5 * 60 * 1000,
   });
 }
 

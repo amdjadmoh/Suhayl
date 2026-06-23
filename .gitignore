@@ -38,3 +38,7 @@ Desktop.ini
 # Codegraph / internal tooling
 .codegraph/
 .omo/
+
+# Playwright / test artifacts
+.playwright-mcp/
+*.png

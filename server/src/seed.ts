@@ -720,7 +720,141 @@ export async function seedIfEmpty(): Promise<number> {
   const uniResult = await University.insertMany(universities)
   console.log(`Seeded ${uniResult.length} universities`)
 
+  await seedProgress()
+
   return uniResult.length
+}
+
+export async function seedProgress(): Promise<void> {
+  // Preparing: documents started, tests in progress, recommendations requested
+  await University.updateMany(
+    { applicationStatus: "Preparing" },
+    {
+      applicationProgress: {
+        documentsObtained: ["CV", "Transcripts"],
+        ieltsTaken: false,
+        gpaVerified: true,
+        recommendationsRequested: 2,
+        recommendationsReceived: 1,
+        sopStatus: "draft",
+        applicationFeePaid: false,
+        visaApplied: false,
+        interviewCompleted: false,
+      },
+    }
+  )
+
+  // Applied: everything ready, submitted
+  const january = new Date("2026-01-20")
+  const march = new Date("2026-03-15")
+  const june = new Date("2026-06-10")
+  const now = new Date()
+  const appliedDates = [january, march, june, now]
+
+  const applied = await University.find({ applicationStatus: "Applied" })
+  for (let i = 0; i < applied.length; i++) {
+    const uni = applied[i]!
+    const requiredDocs = uni.requiredDocuments ?? []
+    await University.findByIdAndUpdate(uni._id, {
+      applicationProgress: {
+        documentsObtained: requiredDocs,
+        ieltsTaken: true,
+        ieltsScore: 7.5,
+        toeflTaken: uni.toeflRequirement ? true : false,
+        toeflScore: uni.toeflRequirement ? 100 : undefined,
+        gpaVerified: true,
+        recommendationsRequested: 2,
+        recommendationsReceived: 2,
+        sopStatus: "final",
+        applicationFeePaid: true,
+        applicationSubmittedDate: appliedDates[i] ?? now,
+        visaApplied: false,
+        interviewCompleted: false,
+      },
+    })
+  }
+
+  // Accepted: all docs, tests, fee paid, interview done, visa applied
+  await University.updateMany(
+    { applicationStatus: "Accepted" },
+    {
+      applicationProgress: {
+        documentsObtained: [
+          "CV",
+          "Transcripts",
+          "Bachelor's degree",
+          "Statement of purpose",
+          "Letters of recommendation",
+        ],
+        ieltsTaken: true,
+        ieltsScore: 7.5,
+        gpaVerified: true,
+        recommendationsRequested: 2,
+        recommendationsReceived: 2,
+        sopStatus: "final",
+        applicationFeePaid: true,
+        applicationSubmittedDate: new Date("2026-02-01"),
+        visaApplied: true,
+        interviewCompleted: true,
+        interviewScheduled: new Date("2026-03-10"),
+      },
+    }
+  )
+
+  // Rejected: all docs, submitted but rejected
+  await University.updateMany(
+    { applicationStatus: "Rejected" },
+    {
+      applicationProgress: {
+        documentsObtained: [
+          "CV",
+          "Transcripts",
+          "Motivation letter",
+          "Reference letters",
+          "BSc diploma",
+        ],
+        ieltsTaken: true,
+        ieltsScore: 7.0,
+        gpaVerified: true,
+        recommendationsRequested: 2,
+        recommendationsReceived: 2,
+        sopStatus: "final",
+        applicationFeePaid: true,
+        applicationSubmittedDate: new Date("2025-10-15"),
+        visaApplied: false,
+        interviewCompleted: false,
+      },
+    }
+  )
+
+  // Enrolled: everything complete, visa approved
+  await University.updateMany(
+    { applicationStatus: "Enrolled" },
+    {
+      applicationProgress: {
+        documentsObtained: [
+          "High school diploma",
+          "Transcripts",
+          "English proficiency proof",
+          "Entrance exam",
+        ],
+        ieltsTaken: true,
+        ieltsScore: 6.5,
+        gpaVerified: true,
+        recommendationsRequested: 2,
+        recommendationsReceived: 2,
+        sopStatus: "final",
+        applicationFeePaid: true,
+        applicationSubmittedDate: new Date("2026-01-10"),
+        visaApplied: true,
+        visaApproved: true,
+        interviewCompleted: true,
+        interviewScheduled: new Date("2026-04-15"),
+      },
+    }
+  )
+
+  console.log("Seeded application progress data")
 }
 
 // Standalone runner: npx tsx src/seed.ts
@@ -750,6 +884,9 @@ async function run(): Promise<void> {
 
   await University.insertMany(universities)
   console.log(`Inserted ${universities.length} universities`)
+
+  await seedProgress()
+  console.log("Progress data seeded")
 
   await mongoose.disconnect()
   console.log("Done.")
