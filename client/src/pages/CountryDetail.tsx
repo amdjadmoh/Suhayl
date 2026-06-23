@@ -154,6 +154,54 @@ export default function CountryDetail(): React.ReactElement {
               </span>
               <Badge variant="outline">{country.currency}</Badge>
             </div>
+
+            {(country.pros.length > 0 || country.cons.length > 0) && (
+              <>
+                <Separator />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {country.pros.length > 0 && (
+                    <div>
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                        Pros
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {country.pros.map((p, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-1.5 text-xs leading-relaxed"
+                          >
+                            <span className="mt-0.5 shrink-0 text-emerald-500">
+                              +
+                            </span>
+                            <span>{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {country.cons.length > 0 && (
+                    <div>
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-red-500">
+                        Cons
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {country.cons.map((c, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-1.5 text-xs leading-relaxed"
+                          >
+                            <span className="mt-0.5 shrink-0 text-red-400">
+                              -
+                            </span>
+                            <span>{c}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

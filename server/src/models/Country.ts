@@ -8,6 +8,8 @@ export interface ICountry {
   readonly visaAcceptanceRate: number
   readonly visaBankAccountAmount: number
   readonly visaBankAccountLocked: boolean
+  readonly pros: readonly string[]
+  readonly cons: readonly string[]
   readonly notes?: string
   readonly createdAt: Date
   readonly updatedAt: Date
@@ -24,6 +26,8 @@ const countrySchema = new Schema<ICountryDocument>(
     visaAcceptanceRate: { type: Number, required: true },
     visaBankAccountAmount: { type: Number, required: true },
     visaBankAccountLocked: { type: Boolean, required: true },
+    pros: { type: [String], default: [] },
+    cons: { type: [String], default: [] },
     notes: { type: String },
   },
   { timestamps: true }

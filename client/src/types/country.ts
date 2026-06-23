@@ -7,6 +7,8 @@ export interface Country {
   visaAcceptanceRate: number
   visaBankAccountAmount: number
   visaBankAccountLocked: boolean
+  pros: string[]
+  cons: string[]
   notes?: string
   createdAt: string
   updatedAt: string

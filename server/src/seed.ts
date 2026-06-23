@@ -11,6 +11,20 @@ const countries = [
     visaAcceptanceRate: 92,
     visaBankAccountAmount: 11208,
     visaBankAccountLocked: true,
+    pros: [
+      "Tuition-free at public universities (only semester fee ~€150–350)",
+      "Strong economy with excellent job prospects after graduation",
+      "18-month post-study job seeker visa",
+      "Central European location — easy travel",
+      "World-class engineering and technical education",
+    ],
+    cons: [
+      "Blocked account required (€11,208 locked upfront)",
+      "Bureaucracy can be slow — lots of paperwork",
+      "Housing crisis in major cities (Munich, Berlin, Hamburg)",
+      "Health insurance mandatory (~€120/month)",
+      "German language helpful for daily life outside university",
+    ],
   },
   {
     name: "France",
@@ -21,6 +35,20 @@ const countries = [
     visaAcceptanceRate: 89,
     visaBankAccountAmount: 7380,
     visaBankAccountLocked: false,
+    pros: [
+      "VLS-TS visa — relatively straightforward process",
+      "Tuition €2,770/year for Master's at public universities",
+      "12-month post-study visa (APS) for Master's graduates",
+      "Campus France facilitates applications from many countries",
+      "Rich culture, food, and central European travel hub",
+    ],
+    cons: [
+      "Campus France pre-registration required for most non-EU applicants",
+      "OFII validation within 3 months — extra paperwork step",
+      "Paris is expensive for housing",
+      "French language strongly recommended for daily life",
+      "Bureaucracy can be slow and disorganized",
+    ],
   },
   {
     name: "Netherlands",
@@ -31,6 +59,20 @@ const countries = [
     visaAcceptanceRate: 88,
     visaBankAccountAmount: 14400,
     visaBankAccountLocked: false,
+    pros: [
+      "University handles visa application for you",
+      "Orientation Year visa after graduation (1 year to find work)",
+      "Excellent English proficiency everywhere",
+      "Strong tech sector (ASML, Philips, Booking.com)",
+      "Central location, excellent train connections"
+    ],
+    cons: [
+      "Tuition high for non-EU (€10,000–22,000/year)",
+      "Housing shortage in Amsterdam, Utrecht, Delft",
+      "Health insurance mandatory (~€100/month)",
+      "Limited scholarships available",
+      "Rainy and grey much of the year"
+    ],
   },
   {
     name: "Sweden",
@@ -41,6 +83,20 @@ const countries = [
     visaAcceptanceRate: 85,
     visaBankAccountAmount: 11050,
     visaBankAccountLocked: false,
+    pros: [
+      "Unlimited work hours alongside studies",
+      "12-month job search permit after graduation",
+      "High quality of life and work-life balance",
+      "Innovation hub (Spotify, Klarna, King)",
+      "English widely spoken"
+    ],
+    cons: [
+      "Tuition €8,000–30,000/year for non-EU",
+      "Long permit processing (2–4 months)",
+      "Dark winters — seasonal affective disorder risk",
+      "Competitive Stockholm housing market",
+      "High cost of living"
+    ],
   },
   {
     name: "Denmark",
@@ -51,6 +107,20 @@ const countries = [
     visaAcceptanceRate: 82,
     visaBankAccountAmount: 10300,
     visaBankAccountLocked: false,
+    pros: [
+      "2-year Establishment Card after graduation",
+      "Tuition-free for EU/EEA students",
+      "High English proficiency everywhere",
+      "Excellent work-life balance (37h week norm)",
+      "Bicycle-friendly cities, sustainable living"
+    ],
+    cons: [
+      "Tuition €6,700–17,500/year for non-EU",
+      "Proof of €10,300/year upfront",
+      "Limited scholarships",
+      "High taxes and cost of living",
+      "Tough Copenhagen housing market"
+    ],
   },
   {
     name: "Norway",
@@ -61,6 +131,20 @@ const countries = [
     visaAcceptanceRate: 84,
     visaBankAccountAmount: 11900,
     visaBankAccountLocked: true,
+    pros: [
+      "Tuition-free for ALL nationalities",
+      "No blocked account needed",
+      "Stunning nature (fjords, Northern Lights)",
+      "High English proficiency",
+      "1-year job search visa after graduation"
+    ],
+    cons: [
+      "Extremely high cost of living (~€1,200/month)",
+      "Cold, dark winters",
+      "Limited English Master’s programs",
+      "Non-EU — separate visa from Schengen",
+      "Competitive non-Norwegian job market"
+    ],
   },
   {
     name: "Finland",
@@ -71,6 +155,20 @@ const countries = [
     visaAcceptanceRate: 87,
     visaBankAccountAmount: 6720,
     visaBankAccountLocked: false,
+    pros: [
+      "2-year post-study residence permit",
+      "30h/week work (unlimited in your field)",
+      "Top-ranked education system",
+      "Safe, clean, well-functioning society",
+      "Growing startup ecosystem (Slush, Wolt)"
+    ],
+    cons: [
+      "Tuition €4,000–18,000/year for non-EU",
+      "Cold, dark winters",
+      "Finnish language difficult to learn",
+      "Smaller job market vs Central Europe",
+      "Remote location — long travel to rest of EU"
+    ],
   },
   {
     name: "Switzerland",
@@ -81,6 +179,20 @@ const countries = [
     visaAcceptanceRate: 78,
     visaBankAccountAmount: 22100,
     visaBankAccountLocked: false,
+    pros: [
+      "Very high post-graduation salaries",
+      "Low tuition (CHF 500–2,000/semester)",
+      "Strong banking/pharma/tech economy",
+      "Multilingual environment",
+      "Stunning Alps and outdoor lifestyle"
+    ],
+    cons: [
+      "Very high cost of living (~€1,600/month)",
+      "Slow visa processing (8–12 weeks)",
+      "Only 15h/week work, after 6 months",
+      "Only 6-month job search after graduation",
+      "Not EU — separate work authorization"
+    ],
   },
   {
     name: "Austria",
@@ -91,6 +203,20 @@ const countries = [
     visaAcceptanceRate: 83,
     visaBankAccountAmount: 7020,
     visaBankAccountLocked: false,
+    pros: [
+      "Public unis ~€750/semester for non-EU",
+      "12-month job search visa after graduation",
+      "Central European hub location",
+      "Vienna #1 most livable city worldwide",
+      "Rich cultural heritage"
+    ],
+    cons: [
+      "Quota system limits spots for some",
+      "Proof of €7,020/year required",
+      "Austrian German differs from standard German",
+      "Smaller job market than Germany",
+      "Conservative norms in some regions"
+    ],
   },
   {
     name: "Belgium",
@@ -101,6 +227,20 @@ const countries = [
     visaAcceptanceRate: 86,
     visaBankAccountAmount: 9600,
     visaBankAccountLocked: false,
+    pros: [
+      "EU institutions in Brussels (internships)",
+      "12-month orientation year after graduation",
+      "Trilingual exposure (Dutch, French, German)",
+      "Affordable tuition vs Netherlands/UK",
+      "Paris, London, Amsterdam all close"
+    ],
+    cons: [
+      "Proof of €9,600/year required",
+      "Complex political/administrative structure",
+      "Brussels housing market tightening",
+      "Grey, rainy weather",
+      "Language divide between regions"
+    ],
   },
   {
     name: "Ireland",
@@ -111,6 +251,20 @@ const countries = [
     visaAcceptanceRate: 95,
     visaBankAccountAmount: 7000,
     visaBankAccountLocked: false,
+    pros: [
+      "Only native English EU country (post-Brexit)",
+      "2-year graduate scheme after study",
+      "European HQ: Google, Meta, Apple, Stripe",
+      "Welcoming, friendly culture",
+      "20h work term / 40h holiday"
+    ],
+    cons: [
+      "Dublin accommodation crisis",
+      "Tuition €10,000–30,000/year non-EU",
+      "Private health insurance (~€500/year)",
+      "GNIB registration fee (€300)",
+      "Limited public transport outside Dublin"
+    ],
   },
   {
     name: "Italy",
@@ -121,6 +275,20 @@ const countries = [
     visaAcceptanceRate: 90,
     visaBankAccountAmount: 7200,
     visaBankAccountLocked: false,
+    pros: [
+      "Income-based tuition (as low as €156/year)",
+      "Rich cultural experience",
+      "Affordable living (especially small cities)",
+      "12-month job search after graduation",
+      "Warm climate, Mediterranean lifestyle"
+    ],
+    cons: [
+      "Visa appointment wait: months",
+      "Permesso di soggiorno bureaucracy",
+      "Weaker job market than Northern Europe",
+      "Italian needed for most jobs",
+      "Public transport strikes common"
+    ],
   },
   {
     name: "Spain",
@@ -131,6 +299,20 @@ const countries = [
     visaAcceptanceRate: 91,
     visaBankAccountAmount: 7200,
     visaBankAccountLocked: false,
+    pros: [
+      "30h/week work allowed during studies",
+      "1-year job search after graduation",
+      "Affordable (€700/month average)",
+      "Warm climate, beaches, vibrant culture",
+      "2nd most popular Erasmus destination"
+    ],
+    cons: [
+      "Proof of €7,200/year required",
+      "TIE ID card bureaucracy (within 30 days)",
+      "Higher unemployment vs EU average",
+      "Spanish needed for most jobs",
+      "Slow administrative processes"
+    ],
   },
   {
     name: "Portugal",
@@ -141,6 +323,20 @@ const countries = [
     visaAcceptanceRate: 92,
     visaBankAccountAmount: 7200,
     visaBankAccountLocked: false,
+    pros: [
+      "Most affordable Western EU country",
+      "1-year job search visa after graduation",
+      "Fast-growing tech hub (Lisbon/Web Summit)",
+      "Warm climate, safe, friendly",
+      "English widely spoken in tech/tourism"
+    ],
+    cons: [
+      "Lower salaries vs Northern/Central Europe",
+      "Proof of €7,200/year required",
+      "SEF immigration appointment waits",
+      "Less developed public transport",
+      "Portuguese helps for better prospects"
+    ],
   },
   {
     name: "Czech Republic",
@@ -151,6 +347,20 @@ const countries = [
     visaAcceptanceRate: 94,
     visaBankAccountAmount: 3400,
     visaBankAccountLocked: false,
+    pros: [
+      "Extremely affordable (~€550/month)",
+      "Low proof of funds (~€3,400/year)",
+      "9-month job search after graduation",
+      "Prague — beautiful, strong IT sector",
+      "Central European travel hub"
+    ],
+    cons: [
+      "Czech needed outside Prague",
+      "Limited English-taught programs",
+      "Bureaucratic visa (multiple office visits)",
+      "Lower post-grad salaries vs West",
+      "Winter air pollution (coal heating)"
+    ],
   },
   {
     name: "Poland",
@@ -161,6 +371,20 @@ const countries = [
     visaAcceptanceRate: 93,
     visaBankAccountAmount: 2800,
     visaBankAccountLocked: false,
+    pros: [
+      "Lowest EU cost of living (~€450/month)",
+      "Low proof of funds (~€2,800/year)",
+      "Fastest visa processing (2–4 weeks)",
+      "Growing IT hub (Warsaw, Krakow, Wroclaw)",
+      "English common in cities and tech"
+    ],
+    cons: [
+      "Polish language difficult to learn",
+      "Lower salaries vs Western Europe",
+      "Temporary permit renewal after 1st year",
+      "Conservative political climate",
+      "Winter air quality in some cities"
+    ],
   },
 ]
 
