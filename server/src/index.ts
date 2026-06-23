@@ -3,6 +3,7 @@ dotenv.config()
 
 import express, { type Request, type Response, type NextFunction } from "express"
 import cors from "cors"
+import path from "path"
 import mongoose from "mongoose"
 import { MongoMemoryServer } from "mongodb-memory-server"
 import { universityRouter } from "./routes/universityRoutes"
@@ -21,6 +22,14 @@ app.use(express.json())
 app.use("/api/universities", universityRouter)
 app.use("/api/stats", statsRouter)
 app.use("/api/countries", countryRouter)
+
+if (process.env["NODE_ENV"] === "production") {
+  const clientDist = path.join(__dirname, "../../client/dist")
+  app.use(express.static(clientDist))
+  app.get("*", (_req: Request, res: Response) => {
+    res.sendFile(path.join(clientDist, "index.html"))
+  })
+}
 
 app.use(
   (err: Error, _req: Request, res: Response, _next: NextFunction): void => {
