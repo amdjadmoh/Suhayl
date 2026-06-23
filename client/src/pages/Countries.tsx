@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom"
-import { AlertCircle, Globe, Lock, Unlock } from "lucide-react"
+import { AlertCircle, Globe, Lock, Unlock, Plus } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCountries } from "@/lib/api"
 import { COUNTRY_FLAGS } from "@/lib/constants"
@@ -50,7 +51,14 @@ export default function Countries(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Countries</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Countries</h1>
+        <Button asChild>
+          <Link to="/countries/new">
+            <Plus className="mr-1 h-4 w-4" /> Add Country
+          </Link>
+        </Button>
+      </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {countries?.map((country) => (
           <Link
