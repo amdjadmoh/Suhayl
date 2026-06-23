@@ -26,7 +26,7 @@ app.use("/api/countries", countryRouter)
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")
   app.use(express.static(clientDist))
-  app.get("*", (_req: Request, res: Response) => {
+  app.get("/{*splat}", (_req: Request, res: Response) => {
     res.sendFile(path.join(clientDist, "index.html"))
   })
 }
