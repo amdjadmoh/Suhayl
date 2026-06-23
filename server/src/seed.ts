@@ -34,32 +34,32 @@ const countries = [
   },
   {
     name: "Sweden",
-    currency: "SEK",
-    livingCostEstimate: 860,
+    currency: "EUR",
+    livingCostEstimate: 920,
     visaRequirements:
-      "Residence permit for studies. Proof of funds SEK 10,314/month for 2025 (adjusted annually). Must show funds for entire study period upfront. Apply online via Migration Agency (Migrationsverket), biometrics at embassy. Processing: 2–4 months — apply early. Allows unlimited work hours alongside studies. After graduation: 12-month job search permit. No blocked account — bank statement or scholarship letter accepted.",
+      "Residence permit for studies. Proof of funds €11,050/year (SEK 10,314/month for 2025). Must show funds for entire study period upfront. Apply online via Migration Agency (Migrationsverket), biometrics at embassy. Processing: 2–4 months — apply early. Allows unlimited work hours alongside studies. After graduation: 12-month job search permit. No blocked account — bank statement or scholarship letter accepted.",
     visaAcceptanceRate: 85,
-    visaBankAccountAmount: 123768,
+    visaBankAccountAmount: 11050,
     visaBankAccountLocked: false,
   },
   {
     name: "Denmark",
-    currency: "DKK",
+    currency: "EUR",
     livingCostEstimate: 1100,
     visaRequirements:
-      "Student residence permit (ST1). Proof of funds DKK 6,397/month (~DKK 76,764/year). Online application via SIRI portal, biometrics at Danish embassy or in Denmark. Processing: 2–3 months. Allows 20 hours/week work (full-time June–August). After graduation: 2-year Establishment Card to seek work. Tuition-free for EU/EEA; non-EU pay DKK 50,000–130,000/year. No blocked account required.",
+      "Student residence permit (ST1). Proof of funds ~€10,300/year (DKK 76,764). Online application via SIRI portal, biometrics at Danish embassy or in Denmark. Processing: 2–3 months. Allows 20 hours/week work (full-time June–August). After graduation: 2-year Establishment Card to seek work. Tuition-free for EU/EEA; non-EU pay tuition. No blocked account required.",
     visaAcceptanceRate: 82,
-    visaBankAccountAmount: 76764,
+    visaBankAccountAmount: 10300,
     visaBankAccountLocked: false,
   },
   {
     name: "Norway",
-    currency: "NOK",
+    currency: "EUR",
     livingCostEstimate: 1200,
     visaRequirements:
-      "Student residence permit. Proof of funds NOK 137,907/year (2025 rate) — must be deposited into an UDI account or shown as bank statement + guaranteed income. Tuition-free for all nationalities at public universities. Allows 20 hours/week work. Processing: 2–8 weeks. After graduation: 1-year job search visa. Note: Norway is not EU but participates in Erasmus+ and Schengen. High cost of living but no tuition fees.",
+      "Student residence permit. Proof of funds ~€11,900/year (NOK 137,907 in 2025) — must be deposited into an UDI account or shown as bank statement + guaranteed income. Tuition-free for all nationalities at public universities. Allows 20 hours/week work. Processing: 2–8 weeks. After graduation: 1-year job search visa. Note: Norway is not EU but participates in Erasmus+ and Schengen. High cost of living but no tuition fees.",
     visaAcceptanceRate: 84,
-    visaBankAccountAmount: 137907,
+    visaBankAccountAmount: 11900,
     visaBankAccountLocked: true,
   },
   {
@@ -74,12 +74,12 @@ const countries = [
   },
   {
     name: "Switzerland",
-    currency: "CHF",
+    currency: "EUR",
     livingCostEstimate: 1600,
     visaRequirements:
-      "National D visa for studies. Proof of CHF 21,000/year minimum. Must apply from home country at Swiss embassy — you cannot enter as tourist and switch. Cantonal migration office processes permits. Processing: 8–12 weeks (slow). Allows 15 hours/week work only after 6 months of residence. After graduation: 6-month job search period. High living costs but low tuition (CHF 500–2,000/semester). Note: Switzerland is Schengen but not EU — separate visa needed.",
+      "National D visa for studies. Proof of ~€22,100/year (CHF 21,000) minimum. Must apply from home country at Swiss embassy — you cannot enter as tourist and switch. Cantonal migration office processes permits. Processing: 8–12 weeks (slow). Allows 15 hours/week work only after 6 months of residence. After graduation: 6-month job search period. High living costs but low tuition (CHF 500–2,000/semester). Note: Switzerland is Schengen but not EU — separate visa needed.",
     visaAcceptanceRate: 78,
-    visaBankAccountAmount: 21000,
+    visaBankAccountAmount: 22100,
     visaBankAccountLocked: false,
   },
   {
@@ -144,22 +144,22 @@ const countries = [
   },
   {
     name: "Czech Republic",
-    currency: "CZK",
+    currency: "EUR",
     livingCostEstimate: 550,
     visaRequirements:
-      "Long-term residence permit for studies. Proof of funds CZK 81,400/year (~€3,250). Criminal record extract from home country required. Purpose-built accommodation proof helps application. Processing: 60–90 days at Czech embassy, then visit Ministry of Interior in person within 3 days of arrival. Allows 20 hours/week work. After graduation: 9-month job search. Very affordable — Prague costs 50% less than Western European capitals. Strong engineering and IT programs. EU member, Schengen area.",
+      "Long-term residence permit for studies. Proof of funds ~€3,400/year (CZK 81,400). Criminal record extract from home country required. Purpose-built accommodation proof helps application. Processing: 60–90 days at Czech embassy, then visit Ministry of Interior in person within 3 days of arrival. Allows 20 hours/week work. After graduation: 9-month job search. Very affordable. Strong engineering and IT programs. EU member, Schengen area.",
     visaAcceptanceRate: 94,
-    visaBankAccountAmount: 81400,
+    visaBankAccountAmount: 3400,
     visaBankAccountLocked: false,
   },
   {
     name: "Poland",
-    currency: "PLN",
+    currency: "EUR",
     livingCostEstimate: 450,
     visaRequirements:
-      "National D visa for studies. Proof of funds ~PLN 800–1,000/month (~PLN 12,000/year). Apply at Polish consulate with admission letter and proof of funds. Processing: 2–4 weeks — one of the fastest in EU. Temporary residence permit required after first year. Allows 20 hours/week work during studies. After graduation: stay under regular work permit rules. Lowest cost of living in EU among developed economies. Growing tech sector — Warsaw, Krakow, Wroclaw are major IT hubs. EU member, Schengen area.",
+      "National D visa for studies. Proof of funds ~€2,800/year (PLN 12,000). Apply at Polish consulate with admission letter and proof of funds. Processing: 2–4 weeks — one of the fastest in EU. Temporary residence permit required after first year. Allows 20 hours/week work during studies. After graduation: stay under regular work permit rules. Lowest cost of living in EU among developed economies. Growing tech sector. EU member, Schengen area.",
     visaAcceptanceRate: 93,
-    visaBankAccountAmount: 12000,
+    visaBankAccountAmount: 2800,
     visaBankAccountLocked: false,
   },
 ]
