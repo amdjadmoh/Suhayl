@@ -1,16 +1,5 @@
 export const CURRENCIES = [
   "EUR",
-  "USD",
-  "GBP",
-  "CAD",
-  "AUD",
-  "JPY",
-  "KRW",
-  "CNY",
-  "TRY",
-  "SAR",
-  "MAD",
-  "DZD",
 ] as const;
 
 export const DEGREE_LEVELS = [
