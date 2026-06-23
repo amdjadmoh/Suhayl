@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    /* ── Strict Core ────────────────────────────────────────── */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* ── Module System ──────────────────────────────────────── */
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    /* ── Target ─────────────────────────────────────────────── */
+    "target": "ES2020",
+    "lib": ["ES2020"],
+
+    /* ── Emit ───────────────────────────────────────────────── */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+
+    /* ── Performance ────────────────────────────────────────── */
+    "skipLibCheck": true,
+    "incremental": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
