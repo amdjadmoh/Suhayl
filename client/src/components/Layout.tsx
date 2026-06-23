@@ -82,8 +82,11 @@ export default function Layout(): React.ReactElement {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 flex-shrink-0 flex-col bg-sidebar border-r border-sidebar-border lg:flex">
-        <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-          <img src="/logo.png" alt="WannaOut" className="h-7 w-auto" />
+        <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
+          <img src="/icon.png" alt="" className="h-7 w-7 rounded-lg" />
+          <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
+            WannaOut
+          </span>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
           <SidebarNav />
@@ -108,15 +111,19 @@ export default function Layout(): React.ReactElement {
               side="left"
               className="w-64 bg-sidebar border-r border-sidebar-border p-0"
             >
-              <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4">
-                <img src="/logo.png" alt="WannaOut" className="h-7 w-auto" />
+              <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
+                <img src="/icon.png" alt="" className="h-7 w-7 rounded-lg" />
+                <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
+                  WannaOut
+                </span>
               </div>
               <div className="py-4">
                 <SidebarNav onItemClick={() => setMobileOpen(false)} />
               </div>
             </SheetContent>
           </Sheet>
-          <img src="/logo.png" alt="WannaOut" className="h-6 w-auto" />
+          <img src="/icon.png" alt="" className="h-6 w-6 rounded-md" />
+          <span className="text-lg font-semibold tracking-tight">WannaOut</span>
         </header>
 
         {/* Page content */}
