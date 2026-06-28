@@ -1,10 +1,12 @@
 import type { Request, Response } from "express"
 import { University } from "../models/University"
+import { City } from "../models/City"
 
 export async function getStats(_req: Request, res: Response): Promise<void> {
   const [
     totalUniversities,
     countriesCount,
+    citiesCount,
     byCountry,
     byStatus,
     avgTuitionResult,
@@ -15,6 +17,8 @@ export async function getStats(_req: Request, res: Response): Promise<void> {
     University.countDocuments(),
 
     University.distinct("country").then((c) => c.length),
+
+    City.countDocuments(),
 
     University.aggregate([
       { $group: { _id: "$country", count: { $sum: 1 } } },
@@ -58,6 +62,7 @@ export async function getStats(_req: Request, res: Response): Promise<void> {
   res.json({
     totalUniversities,
     countriesCount,
+    citiesCount,
     byCountry,
     byStatus,
     avgTuition: Math.round((avgTuitionResult as number) * 100) / 100,

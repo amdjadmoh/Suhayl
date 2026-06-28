@@ -6,29 +6,47 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { useCountryWithUniversities, useDeleteCountry } from "@/lib/api"
+import { useCityWithUniversities, useDeleteCity } from "@/lib/api"
 import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
-import type { Country } from "@/types/country"
-import type { University } from "@/types/university"
 import type { City } from "@/types/city"
 
-export default function CountryDetail(): React.ReactElement {
+function ScoreBar({ value, label }: { value: number; label: string }): React.ReactElement {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-2">
+        <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
+          <div
+            className="h-full rounded-full bg-primary"
+            style={{ width: `${(value / 10) * 100}%` }}
+          />
+        </div>
+        <span className="text-sm font-semibold">{value}/10</span>
+      </div>
+    </div>
+  )
+}
+
+function formatPopulation(pop?: number): string {
+  if (!pop) return "N/A"
+  return pop.toLocaleString()
+}
+
+export default function CityDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const { data, isLoading, isError, error } = useCountryWithUniversities(
-    id ?? ""
-  )
-  const deleteMutation = useDeleteCountry()
+  const { data, isLoading, isError, error } = useCityWithUniversities(id ?? "")
+  const deleteMutation = useDeleteCity()
 
   async function handleDelete(): Promise<void> {
     if (!id) return
     try {
       await deleteMutation.mutateAsync(id)
-      toast.success("Country deleted")
-      navigate("/countries")
+      toast.success("City deleted")
+      navigate("/cities")
     } catch {
-      toast.error("Failed to delete country")
+      toast.error("Failed to delete city")
     }
   }
 
@@ -40,7 +58,7 @@ export default function CountryDetail(): React.ReactElement {
           <Skeleton className="h-8 w-64" />
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[500px] w-full" />
           <Skeleton className="h-[400px] w-full" />
         </div>
       </div>
@@ -56,11 +74,11 @@ export default function CountryDetail(): React.ReactElement {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-            <h2 className="mb-2 text-xl font-semibold">Country not found</h2>
+            <h2 className="mb-2 text-xl font-semibold">City not found</h2>
             <p className="text-muted-foreground">
               {error instanceof Error
                 ? error.message
-                : "The country details could not be loaded."}
+                : "The city details could not be loaded."}
             </p>
           </CardContent>
         </Card>
@@ -68,15 +86,7 @@ export default function CountryDetail(): React.ReactElement {
     )
   }
 
-  const { country, universities, cities } = data
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: country.currency,
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
+  const { city, universities } = data
 
   return (
     <div className="space-y-6">
@@ -86,13 +96,13 @@ export default function CountryDetail(): React.ReactElement {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            {COUNTRY_FLAGS[country.name] ?? <Globe className="h-6 w-6" />}
-            {country.name}
+            {COUNTRY_FLAGS[city.country] ?? <Globe className="h-6 w-6" />}
+            {city.name}
           </h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/countries/${country._id}/edit`}>
+            <Link to={`/cities/${city._id}/edit`}>
               <Pencil className="mr-1 h-4 w-4" /> Edit
             </Link>
           </Button>
@@ -115,59 +125,18 @@ export default function CountryDetail(): React.ReactElement {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Visa Information</CardTitle>
+            <CardTitle className="text-lg">City Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <h3 className="mb-1 text-sm font-medium text-muted-foreground">
-                Requirements
-              </h3>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                {country.visaRequirements}
-              </p>
-            </div>
-
-            <Separator />
-
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
-                Acceptance Rate
+                Country
               </span>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
-                  <div
-                    className="h-full bg-primary"
-                    style={{ width: `${country.visaAcceptanceRate}%` }}
-                  />
-                </div>
-                <span className="font-semibold">
-                  {country.visaAcceptanceRate}%
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">
+                  {COUNTRY_FLAGS[city.country] ?? <Globe className="h-4 w-4" />}
                 </span>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-start justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Bank Account Required
-              </span>
-              <div className="flex flex-col items-end gap-1 text-right">
-                <span className="font-semibold">
-                  {formatCurrency(country.visaBankAccountAmount)}/year
-                </span>
-                <Badge
-                  variant="secondary"
-                  className={
-                    country.visaBankAccountLocked
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-amber-100 text-amber-700"
-                  }
-                >
-                  {country.visaBankAccountLocked
-                    ? "Blocked Account"
-                    : "Regular Account"}
-                </Badge>
+                <span className="font-semibold">{city.country}</span>
               </div>
             </div>
 
@@ -175,10 +144,10 @@ export default function CountryDetail(): React.ReactElement {
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
-                Living Cost / Month
+                Population
               </span>
               <span className="font-semibold">
-                {formatCurrency(country.livingCostEstimate)}
+                {formatPopulation(city.population)}
               </span>
             </div>
 
@@ -186,22 +155,104 @@ export default function CountryDetail(): React.ReactElement {
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
-                Currency
+                Capital City
               </span>
-              <Badge variant="outline">{country.currency}</Badge>
+              {city.isCapital ? (
+                <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                  Capital
+                </Badge>
+              ) : (
+                <span className="text-sm text-muted-foreground">No</span>
+              )}
             </div>
 
-            {(country.pros.length > 0 || country.cons.length > 0) && (
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Climate
+              </span>
+              <span className="font-semibold">{city.climate}</span>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Language
+              </span>
+              <span className="font-semibold">{city.language}</span>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Monthly Living Cost
+              </span>
+              <span className="font-semibold">
+                ${city.monthlyLivingCost.toLocaleString()}/mo
+              </span>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Avg Rent (Single)
+              </span>
+              <span className="font-semibold">
+                ${city.averageRentSingle.toLocaleString()}/mo
+              </span>
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Avg Rent (Shared)
+              </span>
+              <span className="font-semibold">
+                ${city.averageRentShared.toLocaleString()}/mo
+              </span>
+            </div>
+
+            {city.internetSpeed && (
+              <>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Internet Speed
+                  </span>
+                  <span className="font-semibold">{city.internetSpeed} Mbps</span>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Scores</h3>
+              <div className="space-y-2">
+                <ScoreBar value={city.qualityOfLifeScore} label="Quality of Life" />
+                <ScoreBar value={city.safetyScore} label="Safety" />
+                <ScoreBar value={city.publicTransportScore} label="Public Transport" />
+                <ScoreBar value={city.studentFriendliness} label="Student Friendliness" />
+                <ScoreBar value={city.englishFriendliness} label="English Friendliness" />
+              </div>
+            </div>
+
+            {(city.pros.length > 0 || city.cons.length > 0) && (
               <>
                 <Separator />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {country.pros.length > 0 && (
+                  {city.pros.length > 0 && (
                     <div>
                       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-600">
                         Pros
                       </h3>
                       <ul className="space-y-1.5">
-                        {country.pros.map((p, i) => (
+                        {city.pros.map((p, i) => (
                           <li
                             key={i}
                             className="flex items-start gap-1.5 text-xs leading-relaxed"
@@ -215,13 +266,13 @@ export default function CountryDetail(): React.ReactElement {
                       </ul>
                     </div>
                   )}
-                  {country.cons.length > 0 && (
+                  {city.cons.length > 0 && (
                     <div>
                       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-red-500">
                         Cons
                       </h3>
                       <ul className="space-y-1.5">
-                        {country.cons.map((c, i) => (
+                        {city.cons.map((c, i) => (
                           <li
                             key={i}
                             className="flex items-start gap-1.5 text-xs leading-relaxed"
@@ -238,48 +289,23 @@ export default function CountryDetail(): React.ReactElement {
                 </div>
               </>
             )}
+
+            {city.notes && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">Notes</h3>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{city.notes}</p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
-
-        {cities && cities.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                Cities in {country.name} ({cities.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {cities.map((city) => (
-                  <div
-                    key={city._id}
-                    onClick={() => navigate(`/cities/${city._id}`)}
-                    className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <div>
-                      <h4 className="font-semibold">
-                        {city.name}
-                        {city.isCapital && (
-                          <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-700 text-xs">
-                            Capital
-                          </Badge>
-                        )}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        ${city.monthlyLivingCost.toLocaleString()}/mo · Quality of Life: {city.qualityOfLifeScore}/10
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              Universities in {country.name} ({universities.length})
+              Universities in {city.name} ({universities.length})
             </CardTitle>
           </CardHeader>
           <CardContent>

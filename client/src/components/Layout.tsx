@@ -6,6 +6,7 @@ import {
   ClipboardList,
   GitCompare,
   Globe,
+  MapPin,
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,12 @@ const sidebarItems = [
     to: "/countries",
     icon: Globe,
     label: "Countries",
+    end: false,
+  },
+  {
+    to: "/cities",
+    icon: MapPin,
+    label: "Cities",
     end: false,
   },
   {

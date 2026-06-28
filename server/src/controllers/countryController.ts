@@ -1,6 +1,7 @@
 import type { Request, Response } from "express"
 import { Country } from "../models/Country"
 import { University } from "../models/University"
+import { City } from "../models/City"
 
 export async function getAll(_req: Request, res: Response): Promise<void> {
   const countries = await Country.find().sort({ name: 1 })
@@ -30,7 +31,9 @@ export async function getWithUniversities(
     name: 1,
   })
 
-  res.json({ country, universities })
+  const cities = await City.find({ country: country.name }).sort({ name: 1 })
+
+  res.json({ country, universities, cities })
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
@@ -83,6 +86,14 @@ export async function remove(req: Request, res: Response): Promise<void> {
   if (uniCount > 0) {
     res.status(400).json({
       message: `Cannot delete country with ${uniCount} linked universities. Remove them first.`,
+    })
+    return
+  }
+
+  const cityCount = await City.countDocuments({ country: country.name })
+  if (cityCount > 0) {
+    res.status(400).json({
+      message: `Cannot delete country with ${cityCount} linked cities. Remove them first.`,
     })
     return
   }
