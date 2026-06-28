@@ -11,8 +11,15 @@ import type {
   UniversityStats,
   UniversityFormData,
 } from "@/types/university";
+import type { Program, ProgramFormData } from "@/types/program";
+import type {
+  Application,
+  ApplicationFormData,
+} from "@/types/application";
 import type { Country, CountryWithUniversities } from "@/types/country";
 import type { City, CityWithUniversities, CityFormData } from "@/types/city";
+import type { User, AuthResponse } from "@/types/auth";
+import type { Student } from "@/types/student";
 
 const api = axios.create({
   baseURL: "/api",
@@ -22,14 +29,20 @@ const api = axios.create({
   },
 });
 
+// Attach auth token to every request if present in localStorage
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ─── Universities (institution-only catalog) ─────────────────────────────────
+
 interface UniversityQueryParams {
   search?: string;
   country?: string;
-  status?: string;
-  degreeLevel?: string;
-  sortBy?: string;
-  page?: number;
-  limit?: number;
 }
 
 export async function getUniversities(
@@ -134,7 +147,221 @@ export function useDeleteUniversity(): UseMutationResult<
   });
 }
 
-// Countries
+// ─── Programs (degree offerings at universities) ────────────────────────────
+
+interface ProgramQueryParams {
+  search?: string;
+  country?: string;
+  degreeLevel?: string;
+}
+
+export async function getPrograms(
+  params?: ProgramQueryParams,
+): Promise<{ programs: Program[]; total: number }> {
+  const response = await api.get("/programs", { params });
+  return response.data;
+}
+
+export async function getProgram(id: string): Promise<Program> {
+  const response = await api.get(`/programs/${id}`);
+  return response.data;
+}
+
+export async function getProgramsByUniversity(
+  universityId: string,
+): Promise<Program[]> {
+  const response = await api.get(`/programs/by-university/${universityId}`);
+  return response.data;
+}
+
+export async function createProgram(
+  data: ProgramFormData,
+): Promise<Program> {
+  const response = await api.post("/programs", data);
+  return response.data;
+}
+
+export async function updateProgram(
+  id: string,
+  data: Partial<ProgramFormData>,
+): Promise<Program> {
+  const response = await api.put(`/programs/${id}`, data);
+  return response.data;
+}
+
+export async function deleteProgram(id: string): Promise<void> {
+  await api.delete(`/programs/${id}`);
+}
+
+export function usePrograms(
+  params?: ProgramQueryParams,
+): UseQueryResult<{ programs: Program[]; total: number }> {
+  return useQuery({
+    queryKey: ["programs", params],
+    queryFn: () => getPrograms(params),
+  });
+}
+
+export function useProgram(id: string): UseQueryResult<Program> {
+  return useQuery({
+    queryKey: ["programs", id],
+    queryFn: () => getProgram(id),
+    enabled: id.length > 0,
+  });
+}
+
+export function useProgramsByUniversity(
+  universityId: string,
+): UseQueryResult<Program[]> {
+  return useQuery({
+    queryKey: ["programs", "by-university", universityId],
+    queryFn: () => getProgramsByUniversity(universityId),
+    enabled: universityId.length > 0,
+  });
+}
+
+export function useCreateProgram(): UseMutationResult<
+  Program,
+  Error,
+  ProgramFormData
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createProgram,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["programs"] });
+    },
+  });
+}
+
+export function useUpdateProgram(): UseMutationResult<
+  Program,
+  Error,
+  { id: string; data: Partial<ProgramFormData> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => updateProgram(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["programs"] });
+    },
+  });
+}
+
+export function useDeleteProgram(): UseMutationResult<
+  void,
+  Error,
+  string
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteProgram,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["programs"] });
+    },
+  });
+}
+
+// ─── Applications (role-scoped, linked to programs) ─────────────────────────
+
+interface ApplicationQueryParams {
+  status?: string;
+  search?: string;
+}
+
+export async function getApplications(
+  params?: ApplicationQueryParams,
+): Promise<{ applications: Application[]; total: number }> {
+  const response = await api.get("/applications", { params });
+  return response.data;
+}
+
+export async function getApplication(id: string): Promise<Application> {
+  const response = await api.get(`/applications/${id}`);
+  return response.data;
+}
+
+export async function createApplication(
+  data: ApplicationFormData,
+): Promise<Application> {
+  const response = await api.post("/applications", data);
+  return response.data;
+}
+
+export async function updateApplication(
+  id: string,
+  data: Partial<ApplicationFormData>,
+): Promise<Application> {
+  const response = await api.put(`/applications/${id}`, data);
+  return response.data;
+}
+
+export async function deleteApplication(id: string): Promise<void> {
+  await api.delete(`/applications/${id}`);
+}
+
+export function useApplications(
+  params?: ApplicationQueryParams,
+): UseQueryResult<{ applications: Application[]; total: number }> {
+  return useQuery({
+    queryKey: ["applications", params],
+    queryFn: () => getApplications(params),
+  });
+}
+
+export function useApplication(
+  id: string,
+): UseQueryResult<Application> {
+  return useQuery({
+    queryKey: ["applications", id],
+    queryFn: () => getApplication(id),
+    enabled: id.length > 0,
+  });
+}
+
+export function useCreateApplication(): UseMutationResult<
+  Application,
+  Error,
+  ApplicationFormData
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useUpdateApplication(): UseMutationResult<
+  Application,
+  Error,
+  { id: string; data: Partial<ApplicationFormData> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => updateApplication(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useDeleteApplication(): UseMutationResult<
+  void,
+  Error,
+  string
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+// ─── Countries ───────────────────────────────────────────────────────────────
 
 export async function getCountries(): Promise<Country[]> {
   const response = await api.get("/countries")
@@ -234,7 +461,7 @@ export function useDeleteCountry(): UseMutationResult<void, Error, string> {
   })
 }
 
-// Cities
+// ─── Cities ──────────────────────────────────────────────────────────────────
 
 export async function getCities(country?: string): Promise<City[]> {
   const params = country ? { country } : undefined;
@@ -330,5 +557,235 @@ export function useDeleteCity(): UseMutationResult<void, Error, string> {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cities"] });
     },
+  });
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+export async function loginUser(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  const response = await api.post("/auth/login", { email, password });
+  return response.data;
+}
+
+export async function registerUser(
+  name: string,
+  email: string,
+  password: string,
+  role: "student" | "agency",
+): Promise<AuthResponse> {
+  const response = await api.post("/auth/register", {
+    name,
+    email,
+    password,
+    role,
+  });
+  return response.data;
+}
+
+export async function getMe(): Promise<User> {
+  const response = await api.get("/auth/me");
+  return response.data;
+}
+
+// ─── Agency ──────────────────────────────────────────────────────────────────
+
+export async function getAgencyApplications(): Promise<Application[]> {
+  const response = await api.get("/agency/applications");
+  return response.data;
+}
+
+export async function getAgencyStudents(): Promise<
+  { studentName: string; studentEmail: string; count: number }[]
+> {
+  const response = await api.get("/agency/students");
+  return response.data;
+}
+
+export function useAgencyApplications(): UseQueryResult<Application[]> {
+  return useQuery({
+    queryKey: ["agency", "applications"],
+    queryFn: getAgencyApplications,
+  });
+}
+
+export function useAgencyStudents(): UseQueryResult<
+  { studentName: string; studentEmail: string; count: number }[]
+> {
+  return useQuery({
+    queryKey: ["agency", "students"],
+    queryFn: getAgencyStudents,
+  });
+}
+
+// ─── Students (agency) ───────────────────────────────────────────────────────
+
+export async function getStudents(): Promise<Student[]> {
+  const response = await api.get("/students");
+  return response.data;
+}
+
+export async function getStudent(id: string): Promise<Student> {
+  const response = await api.get(`/students/${id}`);
+  return response.data;
+}
+
+export async function createStudent(
+  data: Omit<Student, "_id" | "createdAt" | "updatedAt" | "agencyId">,
+): Promise<Student> {
+  const response = await api.post("/students", data);
+  return response.data;
+}
+
+export async function updateStudent(
+  id: string,
+  data: Partial<Student>,
+): Promise<Student> {
+  const response = await api.put(`/students/${id}`, data);
+  return response.data;
+}
+
+export async function deleteStudent(id: string): Promise<void> {
+  await api.delete(`/students/${id}`);
+}
+
+export function useStudents(): UseQueryResult<Student[]> {
+  return useQuery({ queryKey: ["students"], queryFn: getStudents });
+}
+
+export function useStudent(
+  id: string,
+): UseQueryResult<Student> {
+  return useQuery({
+    queryKey: ["students", id],
+    queryFn: () => getStudent(id),
+    enabled: id.length > 0,
+  });
+}
+
+export function useCreateStudent(): UseMutationResult<
+  Student,
+  Error,
+  Omit<Student, "_id" | "createdAt" | "updatedAt" | "agencyId">
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createStudent,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["students"] }),
+  });
+}
+
+export function useUpdateStudent(): UseMutationResult<
+  Student,
+  Error,
+  { id: string; data: Partial<Student> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => updateStudent(id, data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["students"] }),
+  });
+}
+
+export function useDeleteStudent(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteStudent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+}
+
+// ─── Admin users ─────────────────────────────────────────────────────────────
+
+export async function getUsers(): Promise<User[]> {
+  const response = await api.get("/admin/users");
+  return response.data;
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  await api.delete(`/admin/users/${id}`);
+}
+
+export function useUsers(): UseQueryResult<User[]> {
+  return useQuery({ queryKey: ["users"], queryFn: getUsers });
+}
+
+export function useDeleteUser(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalUniversities: number;
+  totalPrograms: number;
+  totalCountries: number;
+  totalCities: number;
+  totalAgencies: number;
+  totalStudents: number;
+  totalStudentsManaged: number;
+  byRole: { role: string; count: number }[];
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const response = await api.get("/admin/stats");
+  return response.data;
+}
+
+export async function createUserByAdmin(data: {
+  email: string;
+  password: string;
+  name: string;
+  role: string;
+}): Promise<User> {
+  const response = await api.post("/admin/users", data);
+  return response.data;
+}
+
+export async function updateUserByAdmin(
+  id: string,
+  data: Partial<{ email: string; name: string; role: string }>,
+): Promise<User> {
+  const response = await api.put(`/admin/users/${id}`, data);
+  return response.data;
+}
+
+export function useAdminStats(): UseQueryResult<AdminStats> {
+  return useQuery({ queryKey: ["admin", "stats"], queryFn: getAdminStats });
+}
+
+export function useCreateUserByAdmin(): UseMutationResult<
+  User,
+  Error,
+  { email: string; password: string; name: string; role: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createUserByAdmin,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useUpdateUserByAdmin(): UseMutationResult<
+  User,
+  Error,
+  { id: string; data: Partial<{ email: string; name: string; role: string }> }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => updateUserByAdmin(id, data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["users"] }),
   });
 }

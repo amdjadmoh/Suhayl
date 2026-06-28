@@ -7,12 +7,16 @@ import {
   remove,
   getCountries,
 } from "../controllers/universityController"
+import { authenticate, authorize } from "../middleware/auth"
 
 export const universityRouter = Router()
 
+// GET routes are public
 universityRouter.get("/countries", getCountries)
 universityRouter.get("/", getAll)
 universityRouter.get("/:id", getById)
-universityRouter.post("/", create)
-universityRouter.put("/:id", update)
-universityRouter.delete("/:id", remove)
+
+// Write operations: admin only
+universityRouter.post("/", authenticate, authorize("admin"), create)
+universityRouter.put("/:id", authenticate, authorize("admin"), update)
+universityRouter.delete("/:id", authenticate, authorize("admin"), remove)
