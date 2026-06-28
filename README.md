@@ -1,4 +1,4 @@
-# WannaOut
+# Suhayl
 
 A personal tool for tracking and comparing universities when applying to study abroad. Keeps everything in one place — deadlines, requirements, costs, application status — instead of a messy spreadsheet.
 
