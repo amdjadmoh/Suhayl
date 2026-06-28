@@ -103,7 +103,7 @@ export default function Layout(): React.ReactElement {
       {/* Desktop sidebar */}
       <aside className="hidden w-64 flex-shrink-0 flex-col bg-sidebar border-r border-sidebar-border lg:flex">
         <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <img src="/icon.png" alt="" className="h-7 w-7 rounded-lg" />
+          <img src="/logo.svg" alt="" className="h-7 w-7 rounded-lg" />
           <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
             WannaOut
           </span>
@@ -160,7 +160,7 @@ export default function Layout(): React.ReactElement {
               className="w-64 bg-sidebar border-r border-sidebar-border p-0"
             >
               <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-                <img src="/icon.png" alt="" className="h-7 w-7 rounded-lg" />
+                <img src="/logo.svg" alt="" className="h-7 w-7 rounded-lg" />
                 <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
                   WannaOut
                 </span>
@@ -200,7 +200,7 @@ export default function Layout(): React.ReactElement {
               </div>
             </SheetContent>
           </Sheet>
-          <img src="/icon.png" alt="" className="h-6 w-6 rounded-md" />
+          <img src="/logo.svg" alt="" className="h-6 w-6 rounded-md" />
           <span className="text-lg font-semibold tracking-tight">WannaOut</span>
         </header>
 
