@@ -53,6 +53,7 @@ export interface University {
 export interface UniversityStats {
   totalUniversities: number
   countriesCount: number
+  citiesCount: number
   byCountry: { country: string; count: number }[]
   byStatus: { status: string; count: number }[]
   avgTuition: number

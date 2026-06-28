@@ -17,4 +17,5 @@ export interface Country {
 export interface CountryWithUniversities {
   country: Country
   universities: import("./university").University[]
+  cities: import("./city").City[]
 }

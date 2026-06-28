@@ -1,5 +1,6 @@
 import { Country } from "./models/Country"
 import { University } from "./models/University"
+import { City } from "./models/City"
 
 const countries = [
   {
@@ -385,6 +386,189 @@ const countries = [
       "Conservative political climate",
       "Winter air quality in some cities"
     ],
+  },
+]
+
+const cities = [
+  {
+    name: "Munich", country: "Germany", population: 1472000, isCapital: false,
+    averageRentSingle: 950, averageRentShared: 550, monthlyLivingCost: 1100,
+    qualityOfLifeScore: 9, safetyScore: 9, publicTransportScore: 9, studentFriendliness: 8,
+    internetSpeed: 120, language: "German", englishFriendliness: 7,
+    climate: "Continental, cold winters, warm summers",
+    pros: ["Excellent public transport (MVV)", "Beautiful parks and beer gardens", "Strong job market in tech and automotive", "Close to Alps for skiing/hiking", "Very safe city"],
+    cons: ["Most expensive city in Germany for rent", "Finding apartments is extremely competitive", "Can feel conservative compared to Berlin", "Bureaucracy in German only"],
+  },
+  {
+    name: "Berlin", country: "Germany", population: 3645000, isCapital: true,
+    averageRentSingle: 750, averageRentShared: 450, monthlyLivingCost: 950,
+    qualityOfLifeScore: 8, safetyScore: 7, publicTransportScore: 9, studentFriendliness: 9,
+    internetSpeed: 100, language: "German", englishFriendliness: 8,
+    climate: "Continental, cold winters, mild summers",
+    pros: ["Affordable for a capital city", "Massive startup and tech scene", "Very international and English-friendly", "Vibrant nightlife and culture", "Public transport ticket included in semester fee"],
+    cons: ["Housing market getting tighter", "Winter is grey and cold", "Some areas feel rough", "Bureaucracy is slow"],
+  },
+  {
+    name: "Aachen", country: "Germany", population: 249000, isCapital: false,
+    averageRentSingle: 550, averageRentShared: 350, monthlyLivingCost: 800,
+    qualityOfLifeScore: 7, safetyScore: 8, publicTransportScore: 7, studentFriendliness: 9,
+    internetSpeed: 90, language: "German", englishFriendliness: 6,
+    climate: "Oceanic, mild winters, cool summers, rainy",
+    pros: ["Very affordable student city", "Strong engineering community", "Close to Belgium and Netherlands borders", "Compact walkable city center", "Large student population relative to city size"],
+    cons: ["Small city — limited nightlife", "Rainy weather year-round", "Limited English outside university", "Fewer job opportunities than larger cities"],
+  },
+  {
+    name: "Delft", country: "Netherlands", population: 103000, isCapital: false,
+    averageRentSingle: 850, averageRentShared: 500, monthlyLivingCost: 1000,
+    qualityOfLifeScore: 8, safetyScore: 9, publicTransportScore: 8, studentFriendliness: 9,
+    internetSpeed: 150, language: "Dutch", englishFriendliness: 9,
+    climate: "Maritime, mild winters, cool summers",
+    pros: ["Charming historic canal city", "Everyone speaks English", "Great cycling infrastructure", "Close to The Hague and Rotterdam", "Strong tech community around TU Delft"],
+    cons: ["Student housing shortage", "Small city with limited nightlife", "Expensive for its size", "Rainy and windy weather"],
+  },
+  {
+    name: "Amsterdam", country: "Netherlands", population: 873000, isCapital: true,
+    averageRentSingle: 1200, averageRentShared: 700, monthlyLivingCost: 1300,
+    qualityOfLifeScore: 9, safetyScore: 8, publicTransportScore: 9, studentFriendliness: 8,
+    internetSpeed: 200, language: "Dutch", englishFriendliness: 10,
+    climate: "Maritime, mild year-round, windy",
+    pros: ["Most English-friendly city in non-English Europe", "World-class cultural scene", "Excellent cycling and public transport", "Major tech hub (Booking.com, Adyen)", "Diverse and tolerant culture"],
+    cons: ["Very expensive housing", "Extremely competitive rental market", "Tourist overcrowding in center", "Flat and grey weather"],
+  },
+  {
+    name: "Zurich", country: "Switzerland", population: 421000, isCapital: false,
+    averageRentSingle: 1800, averageRentShared: 1000, monthlyLivingCost: 1700,
+    qualityOfLifeScore: 10, safetyScore: 10, publicTransportScore: 10, studentFriendliness: 7,
+    internetSpeed: 200, language: "German", englishFriendliness: 8,
+    climate: "Continental, cold winters, warm summers, lake effect",
+    pros: ["Highest quality of life globally", "Stunning lake and mountain scenery", "Excellent public transport", "Very high salaries after graduation", "Extremely safe"],
+    cons: ["Most expensive city in Europe", "Social life can feel reserved/closed", "Limited work hours for students (15h/week after 6 months)", "Small city for its cost level"],
+  },
+  {
+    name: "Stockholm", country: "Sweden", population: 975000, isCapital: true,
+    averageRentSingle: 900, averageRentShared: 550, monthlyLivingCost: 950,
+    qualityOfLifeScore: 9, safetyScore: 8, publicTransportScore: 9, studentFriendliness: 8,
+    internetSpeed: 180, language: "Swedish", englishFriendliness: 9,
+    climate: "Continental, very cold dark winters, mild bright summers",
+    pros: ["Beautiful archipelago city", "Strong tech ecosystem (Spotify, Klarna)", "Unlimited work hours for students", "High English proficiency", "Great work-life balance culture"],
+    cons: ["Dark winters (6h daylight in December)", "Severe housing shortage", "High cost of living", "Can feel socially reserved"],
+  },
+  {
+    name: "Copenhagen", country: "Denmark", population: 794000, isCapital: true,
+    averageRentSingle: 1000, averageRentShared: 600, monthlyLivingCost: 1100,
+    qualityOfLifeScore: 9, safetyScore: 9, publicTransportScore: 9, studentFriendliness: 8,
+    internetSpeed: 170, language: "Danish", englishFriendliness: 9,
+    climate: "Maritime, mild winters, cool summers, windy",
+    pros: ["World's best cycling infrastructure", "Excellent work-life balance", "Very English-friendly", "Clean and sustainable city", "2-year Establishment Card after graduation"],
+    cons: ["Very expensive cost of living", "Tough housing market", "Dark winters", "Danish is hard to learn", "High taxes"],
+  },
+  {
+    name: "Paris", country: "France", population: 2161000, isCapital: true,
+    averageRentSingle: 1100, averageRentShared: 650, monthlyLivingCost: 1200,
+    qualityOfLifeScore: 8, safetyScore: 7, publicTransportScore: 9, studentFriendliness: 8,
+    internetSpeed: 150, language: "French", englishFriendliness: 5,
+    climate: "Oceanic, mild winters, warm summers",
+    pros: ["World-class culture, food, and architecture", "Excellent Metro system", "Many prestigious universities", "Central European travel hub", "Rich student life and social scene"],
+    cons: ["Expensive housing especially in center", "French strongly expected in daily life", "Bureaucracy is legendary", "Some areas feel unsafe at night", "Crowded and noisy"],
+  },
+  {
+    name: "Milan", country: "Italy", population: 1352000, isCapital: false,
+    averageRentSingle: 850, averageRentShared: 500, monthlyLivingCost: 900,
+    qualityOfLifeScore: 7, safetyScore: 7, publicTransportScore: 7, studentFriendliness: 7,
+    internetSpeed: 100, language: "Italian", englishFriendliness: 5,
+    climate: "Humid subtropical, foggy winters, hot summers",
+    pros: ["Fashion and design capital", "Strong economy — best job market in Italy", "Good international flight connections", "Income-based tuition at public universities", "Close to lakes and Alps"],
+    cons: ["Expensive by Italian standards", "Air pollution and fog in winter", "Italian needed for most daily interactions", "Public transport strikes", "Hot and humid summers"],
+  },
+  {
+    name: "Bologna", country: "Italy", population: 394000, isCapital: false,
+    averageRentSingle: 600, averageRentShared: 350, monthlyLivingCost: 700,
+    qualityOfLifeScore: 8, safetyScore: 8, publicTransportScore: 7, studentFriendliness: 9,
+    internetSpeed: 80, language: "Italian", englishFriendliness: 4,
+    climate: "Humid subtropical, cold foggy winters, hot summers",
+    pros: ["Very student-friendly (oldest university in Western world)", "Excellent food scene (food capital of Italy)", "Affordable by Western European standards", "Compact and walkable", "Vibrant nightlife for students"],
+    cons: ["Italian essential for daily life", "Hot and humid summers", "Foggy winters", "Limited English-speaking community", "Smaller job market"],
+  },
+  {
+    name: "Barcelona", country: "Spain", population: 1621000, isCapital: false,
+    averageRentSingle: 800, averageRentShared: 450, monthlyLivingCost: 850,
+    qualityOfLifeScore: 9, safetyScore: 7, publicTransportScore: 8, studentFriendliness: 9,
+    internetSpeed: 120, language: "Spanish/Catalan", englishFriendliness: 6,
+    climate: "Mediterranean, mild winters, hot summers, sunny",
+    pros: ["Excellent weather and beaches", "Vibrant culture and nightlife", "Growing tech scene", "Affordable compared to Northern Europe", "30h/week work allowed"],
+    cons: ["Pickpocketing and petty crime", "Tourist overcrowding", "Spanish/Catalan needed for most jobs", "Summer heat waves", "Housing prices rising fast"],
+  },
+  {
+    name: "Lisbon", country: "Portugal", population: 545000, isCapital: true,
+    averageRentSingle: 700, averageRentShared: 400, monthlyLivingCost: 750,
+    qualityOfLifeScore: 8, safetyScore: 9, publicTransportScore: 7, studentFriendliness: 8,
+    internetSpeed: 110, language: "Portuguese", englishFriendliness: 7,
+    climate: "Mediterranean, mild winters, hot dry summers, sunny",
+    pros: ["Affordable Western European capital", "Growing tech hub (Web Summit host)", "Excellent weather year-round", "Very safe", "Friendly and welcoming people"],
+    cons: ["Salaries are low compared to cost", "Housing prices rising rapidly", "Hilly — tough on foot", "Portuguese helps for better prospects", "Public transport could be better"],
+  },
+  {
+    name: "Prague", country: "Czech Republic", population: 1309000, isCapital: true,
+    averageRentSingle: 550, averageRentShared: 320, monthlyLivingCost: 600,
+    qualityOfLifeScore: 8, safetyScore: 9, publicTransportScore: 9, studentFriendliness: 9,
+    internetSpeed: 100, language: "Czech", englishFriendliness: 7,
+    climate: "Continental, cold winters, warm summers",
+    pros: ["Extremely affordable for students", "Beautiful historic city", "Excellent public transport", "Central European location", "Strong and growing IT sector"],
+    cons: ["Czech language barrier outside center", "Tourism crowds in old town", "Air pollution in winter", "Bureaucratic visa processes", "Lower salaries than Western Europe"],
+  },
+  {
+    name: "Warsaw", country: "Poland", population: 1794000, isCapital: true,
+    averageRentSingle: 500, averageRentShared: 300, monthlyLivingCost: 550,
+    qualityOfLifeScore: 7, safetyScore: 8, publicTransportScore: 8, studentFriendliness: 8,
+    internetSpeed: 130, language: "Polish", englishFriendliness: 7,
+    climate: "Continental, cold winters, warm summers",
+    pros: ["Lowest cost of living among EU capitals", "Fastest-growing tech hub in CEE", "Modern city with lots of development", "Good English in tech/business", "Fast visa processing"],
+    cons: ["Polish is difficult to learn", "Cold grey winters", "Less charming than Krakow/Prague", "Air quality issues in winter", "Conservative political climate"],
+  },
+  {
+    name: "Oslo", country: "Norway", population: 697000, isCapital: true,
+    averageRentSingle: 1100, averageRentShared: 650, monthlyLivingCost: 1300,
+    qualityOfLifeScore: 9, safetyScore: 9, publicTransportScore: 8, studentFriendliness: 7,
+    internetSpeed: 160, language: "Norwegian", englishFriendliness: 9,
+    climate: "Continental/subarctic, cold dark winters, mild bright summers",
+    pros: ["Free tuition for all nationalities", "Stunning nature nearby (fjords, forests)", "High English proficiency", "Very safe and clean", "Excellent outdoor lifestyle"],
+    cons: ["Extremely expensive cost of living", "Dark winters (6h daylight December)", "Limited English-taught Master's options", "Small and quiet city", "Difficult to find part-time work"],
+  },
+  {
+    name: "Espoo", country: "Finland", population: 292000, isCapital: false,
+    averageRentSingle: 750, averageRentShared: 450, monthlyLivingCost: 850,
+    qualityOfLifeScore: 8, safetyScore: 9, publicTransportScore: 8, studentFriendliness: 9,
+    internetSpeed: 150, language: "Finnish", englishFriendliness: 8,
+    climate: "Subarctic/continental, very cold dark winters, mild bright summers",
+    pros: ["Aalto University campus is excellent", "Safe and clean environment", "Good public transport to Helsinki", "2-year post-study permit", "Growing startup ecosystem"],
+    cons: ["Very cold and dark winters", "Finnish is extremely difficult", "Small city — limited nightlife", "Remote location in Europe", "Limited job market outside tech"],
+  },
+  {
+    name: "Vienna", country: "Austria", population: 1912000, isCapital: true,
+    averageRentSingle: 700, averageRentShared: 420, monthlyLivingCost: 900,
+    qualityOfLifeScore: 10, safetyScore: 9, publicTransportScore: 10, studentFriendliness: 9,
+    internetSpeed: 120, language: "German", englishFriendliness: 7,
+    climate: "Continental, cold winters, warm summers",
+    pros: ["#1 most livable city in the world", "Excellent and cheap public transport (365€/year)", "Rich cultural scene (opera, museums)", "Affordable for Western European capital", "Central location for European travel"],
+    cons: ["Austrian German differs from standard German", "Can feel formal/reserved socially", "Smaller job market than Germany", "Bureaucracy in German only", "Some areas outside center are dull"],
+  },
+  {
+    name: "Leuven", country: "Belgium", population: 101000, isCapital: false,
+    averageRentSingle: 650, averageRentShared: 400, monthlyLivingCost: 850,
+    qualityOfLifeScore: 8, safetyScore: 9, publicTransportScore: 7, studentFriendliness: 10,
+    internetSpeed: 120, language: "Dutch", englishFriendliness: 8,
+    climate: "Maritime, mild winters, cool summers, rainy",
+    pros: ["Ultimate student city — 1 in 3 residents is a student", "KU Leuven campus integrated into city", "Very safe and compact", "Close to Brussels (25 min train)", "Affordable for Belgium"],
+    cons: ["Very small — can feel limiting", "Rainy grey weather", "Quiet during summer/holidays", "Dutch language barrier", "Limited job market locally"],
+  },
+  {
+    name: "Dublin", country: "Ireland", population: 1228000, isCapital: true,
+    averageRentSingle: 1400, averageRentShared: 800, monthlyLivingCost: 1300,
+    qualityOfLifeScore: 8, safetyScore: 7, publicTransportScore: 6, studentFriendliness: 7,
+    internetSpeed: 130, language: "English", englishFriendliness: 10,
+    climate: "Maritime, mild wet winters, cool summers, rainy",
+    pros: ["Native English-speaking — no language barrier", "European HQ of Google, Meta, Apple, Stripe", "Friendly welcoming culture", "2-year graduate visa", "Strong tech job market"],
+    cons: ["Severe housing crisis — highest rents in EU", "Expensive cost of living overall", "Poor public transport", "Rainy weather year-round", "GNIB registration fee (€300)"],
   },
 ]
 
@@ -939,6 +1123,9 @@ export async function seedIfEmpty(): Promise<number> {
   const countryResult = await Country.insertMany(countries)
   console.log(`Seeded ${countryResult.length} countries`)
 
+  const cityResult = await City.insertMany(cities)
+  console.log(`Seeded ${cityResult.length} cities`)
+
   const uniResult = await University.insertMany(universities)
   console.log(`Seeded ${uniResult.length} universities`)
 
@@ -1098,11 +1285,15 @@ async function run(): Promise<void> {
   }
 
   await Country.deleteMany({})
+  await City.deleteMany({})
   await University.deleteMany({})
   console.log("Cleared existing data")
 
   await Country.insertMany(countries)
   console.log(`Inserted ${countries.length} countries`)
+
+  await City.insertMany(cities)
+  console.log(`Inserted ${cities.length} cities`)
 
   await University.insertMany(universities)
   console.log(`Inserted ${universities.length} universities`)

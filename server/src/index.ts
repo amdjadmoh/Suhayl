@@ -9,6 +9,7 @@ import { MongoMemoryServer } from "mongodb-memory-server"
 import { universityRouter } from "./routes/universityRoutes"
 import { statsRouter } from "./routes/statsRoutes"
 import { countryRouter } from "./routes/countryRoutes"
+import { cityRouter } from "./routes/cityRoutes"
 import { seedIfEmpty } from "./seed"
 
 const app = express()
@@ -22,6 +23,7 @@ app.use(express.json())
 app.use("/api/universities", universityRouter)
 app.use("/api/stats", statsRouter)
 app.use("/api/countries", countryRouter)
+app.use("/api/cities", cityRouter)
 
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")

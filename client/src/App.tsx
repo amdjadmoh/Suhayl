@@ -7,6 +7,9 @@ import Dashboard from "@/pages/Dashboard";
 import Countries from "@/pages/Countries";
 import CountryDetail from "@/pages/CountryDetail";
 import AddEditCountry from "@/pages/AddEditCountry";
+import Cities from "@/pages/Cities";
+import CityDetail from "@/pages/CityDetail";
+import AddEditCity from "@/pages/AddEditCity";
 import Universities from "@/pages/Universities";
 import AddEditUniversity from "@/pages/AddEditUniversity";
 import UniversityDetail from "@/pages/UniversityDetail";
@@ -35,6 +38,10 @@ export default function App(): React.ReactElement {
               <Route path="countries/new" element={<AddEditCountry />} />
               <Route path="countries/:id" element={<CountryDetail />} />
               <Route path="countries/:id/edit" element={<AddEditCountry />} />
+              <Route path="cities" element={<Cities />} />
+              <Route path="cities/new" element={<AddEditCity />} />
+              <Route path="cities/:id" element={<CityDetail />} />
+              <Route path="cities/:id/edit" element={<AddEditCity />} />
               <Route path="universities" element={<Universities />} />
               <Route path="universities/new" element={<AddEditUniversity />} />
               <Route path="universities/:id" element={<UniversityDetail />} />

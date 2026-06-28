@@ -10,6 +10,7 @@ import { useCountryWithUniversities, useDeleteCountry } from "@/lib/api"
 import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
 import type { Country } from "@/types/country"
 import type { University } from "@/types/university"
+import type { City } from "@/types/city"
 
 export default function CountryDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -67,7 +68,7 @@ export default function CountryDetail(): React.ReactElement {
     )
   }
 
-  const { country, universities } = data
+  const { country, universities, cities } = data
 
   function formatCurrency(amount: number): string {
     return new Intl.NumberFormat("en-US", {
@@ -239,6 +240,41 @@ export default function CountryDetail(): React.ReactElement {
             )}
           </CardContent>
         </Card>
+
+        {cities && cities.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Cities in {country.name} ({cities.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {cities.map((city) => (
+                  <div
+                    key={city._id}
+                    onClick={() => navigate(`/cities/${city._id}`)}
+                    className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div>
+                      <h4 className="font-semibold">
+                        {city.name}
+                        {city.isCapital && (
+                          <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-700 text-xs">
+                            Capital
+                          </Badge>
+                        )}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        ${city.monthlyLivingCost.toLocaleString()}/mo · Quality of Life: {city.qualityOfLifeScore}/10
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

@@ -7,6 +7,7 @@ import {
   useUpdateUniversity,
   useUniversity,
   useCountries,
+  useCitiesByCountry,
 } from "@/lib/api";
 import {
   CURRENCIES,
@@ -77,6 +78,8 @@ export default function AddEditUniversity(): React.ReactElement {
 
   const scholarshipAvailable = watch("scholarshipAvailable");
   const requiredDocuments = watch("requiredDocuments") ?? [];
+  const selectedCountry = watch("country");
+  const { data: citiesForCountry } = useCitiesByCountry(selectedCountry ?? "");
   const [documentInput, setDocumentInput] = useState("");
 
   useEffect(() => {
@@ -247,11 +250,27 @@ export default function AddEditUniversity(): React.ReactElement {
               <Label htmlFor="city">
                 City <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="city"
-                {...register("city", { required: "City is required" })}
-                placeholder="e.g. Munich"
-              />
+              <Select
+                value={watch("city")}
+                onValueChange={(v: string) => {
+                  setValue("city", v)
+                  const selectedCity = citiesForCountry?.find((c) => c.name === v)
+                  if (selectedCity && !watch("livingCostEstimate")) {
+                    setValue("livingCostEstimate", selectedCity.monthlyLivingCost)
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a city..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {citiesForCountry?.map((c) => (
+                    <SelectItem key={c._id} value={c.name}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.city && (
                 <p className="text-sm text-destructive">
                   {errors.city.message}
