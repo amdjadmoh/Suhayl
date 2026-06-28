@@ -1,65 +1,71 @@
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   GraduationCap,
   ClipboardList,
   GitCompare,
   Globe,
-  MapPin,
+  Users,
+  Building2,
+  BookOpen,
   Menu,
+  LogOut,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-
-const sidebarItems = [
-  {
-    to: "/",
-    icon: LayoutDashboard,
-    label: "Dashboard",
-    end: true,
-  },
-  {
-    to: "/countries",
-    icon: Globe,
-    label: "Countries",
-    end: false,
-  },
-  {
-    to: "/cities",
-    icon: MapPin,
-    label: "Cities",
-    end: false,
-  },
-  {
-    to: "/universities",
-    icon: GraduationCap,
-    label: "Universities",
-    end: false,
-  },
-  {
-    to: "/applications",
-    icon: ClipboardList,
-    label: "Applications",
-    end: false,
-  },
-  {
-    to: "/compare",
-    icon: GitCompare,
-    label: "Compare",
-    end: false,
-  },
-] as const;
+import { useAuth } from "@/lib/authContext";
 
 function SidebarNav({
   onItemClick,
 }: {
   onItemClick?: () => void;
 }): React.ReactElement {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+
+  const items: Array<{
+    to: string;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    end?: boolean;
+  }> = [];
+
+  if (!isAuthenticated) {
+    items.push(
+      { to: "/login", icon: LogIn, label: "Login" },
+      { to: "/register", icon: UserPlus, label: "Register" },
+    );
+  } else if (user.role === "student") {
+    items.push(
+      { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
+      { to: "/universities", icon: GraduationCap, label: "Universities" },
+      { to: "/programs", icon: BookOpen, label: "Programs" },
+      { to: "/applications", icon: ClipboardList, label: "Applications" },
+      { to: "/compare", icon: GitCompare, label: "Compare" },
+    );
+  } else if (user.role === "admin") {
+    items.push(
+      { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
+      { to: "/countries", icon: Globe, label: "Countries" },
+      { to: "/universities", icon: GraduationCap, label: "Universities" },
+      { to: "/programs", icon: BookOpen, label: "Programs" },
+      { to: "/users", icon: Users, label: "Users" },
+    );
+  } else if (user.role === "agency") {
+    items.push(
+      { to: "/agency", icon: Building2, label: "Dashboard" },
+      { to: "/agency/students", icon: Users, label: "Students" },
+      { to: "/applications", icon: ClipboardList, label: "Applications" },
+    );
+  }
+
   return (
     <nav className="flex flex-col gap-1 px-3">
-      {sidebarItems.map((item) => (
+      {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -84,6 +90,13 @@ function SidebarNav({
 
 export default function Layout(): React.ReactElement {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout(): void {
+    logout();
+    navigate("/login");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -98,6 +111,34 @@ export default function Layout(): React.ReactElement {
         <div className="flex-1 overflow-y-auto py-4">
           <SidebarNav />
         </div>
+
+        {/* User section at bottom */}
+        {user && (
+          <div className="border-t border-sidebar-border p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-sidebar-foreground">
+                  {user.name}
+                </p>
+                <p className="truncate text-xs capitalize text-sidebar-foreground/60">
+                  {user.role}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                title="Log out"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main content area */}
@@ -124,8 +165,38 @@ export default function Layout(): React.ReactElement {
                   WannaOut
                 </span>
               </div>
-              <div className="py-4">
+              <div className="flex flex-1 flex-col overflow-y-auto py-4">
                 <SidebarNav onItemClick={() => setMobileOpen(false)} />
+
+                {/* Mobile user section */}
+                {user && (
+                  <div className="mt-auto border-t border-sidebar-border px-3 pt-4">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-sidebar-foreground">
+                          {user.name}
+                        </p>
+                        <p className="truncate text-xs capitalize text-sidebar-foreground/60">
+                          {user.role}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Log out
+                    </Button>
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>

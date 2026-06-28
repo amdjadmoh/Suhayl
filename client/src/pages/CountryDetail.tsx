@@ -1,12 +1,12 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
-import { ArrowLeft, Globe, AlertCircle, Pencil, Trash2, Loader2 } from "lucide-react"
+import { ArrowLeft, Globe, AlertCircle, Pencil, Trash2, Loader2, Plus } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { useCountryWithUniversities, useDeleteCountry } from "@/lib/api"
+import { useCountryWithUniversities, useDeleteCountry, useDeleteCity } from "@/lib/api"
 import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
 import type { Country } from "@/types/country"
 import type { University } from "@/types/university"
@@ -20,6 +20,7 @@ export default function CountryDetail(): React.ReactElement {
     id ?? ""
   )
   const deleteMutation = useDeleteCountry()
+  const deleteCityMutation = useDeleteCity()
 
   async function handleDelete(): Promise<void> {
     if (!id) return
@@ -29,6 +30,16 @@ export default function CountryDetail(): React.ReactElement {
       navigate("/countries")
     } catch {
       toast.error("Failed to delete country")
+    }
+  }
+
+  async function handleDeleteCity(city: City): Promise<void> {
+    if (!window.confirm(`Delete city "${city.name}"? This cannot be undone.`)) return
+    try {
+      await deleteCityMutation.mutateAsync(city._id)
+      toast.success("City deleted")
+    } catch {
+      toast.error("Failed to delete city")
     }
   }
 
@@ -241,40 +252,71 @@ export default function CountryDetail(): React.ReactElement {
           </CardContent>
         </Card>
 
-        {cities && cities.length > 0 && (
-          <Card>
-            <CardHeader>
+        {/* Cities Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
                 Cities in {country.name} ({cities.length})
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/cities/new?countryName=${encodeURIComponent(country.name)}`}>
+                  <Plus className="mr-1 h-4 w-4" /> Add City
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {cities.length > 0 ? (
+              <div className="space-y-2">
                 {cities.map((city) => (
                   <div
                     key={city._id}
-                    onClick={() => navigate(`/cities/${city._id}`)}
-                    className="flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="flex items-center justify-between rounded-lg border p-3"
                   >
-                    <div>
-                      <h4 className="font-semibold">
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        to={`/cities/${city._id}`}
+                        className="font-semibold hover:text-primary"
+                      >
                         {city.name}
                         {city.isCapital && (
                           <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-700 text-xs">
                             Capital
                           </Badge>
                         )}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
+                      </Link>
+                      <p className="text-xs text-muted-foreground">
                         ${city.monthlyLivingCost.toLocaleString()}/mo · Quality of Life: {city.qualityOfLifeScore}/10
                       </p>
+                    </div>
+                    <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link to={`/cities/${city._id}/edit`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteCity(city)}
+                        disabled={deleteCityMutation.isPending}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
+                <Globe className="h-8 w-8 text-muted/50" />
+                <p>No cities added yet</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

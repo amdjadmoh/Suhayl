@@ -1,15 +1,6 @@
 import type { Request, Response } from "express"
 import { University } from "../models/University"
-import type { SortOrder } from "mongoose"
-
-type SortableField = "tuition" | "deadline" | "ranking" | "name"
-
-const SORT_FIELD_MAP: Record<SortableField, string> = {
-  tuition: "tuitionFee",
-  deadline: "applicationDeadline",
-  ranking: "ranking",
-  name: "name",
-}
+import { Program } from "../models/Program"
 
 function buildFilter(query: Request["query"]): Record<string, unknown> {
   const filter: Record<string, unknown> = {}
@@ -17,16 +8,6 @@ function buildFilter(query: Request["query"]): Record<string, unknown> {
   const country = query["country"]
   if (typeof country === "string" && country.length > 0) {
     filter["country"] = country
-  }
-
-  const status = query["status"]
-  if (typeof status === "string" && status.length > 0) {
-    filter["applicationStatus"] = status
-  }
-
-  const degreeLevel = query["degreeLevel"]
-  if (typeof degreeLevel === "string" && degreeLevel.length > 0) {
-    filter["degreeLevel"] = degreeLevel
   }
 
   const search = query["search"]
@@ -37,26 +18,11 @@ function buildFilter(query: Request["query"]): Record<string, unknown> {
   return filter
 }
 
-function buildSort(query: Request["query"]): Record<string, SortOrder> {
-  const sortByRaw = query["sortBy"]
-  const sortBy: SortableField =
-    typeof sortByRaw === "string" && sortByRaw in SORT_FIELD_MAP
-      ? (sortByRaw as SortableField)
-      : "name"
-
-  const sortOrderRaw = query["sortOrder"]
-  const direction: SortOrder =
-    typeof sortOrderRaw === "string" && sortOrderRaw === "desc" ? -1 : 1
-
-  const field = SORT_FIELD_MAP[sortBy]
-  return field === undefined ? {} : { [field]: direction }
-}
-
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter = buildFilter(req.query)
-  const sort = buildSort(req.query)
+
   const [universities, total] = await Promise.all([
-    University.find(filter).sort(sort),
+    University.find(filter).sort({ name: 1 }),
     University.countDocuments(filter),
   ])
   res.json({ universities, total })
@@ -73,18 +39,13 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   const body = req.body as Record<string, unknown>
-
   const name = body["name"]
   const country = body["country"]
   const city = body["city"]
-  const program = body["program"]
-  const degreeLevel = body["degreeLevel"]
-  const tuitionFee = body["tuitionFee"]
 
-  if (!name || !country || !city || !program || !degreeLevel || tuitionFee == null) {
+  if (!name || !country || !city) {
     res.status(400).json({
-      message:
-        "Missing required fields: name, country, city, program, degreeLevel, tuitionFee",
+      message: "Missing required fields: name, country, city",
     })
     return
   }
@@ -107,11 +68,22 @@ export async function update(req: Request, res: Response): Promise<void> {
 }
 
 export async function remove(req: Request, res: Response): Promise<void> {
-  const university = await University.findByIdAndDelete(req.params["id"])
-  if (!university) {
+  const existing = await University.findById(req.params["id"])
+  if (!existing) {
     res.status(404).json({ message: "University not found" })
     return
   }
+
+  // Prevent deletion if programs exist for this university
+  const progCount = await Program.countDocuments({ universityId: existing._id })
+  if (progCount > 0) {
+    res.status(400).json({
+      message: `Cannot delete university: ${progCount} program(s) reference it. Remove programs first.`,
+    })
+    return
+  }
+
+  await University.findByIdAndDelete(req.params["id"])
   res.json({ message: "University deleted" })
 }
 

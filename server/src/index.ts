@@ -11,6 +11,12 @@ import { statsRouter } from "./routes/statsRoutes"
 import { countryRouter } from "./routes/countryRoutes"
 import { cityRouter } from "./routes/cityRoutes"
 import { seedIfEmpty } from "./seed"
+import { authRouter } from "./routes/authRoutes"
+import { agencyRouter } from "./routes/agencyRoutes"
+import { studentRouter } from "./routes/studentRoutes"
+import { adminRouter } from "./routes/adminRoutes"
+import { applicationRouter } from "./routes/applicationRoutes"
+import { programRouter } from "./routes/programRoutes"
 
 const app = express()
 const PORT = process.env["PORT"] ?? "5000"
@@ -24,6 +30,12 @@ app.use("/api/universities", universityRouter)
 app.use("/api/stats", statsRouter)
 app.use("/api/countries", countryRouter)
 app.use("/api/cities", cityRouter)
+app.use("/api/auth", authRouter)
+app.use("/api/agency", agencyRouter)
+app.use("/api/students", studentRouter)
+app.use("/api/admin", adminRouter)
+app.use("/api/applications", applicationRouter)
+app.use("/api/programs", programRouter)
 
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")

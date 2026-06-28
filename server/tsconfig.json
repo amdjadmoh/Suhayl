@@ -28,7 +28,8 @@
 
     /* ── Performance ────────────────────────────────────────── */
     "skipLibCheck": true,
-    "incremental": true
+    "incremental": true,
+    "types": ["node"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
