@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -41,7 +41,7 @@ function SidebarNav({
     );
   } else if (user.role === "student") {
     items.push(
-      { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
+      { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
       { to: "/universities", icon: GraduationCap, label: "Universities" },
       { to: "/programs", icon: BookOpen, label: "Programs" },
       { to: "/applications", icon: ClipboardList, label: "Applications" },
@@ -49,7 +49,7 @@ function SidebarNav({
     );
   } else if (user.role === "admin") {
     items.push(
-      { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
+      { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
       { to: "/countries", icon: Globe, label: "Countries" },
       { to: "/universities", icon: GraduationCap, label: "Universities" },
       { to: "/programs", icon: BookOpen, label: "Programs" },
@@ -73,10 +73,10 @@ function SidebarNav({
           onClick={onItemClick}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                ? "bg-[#0EA5E9]/10 text-[#0EA5E9] border-l-4 border-[#0EA5E9]"
+                : "text-slate-400 hover:text-white hover:bg-white/5 border-l-4 border-transparent"
             )
           }
         >
@@ -92,20 +92,36 @@ export default function Layout(): React.ReactElement {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   function handleLogout(): void {
     logout();
     navigate("/login");
   }
 
+  const pageTitle =
+    {
+      "/dashboard": "Dashboard",
+      "/countries": "Countries",
+      "/universities": "Universities",
+      "/programs": "Programs",
+      "/applications": "Applications",
+      "/compare": "Compare",
+      "/users": "Users",
+      "/agency": "Dashboard",
+      "/agency/students": "Students",
+    }[location.pathname] || "";
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-[#F8FAFC]">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col bg-sidebar border-r border-sidebar-border lg:flex">
-        <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <img src="/logo.svg" alt="" className="h-7 w-7 rounded-lg" />
-          <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
-            WannaOut
+      <aside className="hidden w-64 flex-shrink-0 flex-col bg-[#0F172A] border-r border-slate-800 lg:flex">
+        <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white p-1">
+            <img src="/logo.svg" alt="" className="h-full w-full" />
+          </div>
+          <span className="text-xl font-bold text-white tracking-tight">
+            Suhayl
           </span>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
@@ -114,16 +130,16 @@ export default function Layout(): React.ReactElement {
 
         {/* User section at bottom */}
         {user && (
-          <div className="border-t border-sidebar-border p-4">
+          <div className="border-t border-slate-800 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0EA5E9] text-sm font-bold text-white">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">
+                <p className="truncate text-sm font-medium text-white">
                   {user.name}
                 </p>
-                <p className="truncate text-xs capitalize text-sidebar-foreground/60">
+                <p className="truncate text-xs capitalize text-slate-400">
                   {user.role}
                 </p>
               </div>
@@ -131,7 +147,7 @@ export default function Layout(): React.ReactElement {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                className="text-slate-400 hover:text-white hover:bg-white/10"
                 title="Log out"
               >
                 <LogOut className="h-4 w-4" />
@@ -143,65 +159,57 @@ export default function Layout(): React.ReactElement {
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="flex h-14 items-center gap-3 border-b px-4 lg:hidden">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="left"
-              className="w-64 bg-sidebar border-r border-sidebar-border p-0"
-            >
-              <div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-4">
-                <img src="/logo.svg" alt="" className="h-7 w-7 rounded-lg" />
-                <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
-                  WannaOut
-                </span>
-              </div>
-              <div className="flex flex-1 flex-col overflow-y-auto py-4">
-                <SidebarNav onItemClick={() => setMobileOpen(false)} />
-
-                {/* Mobile user section */}
-                {user && (
-                  <div className="mt-auto border-t border-sidebar-border px-3 pt-4">
-                    <div className="mb-3 flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-sidebar-foreground">
-                          {user.name}
-                        </p>
-                        <p className="truncate text-xs capitalize text-sidebar-foreground/60">
-                          {user.role}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start gap-3 text-sidebar-foreground/60 hover:text-sidebar-foreground"
-                      onClick={() => {
-                        handleLogout();
-                        setMobileOpen(false);
-                      }}
-                    >
-                      <LogOut className="h-5 w-5" />
-                      Log out
-                    </Button>
+        {/* Top header */}
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 lg:px-8">
+          <div className="flex items-center gap-3 lg:hidden">
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 bg-[#0F172A] border-r border-slate-800 p-0">
+                <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white p-1">
+                    <img src="/logo.svg" alt="" className="h-full w-full" />
                   </div>
-                )}
+                  <span className="text-xl font-bold text-white tracking-tight">Suhayl</span>
+                </div>
+                <div className="flex flex-1 flex-col overflow-y-auto py-4">
+                  <SidebarNav onItemClick={() => setMobileOpen(false)} />
+                  {user && (
+                    <div className="mt-auto border-t border-slate-800 px-3 pt-4">
+                      <div className="mb-3 flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0EA5E9] text-sm font-bold text-white">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-white">{user.name}</p>
+                          <p className="truncate text-xs capitalize text-slate-400">{user.role}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" className="w-full justify-start gap-3 text-slate-400 hover:text-white hover:bg-white/10" onClick={() => { handleLogout(); setMobileOpen(false); }}>
+                        <LogOut className="h-5 w-5" /> Log out
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0F172A] p-1">
+              <img src="/logo.svg" alt="" className="h-full w-full invert" />
+            </div>
+          </div>
+          <h1 className="hidden text-xl font-semibold text-[#0F172A] lg:block">
+            {pageTitle}
+          </h1>
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0EA5E9] text-sm font-bold text-white lg:hidden">
+                {user.name.charAt(0).toUpperCase()}
               </div>
-            </SheetContent>
-          </Sheet>
-          <img src="/logo.svg" alt="" className="h-6 w-6 rounded-md" />
-          <span className="text-lg font-semibold tracking-tight">WannaOut</span>
+            )}
+          </div>
         </header>
 
         {/* Page content */}

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +22,7 @@ import Programs from "@/pages/Programs";
 import ProgramDetail from "@/pages/ProgramDetail";
 import AddEditProgram from "@/pages/AddEditProgram";
 import Compare from "@/pages/Compare";
+import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import AgencyDashboard from "@/pages/AgencyDashboard";
@@ -47,13 +48,15 @@ export default function App(): React.ReactElement {
           <AuthProvider>
             <Routes>
               {/* Public routes */}
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
               {/* Authenticated routes wrapped in Layout */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
-                  <Route index element={<Dashboard />} />
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
                   <Route path="countries" element={<Countries />} />
                   <Route path="countries/new" element={<AddEditCountry />} />
                   <Route path="countries/:id" element={<CountryDetail />} />
