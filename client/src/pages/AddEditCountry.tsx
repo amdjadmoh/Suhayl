@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react"
+import { getErrorMessage } from "@/lib/utils"
 
 type CountryFormData = Omit<Country, "_id" | "createdAt" | "updatedAt">
 
@@ -73,8 +74,8 @@ export default function AddEditCountry(): React.ReactElement {
         toast.success("Country added")
       }
       navigate("/countries")
-    } catch {
-      toast.error(isEdit ? "Failed to update country" : "Failed to add country")
+    } catch (err: unknown) {
+      toast.error(isEdit ? getErrorMessage(err, "Failed to update country") : getErrorMessage(err, "Failed to add country"))
     }
   }
 

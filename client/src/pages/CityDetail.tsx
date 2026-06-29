@@ -24,6 +24,8 @@ function ScoreBar({ value, label }: { value: number; label: string }): React.Rea
   )
 }
 
+import { getErrorMessage } from "@/lib/utils"
+
 function formatPopulation(pop?: number): string {
   if (!pop) return "N/A"
   return pop.toLocaleString()
@@ -42,8 +44,8 @@ export default function CityDetail(): React.ReactElement {
       await deleteMutation.mutateAsync(id)
       toast.success("City deleted")
       navigate("/cities")
-    } catch {
-      toast.error("Failed to delete city")
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete city"))
     }
   }
 

@@ -24,18 +24,19 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  FileText,
-  Pencil,
-  Trash2,
-  PlusCircle,
-  GraduationCap,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+   ArrowLeft,
+   User,
+   Mail,
+   Phone,
+   FileText,
+   Pencil,
+   Trash2,
+   PlusCircle,
+   GraduationCap,
+   Loader2,
+   AlertCircle,
+ } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function AgencyStudentDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -85,8 +86,8 @@ export default function AgencyStudentDetail(): React.ReactElement {
       });
       toast.success("Student updated");
       setEditOpen(false);
-    } catch {
-      toast.error("Failed to update student");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to update student"));
     }
   }
 
@@ -102,8 +103,8 @@ export default function AgencyStudentDetail(): React.ReactElement {
       await deleteMutation.mutateAsync(student._id);
       toast.success("Student deleted");
       navigate("/agency/students");
-    } catch {
-      toast.error("Failed to delete student");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete student"));
     }
   }
 

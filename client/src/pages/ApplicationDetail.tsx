@@ -13,6 +13,7 @@ import {
   GraduationCap, Globe, BookOpen, DollarSign,
 } from "lucide-react";
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/utils";
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return "Not set";
@@ -43,8 +44,8 @@ export default function ApplicationDetail(): React.ReactElement {
       await deleteMutation.mutateAsync(id);
       toast.success("Application deleted");
       navigate("/applications");
-    } catch {
-      toast.error("Failed to delete application");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete application"));
     }
   }
 

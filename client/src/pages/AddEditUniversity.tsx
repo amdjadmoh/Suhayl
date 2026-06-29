@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function AddEditUniversity(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -75,8 +76,8 @@ export default function AddEditUniversity(): React.ReactElement {
         toast.success("University created");
       }
       navigate("/universities");
-    } catch {
-      toast.error(isEdit ? "Failed to update university" : "Failed to create university");
+    } catch (err: unknown) {
+      toast.error(isEdit ? getErrorMessage(err, "Failed to update university") : getErrorMessage(err, "Failed to create university"));
     }
   }
 

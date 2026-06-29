@@ -22,17 +22,18 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
-  Users,
-  Plus,
-  Pencil,
-  Trash2,
-  ExternalLink,
-  Loader2,
-  AlertCircle,
-  Mail,
-  Phone,
-  FileText,
-} from "lucide-react";
+   Users,
+   Plus,
+   Pencil,
+   Trash2,
+   ExternalLink,
+   Loader2,
+   AlertCircle,
+   Mail,
+   Phone,
+   FileText,
+ } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils";
 
 type StudentFormData = {
   name: string;
@@ -97,10 +98,8 @@ export default function AgencyStudents(): React.ReactElement {
         toast.success("Student created");
       }
       setDialogOpen(false);
-    } catch {
-      toast.error(
-        editingStudent ? "Failed to update student" : "Failed to create student",
-      );
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, editingStudent ? "Failed to update student" : "Failed to create student"));
     }
   }
 
@@ -114,8 +113,8 @@ export default function AgencyStudents(): React.ReactElement {
     try {
       await deleteMutation.mutateAsync(student._id);
       toast.success("Student deleted");
-    } catch {
-      toast.error("Failed to delete student");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete student"));
     }
   }
 

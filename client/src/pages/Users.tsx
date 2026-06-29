@@ -29,17 +29,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Users as UsersIcon,
-  Trash2,
-  Pencil,
-  Plus,
-  Loader2,
-  AlertCircle,
-  Mail,
-  Shield,
-  Building2,
-  GraduationCap,
-} from "lucide-react";
+   Users as UsersIcon,
+   Trash2,
+   Pencil,
+   Plus,
+   Loader2,
+   AlertCircle,
+   Mail,
+   Shield,
+   Building2,
+   GraduationCap,
+ } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils";
 
 type UserFormData = {
   name: string;
@@ -108,10 +109,8 @@ export default function UsersPage(): React.ReactElement {
         toast.success("User created");
       }
       setDialogOpen(false);
-    } catch {
-      toast.error(
-        editingUser ? "Failed to update user" : "Failed to create user",
-      );
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, editingUser ? "Failed to update user" : "Failed to create user"));
     }
   }
 
@@ -121,8 +120,8 @@ export default function UsersPage(): React.ReactElement {
     try {
       await deleteMutation.mutateAsync(userId);
       toast.success("User deleted");
-    } catch {
-      toast.error("Failed to delete user");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete user"));
     }
   }
 

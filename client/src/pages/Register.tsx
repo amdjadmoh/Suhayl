@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, UserPlus, AlertCircle, GraduationCap, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function Register(): React.ReactElement {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function Register(): React.ReactElement {
       toast.success("Account created!");
       navigate("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Registration failed";
+      const message = getErrorMessage(err, "Registration failed");
       setError(message);
     } finally {
       setIsSubmitting(false);
