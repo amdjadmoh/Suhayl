@@ -13,9 +13,7 @@ import {
   AlertCircle,
   Loader2,
   PlusCircle,
-  Globe,
   GraduationCap,
-  Calendar,
   DollarSign,
   BookOpen,
   GitCompare,
@@ -64,7 +62,7 @@ export default function ProgramDetail(): React.ReactElement {
   const { addToCompare, removeFromCompare, isInCompare } = useCompare();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const { data: program, isLoading, isError, error } = useProgram(id ?? "");
+  const { data: program, isLoading, isError } = useProgram(id ?? "");
   const deleteMutation = useDeleteProgram();
 
   async function handleDelete(): Promise<void> {

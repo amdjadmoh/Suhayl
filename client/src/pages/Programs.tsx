@@ -11,8 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
-  Search, X, GraduationCap, MapPin, AlertCircle, BookOpen, Calendar,
-  ArrowRight, DollarSign, GitCompare, Check,
+  Search, X, MapPin, AlertCircle, BookOpen, Calendar,
+  DollarSign, GitCompare, Check,
 } from "lucide-react";
 
 function formatCurrency(amount: number, currency: string, period: string): string {

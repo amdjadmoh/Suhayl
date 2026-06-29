@@ -15,7 +15,6 @@ import {
   PlusCircle,
   GraduationCap,
   BookOpen,
-  DollarSign,
   Calendar,
 } from "lucide-react";
 import { useState } from "react";
@@ -244,7 +243,7 @@ export default function UniversityDetail(): React.ReactElement {
           ) : programs && programs.length > 0 ? (
             <div className="space-y-3">
               {programs.map((p) => (
-                <ProgramCard key={p._id} program={p} isAdmin={isAdmin} universityId={id!}
+                <ProgramCard key={p._id} program={p} isAdmin={isAdmin}
                   onDelete={() => handleDeleteProgram(p._id)}
                   deleteOpen={deleteProgOpen === p._id}
                   setDeleteOpen={(o) => setDeleteProgOpen(o ? p._id : null)}
@@ -273,10 +272,9 @@ export default function UniversityDetail(): React.ReactElement {
   );
 }
 
-function ProgramCard({ program, isAdmin, universityId, onDelete, deleteOpen, setDeleteOpen, deletePending }: {
+function ProgramCard({ program, isAdmin, onDelete, deleteOpen, setDeleteOpen, deletePending }: {
   program: Program;
   isAdmin: boolean;
-  universityId: string;
   onDelete: () => void;
   deleteOpen: boolean;
   setDeleteOpen: (open: boolean) => void;
