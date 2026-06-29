@@ -8,6 +8,7 @@ import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
 import type { Country } from "@/types/country"
 import type { University } from "@/types/university"
 import type { City } from "@/types/city"
+import { getErrorMessage } from "@/lib/utils"
 
 export default function CountryDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -25,8 +26,8 @@ export default function CountryDetail(): React.ReactElement {
       await deleteMutation.mutateAsync(id)
       toast.success("Country deleted")
       navigate("/countries")
-    } catch {
-      toast.error("Failed to delete country")
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete country"))
     }
   }
 
@@ -35,8 +36,8 @@ export default function CountryDetail(): React.ReactElement {
     try {
       await deleteCityMutation.mutateAsync(city._id)
       toast.success("City deleted")
-    } catch {
-      toast.error("Failed to delete city")
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete city"))
     }
   }
 

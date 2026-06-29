@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowLeft, Save, X, AlertCircle, Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function AddEditApplication(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -105,8 +106,8 @@ export default function AddEditApplication(): React.ReactElement {
         toast.success("Application created");
       }
       navigate("/applications");
-    } catch {
-      toast.error(isEdit ? "Failed to update application" : "Failed to create application");
+    } catch (err: unknown) {
+      toast.error(isEdit ? getErrorMessage(err, "Failed to update application") : getErrorMessage(err, "Failed to create application"));
     }
   }
 

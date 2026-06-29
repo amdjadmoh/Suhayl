@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, LogIn, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function Login(): React.ReactElement {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function Login(): React.ReactElement {
       toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Invalid email or password";
+      const message = getErrorMessage(err, "Invalid email or password");
       setError(message);
     } finally {
       setIsSubmitting(false);

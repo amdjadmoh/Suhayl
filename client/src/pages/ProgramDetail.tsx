@@ -22,6 +22,7 @@ import {
   Check,
 } from "lucide-react";
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -72,8 +73,8 @@ export default function ProgramDetail(): React.ReactElement {
       await deleteMutation.mutateAsync(id);
       toast.success("Program deleted");
       navigate("/universities");
-    } catch {
-      toast.error("Failed to delete program");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete program"));
     }
   }
 

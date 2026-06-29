@@ -19,6 +19,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useState } from "react";
+import { getErrorMessage } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -62,8 +63,8 @@ export default function UniversityDetail(): React.ReactElement {
       await deleteMutation.mutateAsync(id);
       toast.success("University deleted");
       navigate("/universities");
-    } catch {
-      toast.error("Failed to delete university");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete university"));
     }
   }
 
@@ -72,8 +73,8 @@ export default function UniversityDetail(): React.ReactElement {
       await deleteProgramMutation.mutateAsync(programId);
       toast.success("Program deleted");
       setDeleteProgOpen(null);
-    } catch {
-      toast.error("Failed to delete program");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete program"));
     }
   }
 

@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react"
+import { getErrorMessage } from "@/lib/utils"
 
 export default function AddEditCity(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -117,8 +118,8 @@ export default function AddEditCity(): React.ReactElement {
         }
       }
       navigate(-1)
-    } catch {
-      toast.error(isEdit ? "Failed to update city" : "Failed to add city")
+    } catch (err: unknown) {
+      toast.error(isEdit ? getErrorMessage(err, "Failed to update city") : getErrorMessage(err, "Failed to add city"))
     }
   }
 

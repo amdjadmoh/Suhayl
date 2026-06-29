@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useDeleteUniversity } from "@/lib/api";
+import { getErrorMessage } from "@/lib/utils";
 
 function UniversityCard({
   university,
@@ -52,8 +53,8 @@ function UniversityCard({
     try {
       await deleteMutation.mutateAsync(university._id);
       toast.success("University deleted");
-    } catch {
-      toast.error("Failed to delete university");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete university"));
     }
   }
 
