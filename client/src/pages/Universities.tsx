@@ -23,7 +23,6 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
-  ArrowRight,
   Star,
 } from "lucide-react";
 import {

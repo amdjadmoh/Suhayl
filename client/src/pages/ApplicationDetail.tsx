@@ -10,9 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   ArrowLeft, Pencil, Trash2, AlertCircle, Loader2, ClipboardList, User, Mail,
-  GraduationCap, Globe, BookOpen, DollarSign,
+  GraduationCap, BookOpen,
 } from "lucide-react";
 import { useState } from "react";
+import type { Program } from "@/types/program";
 import { getErrorMessage } from "@/lib/utils";
 
 function formatDate(dateStr?: string): string {
@@ -35,7 +36,7 @@ export default function ApplicationDetail(): React.ReactElement {
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const { data: application, isLoading, isError, error } = useApplication(id ?? "");
+  const { data: application, isLoading, isError } = useApplication(id ?? "");
   const deleteMutation = useDeleteApplication();
 
   async function handleDelete(): Promise<void> {
@@ -71,8 +72,8 @@ export default function ApplicationDetail(): React.ReactElement {
   }
 
   const a = application;
-  const prog = typeof a.programId === "object" ? a.programId : null;
-  const uni = prog?.universityId;
+  const prog = typeof a.programId === "object" ? (a.programId as unknown as Program) : null;
+  const uni = prog?.universityId && typeof prog.universityId === "object" ? prog.universityId : null;
   const p = a.applicationProgress;
 
   return (

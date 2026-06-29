@@ -153,6 +153,7 @@ interface ProgramQueryParams {
   search?: string;
   country?: string;
   degreeLevel?: string;
+  field?: string;
 }
 
 export async function getPrograms(

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCountries } from "@/lib/api"
 import { COUNTRY_FLAGS } from "@/lib/constants"
-import type { Country } from "@/types/country"
 
 export default function Countries(): React.ReactElement {
   const { data: countries, isLoading, isError } = useCountries()

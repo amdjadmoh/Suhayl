@@ -139,8 +139,8 @@ function UpcomingDeadlines({
           {upcoming.map((a) => {
             const days = daysUntil(a.applicationDeadline!);
             const isUrgent = days <= 14;
-            const uniName =
-              typeof a.universityId === "object" ? a.universityId?.name : "University";
+            const progObj = typeof a.programId === "object" ? a.programId : null;
+            const uniName = progObj?.universityId?.name ?? "University";
             return (
               <Link
                 key={a._id}
@@ -208,8 +208,8 @@ function RecentlyAdded({
       ) : (
         <div className="space-y-3">
           {recent.map((a) => {
-            const uniName =
-              typeof a.universityId === "object" ? a.universityId?.name : "University";
+            const progObj = typeof a.programId === "object" ? a.programId : null;
+            const uniName = progObj?.universityId?.name ?? "University";
             return (
               <Link
                 key={a._id}
@@ -652,8 +652,8 @@ function AgencyOverview(): React.ReactElement {
           </div>
           <div className="space-y-3">
             {applications.slice(0, 5).map((a) => {
-              const uniName =
-                typeof a.universityId === "object" ? a.universityId?.name : "University";
+              const progObj = typeof a.programId === "object" ? a.programId : null;
+              const uniName = progObj?.universityId?.name ?? "University";
               return (
                 <Link
                   key={a._id}

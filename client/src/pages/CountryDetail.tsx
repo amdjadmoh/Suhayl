@@ -4,9 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { useCountryWithUniversities, useDeleteCountry, useDeleteCity } from "@/lib/api"
-import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
-import type { Country } from "@/types/country"
-import type { University } from "@/types/university"
+import { COUNTRY_FLAGS } from "@/lib/constants"
 import type { City } from "@/types/city"
 import { getErrorMessage } from "@/lib/utils"
 
@@ -327,18 +325,6 @@ export default function CountryDetail(): React.ReactElement {
                           {uni.city}
                         </p>
                       </div>
-                      <Badge
-                        className={STATUS_COLORS[uni.applicationStatus]}
-                      >
-                        {uni.applicationStatus}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2 text-sm text-slate-500">
-                      <span className="font-medium text-[#0F172A]">
-                        {uni.degreeLevel}
-                      </span>
-                      <span>·</span>
-                      <span>{uni.program}</span>
                     </div>
                   </div>
                 ))}

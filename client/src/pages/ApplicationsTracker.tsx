@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/authContext";
 import { STATUS_COLORS, APPLICATION_STATUSES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Calendar, GraduationCap, PlusCircle, ArrowRight, Clock } from "lucide-react";
+import { AlertCircle, Calendar, GraduationCap, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCities } from "@/lib/api"
 import { COUNTRY_FLAGS } from "@/lib/constants"
-import type { City } from "@/types/city"
 
 function ScoreBar({ value, label }: { value: number; label: string }): React.ReactElement {
   return (

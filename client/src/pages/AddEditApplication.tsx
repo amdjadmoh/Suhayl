@@ -148,7 +148,7 @@ export default function AddEditApplication(): React.ReactElement {
           <div className="p-6 space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700">Program <span className="text-red-500">*</span></Label>
-              <Select value={watch("programId") ?? ""}
+              <Select value={(watch("programId") as string) ?? ""}
                 onValueChange={(v) => setValue("programId", v)}>
                 <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select a program..." /></SelectTrigger>
                 <SelectContent>

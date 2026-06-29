@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useQueries } from "@tanstack/react-query";
 import { getProgram } from "@/lib/api";
 import { useCompare } from "@/lib/compareContext";
@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  GitCompare, X, ArrowRight, BookOpen, DollarSign,
-  Calendar, GraduationCap, MapPin, CheckCircle2, XCircle,
+  GitCompare, X, ArrowRight, BookOpen, MapPin, CheckCircle2, XCircle,
 } from "lucide-react";
 
 function formatCurrency(amount: number, currency: string, period: string): string {
@@ -25,7 +24,6 @@ function getUni(program: Program) {
 }
 
 export default function Compare(): React.ReactElement {
-  const navigate = useNavigate();
   const { compareIds, removeFromCompare, clearCompare } = useCompare();
 
   const queries = useQueries({
