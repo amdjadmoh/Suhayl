@@ -3,8 +3,6 @@ import { useUniversity, useDeleteUniversity, useProgramsByUniversity, useDeleteP
 import { useAuth } from "@/lib/authContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -92,16 +90,16 @@ export default function UniversityDetail(): React.ReactElement {
   if (isError || !university) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">
           {isError ? "Failed to load university" : "University not found"}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-slate-500">
           {error instanceof Error ? error.message : ""}
         </p>
-        <Button variant="outline" className="mt-4" onClick={() => navigate("/universities")}>
+        <button onClick={() => navigate("/universities")} className="mt-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
           Back to Universities
-        </Button>
+        </button>
       </div>
     );
   }
@@ -114,33 +112,29 @@ export default function UniversityDetail(): React.ReactElement {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/universities")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <button onClick={() => navigate("/universities")} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{u.name}</h1>
-            <p className="text-muted-foreground">{u.city}, {u.country}</p>
-            {u.ranking && <p className="text-xs text-muted-foreground">Ranking: #{u.ranking}</p>}
+            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{u.name}</h1>
+            <p className="text-sm text-slate-500">{u.city}, {u.country}</p>
+            {u.ranking && <p className="text-xs text-slate-400">Ranking: #{u.ranking}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/programs/new?universityId=${u._id}`}>
-                  <PlusCircle className="mr-1 h-4 w-4" /> Add Program
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/universities/${u._id}/edit`}>
-                  <Pencil className="mr-1 h-4 w-4" /> Edit
-                </Link>
-              </Button>
+              <Link to={`/programs/new?universityId=${u._id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <PlusCircle className="h-4 w-4" /> Add Program
+              </Link>
+              <Link to={`/universities/${u._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <Pencil className="h-4 w-4" /> Edit
+              </Link>
               <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Trash2 className="mr-1 h-4 w-4 text-destructive" /> Delete
-                  </Button>
+                  <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600">
+                    <Trash2 className="h-4 w-4" /> Delete
+                  </button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -164,84 +158,82 @@ export default function UniversityDetail(): React.ReactElement {
 
       {/* Visa Info */}
       {country && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" /> Visa Info — {u.country}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <Globe className="h-5 w-5 text-slate-400" /> Visa Info — {u.country}
+            </h3>
+          </div>
+          <div className="p-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <p className="text-xs text-muted-foreground">Acceptance Rate</p>
+                <p className="text-xs text-slate-500">Acceptance Rate</p>
                 <p className="text-2xl font-bold text-emerald-600">{country.visaAcceptanceRate}%</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Bank Account</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xs text-slate-500">Bank Account</p>
+                <p className="text-2xl font-bold text-[#0F172A]">
                   {new Intl.NumberFormat("en-US", { style: "currency", currency: country.currency, minimumFractionDigits: 0 }).format(country.visaBankAccountAmount)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Account Type</p>
-                <Badge variant={country.visaBankAccountLocked ? "default" : "secondary"}
-                  className={country.visaBankAccountLocked ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}>
+                <p className="text-xs text-slate-500">Account Type</p>
+                <Badge className={
+                  country.visaBankAccountLocked ? "rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700" : "rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"
+                }>
                   {country.visaBankAccountLocked ? "Blocked Account" : "Regular Account"}
                 </Badge>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Living Cost / Mo</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xs text-slate-500">Living Cost / Mo</p>
+                <p className="text-2xl font-bold text-[#0F172A]">
                   {new Intl.NumberFormat("en-US", { style: "currency", currency: country.currency, minimumFractionDigits: 0 }).format(country.livingCostEstimate)}
                 </p>
               </div>
             </div>
-            <Separator className="my-4" />
-            <p className="text-xs text-muted-foreground mb-1">Visa Requirements</p>
-            <p className="text-sm leading-relaxed">{country.visaRequirements}</p>
-          </CardContent>
-        </Card>
+            <div className="border-t border-slate-100 my-4" />
+            <p className="mb-1 text-xs text-slate-500">Visa Requirements</p>
+            <p className="text-sm leading-relaxed text-[#0F172A]">{country.visaRequirements}</p>
+          </div>
+        </div>
       )}
 
       {/* University Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">About {u.name}</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+            <GraduationCap className="h-5 w-5 text-slate-400" /> About {u.name}
+          </h3>
+        </div>
+        <div className="p-6">
           {u.websiteUrl && (
-            <div className="flex items-center gap-2 mb-3">
-              <Globe className="h-4 w-4 text-muted-foreground" />
-              <a href={u.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+            <div className="mb-3 flex items-center gap-2">
+              <Globe className="h-4 w-4 text-slate-400" />
+              <a href={u.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#0EA5E9] hover:underline">
                 Visit Website
               </a>
             </div>
           )}
-          {u.notes && <p className="text-sm text-muted-foreground">{u.notes}</p>}
+          {u.notes && <p className="text-sm text-slate-500">{u.notes}</p>}
           {!u.websiteUrl && !u.notes && (
-            <p className="text-sm text-muted-foreground">No additional information available.</p>
+            <p className="text-sm text-slate-500">No additional information available.</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Programs */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="h-5 w-5" />
-              Programs ({programs?.length ?? 0})
-            </CardTitle>
-            {isAdmin && (
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/programs/new?universityId=${u._id}`}>
-                  <PlusCircle className="mr-1 h-4 w-4" /> Add Program
-                </Link>
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+            <BookOpen className="h-5 w-5 text-slate-400" /> Programs ({programs?.length ?? 0})
+          </h3>
+          {isAdmin && (
+            <Link to={`/programs/new?universityId=${u._id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+              <PlusCircle className="h-4 w-4" /> Add Program
+            </Link>
+          )}
+        </div>
+        <div className="p-6">
           {progLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 2 }).map((_, i) => (
@@ -260,22 +252,20 @@ export default function UniversityDetail(): React.ReactElement {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center py-10 text-center text-muted-foreground">
-              <GraduationCap className="mb-3 h-12 w-12 text-muted-foreground/30" />
+            <div className="flex flex-col items-center py-10 text-center text-slate-500">
+              <GraduationCap className="mb-3 h-12 w-12 text-slate-300" />
               <p>No programs added yet</p>
               {isAdmin && (
-                <Button variant="outline" size="sm" className="mt-3" asChild>
-                  <Link to={`/programs/new?universityId=${u._id}`}>
-                    <PlusCircle className="mr-1 h-4 w-4" /> Add Program
-                  </Link>
-                </Button>
+                <Link to={`/programs/new?universityId=${u._id}`} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+                  <PlusCircle className="h-4 w-4" /> Add Program
+                </Link>
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs text-slate-400">
         Created {new Date(u.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · Updated {new Date(u.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
       </p>
     </div>
@@ -292,13 +282,13 @@ function ProgramCard({ program, isAdmin, universityId, onDelete, deleteOpen, set
   deletePending: boolean;
 }): React.ReactElement {
   return (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-lg border border-slate-100 p-4 transition-all hover:border-slate-200">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <Link to={`/programs/${program._id}`} className="font-semibold hover:text-primary">
+          <Link to={`/programs/${program._id}`} className="font-semibold text-[#0F172A] hover:text-[#0EA5E9]">
             {program.name}
           </Link>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
             <span>{program.degreeLevel}</span>
             <span>·</span>
             <span>{program.languageOfInstruction}</span>
@@ -315,30 +305,28 @@ function ProgramCard({ program, isAdmin, universityId, onDelete, deleteOpen, set
             )}
           </div>
           {program.scholarshipAvailable && (
-            <Badge variant="secondary" className="mt-1 bg-emerald-100 text-emerald-700 text-xs">Scholarship Available</Badge>
+            <Badge className="mt-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">Scholarship Available</Badge>
           )}
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1">
           {!isAdmin && (
-            <Button size="sm" asChild>
-              <Link to={`/applications/new?programId=${program._id}`}>Apply</Link>
-            </Button>
+            <Link to={`/applications/new?programId=${program._id}`} className="inline-flex items-center rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0284C7]">
+              Apply
+            </Link>
           )}
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/programs/${program._id}`}>View</Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/programs/${program._id}/edit`}>
-                  <Pencil className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
+              <Link to={`/programs/${program._id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+                View
+              </Link>
+              <Link to={`/programs/${program._id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+                <Pencil className="h-3.5 w-3.5 text-slate-500" />
+              </Link>
               <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                  <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-red-500 hover:text-red-600">
                     <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>

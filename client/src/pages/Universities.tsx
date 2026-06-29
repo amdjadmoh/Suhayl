@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useUniversities, useCountries } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
-import {
-  COUNTRY_FLAGS,
-} from "@/lib/constants";
+import { COUNTRY_FLAGS } from "@/lib/constants";
 import type { University } from "@/types/university";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,11 +17,14 @@ import { Button } from "@/components/ui/button";
 import {
   Search,
   X,
+  Plus,
   GraduationCap,
   MapPin,
   AlertCircle,
   Pencil,
   Trash2,
+  ArrowRight,
+  Star,
 } from "lucide-react";
 import {
   Dialog,
@@ -57,70 +58,79 @@ function UniversityCard({
   }
 
   return (
-    <div className="group block rounded-xl border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md">
-      <Link to={`/universities/${university._id}`}>
-        <div className="mb-3 flex items-start justify-between">
-          <div className="flex items-center gap-2 text-lg">
-            {COUNTRY_FLAGS[university.country] ?? "🎓"}
+    <div className="group relative overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-xl hover:border-[#0EA5E9]/30 transition-all duration-300">
+      {/* Gradient accent */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+      
+      <div className="p-6">
+        <Link to={`/universities/${university._id}`}>
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-2xl">
+              {COUNTRY_FLAGS[university.country] ?? ""}
+            </div>
+            {university.ranking && (
+              <div className="flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                #{university.ranking}
+              </div>
+            )}
           </div>
-        </div>
 
-        <h3 className="mb-1 font-semibold text-card-foreground group-hover:text-primary">
-          {university.name}
-        </h3>
+          <h3 className="text-lg font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors mb-2">
+            {university.name}
+          </h3>
 
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5" />
-          {university.city}, {university.country}
-        </div>
-
-        {university.ranking && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            Ranking: #{university.ranking}
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <MapPin className="h-4 w-4" />
+            {university.city}, {university.country}
           </div>
-        )}
-      </Link>
+        </Link>
 
-      {isAdmin && (
-        <div className="mt-3 flex items-center gap-2 border-t pt-3">
-          <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link to={`/universities/${university._id}/edit`}>
-              <Pencil className="mr-1.5 h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 text-destructive">
-                <Trash2 className="mr-1.5 h-4 w-4" />
-                Delete
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete University</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete {university.name}? This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+        {isAdmin && (
+          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+            <Button variant="outline" size="sm" className="flex-1 rounded-xl" asChild>
+              <Link to={`/universities/${university._id}/edit`}>
+                <Pencil className="mr-1.5 h-4 w-4" />
+                Edit
+              </Link>
+            </Button>
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl">
+                  <Trash2 className="mr-1.5 h-4 w-4" />
                   Delete
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete University</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete {university.name}? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                  <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 function UniversityCardSkeleton(): React.ReactElement {
   return (
-    <div className="rounded-xl border bg-card p-5">
-      <Skeleton className="mb-2 h-5 w-3/4" />
+    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+      <div className="flex items-start justify-between mb-4">
+        <Skeleton className="h-14 w-14 rounded-2xl" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+      <Skeleton className="h-5 w-3/4 mb-2" />
       <Skeleton className="h-4 w-1/2" />
     </div>
   );
@@ -167,9 +177,9 @@ export default function Universities(): React.ReactElement {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">Failed to load universities</h2>
-        <p className="text-sm text-muted-foreground">
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load universities</h2>
+        <p className="text-sm text-slate-500">
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       </div>
@@ -179,74 +189,88 @@ export default function Universities(): React.ReactElement {
   const universities = data?.universities ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Universities</h1>
-        {isAdmin && (
-          <Button asChild>
-            <Link to="/universities/new">Add University</Link>
-          </Button>
-        )}
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search universities..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-              className="pl-9"
-            />
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-violet-400 blur-3xl" />
+        </div>
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Universities</h1>
+            <p className="mt-2 text-purple-100">Explore top institutions worldwide</p>
           </div>
-
-          <Select
-            value={country}
-            onValueChange={(v) => updateFilter("country", v === "all" ? "" : v)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Country" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Countries</SelectItem>
-              {countries?.map((c) => (
-                <SelectItem key={c.name} value={c.name}>
-                  {COUNTRY_FLAGS[c.name] ?? ""} {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {hasFilters && (
-            <Button variant="ghost" size="icon" onClick={clearFilters} className="h-9 w-9">
-              <X className="h-4 w-4" />
+          {isAdmin && (
+            <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
+              <Link to="/universities/new">
+                <Plus className="mr-2 h-4 w-4" /> Add University
+              </Link>
             </Button>
           )}
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Search universities..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+            className="pl-11 rounded-xl border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20"
+          />
+        </div>
+
+        <Select
+          value={country}
+          onValueChange={(v) => updateFilter("country", v === "all" ? "" : v)}
+        >
+          <SelectTrigger className="w-[180px] rounded-xl border-slate-200">
+            <SelectValue placeholder="Country" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Countries</SelectItem>
+            {countries?.map((c) => (
+              <SelectItem key={c.name} value={c.name}>
+                {COUNTRY_FLAGS[c.name] ?? ""} {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasFilters && (
+          <Button variant="outline" size="icon" onClick={clearFilters} className="rounded-xl">
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Results */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <UniversityCardSkeleton key={i} />
           ))}
         </div>
       ) : universities.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <GraduationCap className="mb-4 h-16 w-16 text-muted-foreground/30" />
-          <h2 className="text-lg font-semibold">No universities found</h2>
-          <p className="mb-4 text-sm text-muted-foreground">
+        <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 mx-auto mb-4">
+            <GraduationCap className="h-10 w-10 text-violet-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-[#0F172A] mb-2">No universities found</h2>
+          <p className="text-slate-500">
             {hasFilters ? "Try adjusting your filters" : "No universities in the catalog yet"}
           </p>
         </div>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-500">
             {data?.total ?? universities.length} universit{universities.length === 1 ? "y" : "ies"} found
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {universities.map((u) => (
               <UniversityCard key={u._id} university={u} isAdmin={isAdmin} />
             ))}

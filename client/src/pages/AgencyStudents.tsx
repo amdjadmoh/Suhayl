@@ -13,12 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -129,8 +123,8 @@ export default function AgencyStudents(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">Failed to load students</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load students</h2>
+        <p className="text-sm text-slate-500">
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       </div>
@@ -141,8 +135,8 @@ export default function AgencyStudents(): React.ReactElement {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Students</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">My Students</h1>
+          <p className="text-sm text-slate-500">
             Manage the students you work with
           </p>
         </div>
@@ -166,6 +160,7 @@ export default function AgencyStudents(): React.ReactElement {
                 </Label>
                 <Input
                   id="s-name"
+                  className="rounded-xl"
                   {...register("name", { required: "Name is required" })}
                   placeholder="John Doe"
                 />
@@ -183,6 +178,7 @@ export default function AgencyStudents(): React.ReactElement {
                 <Input
                   id="s-email"
                   type="email"
+                  className="rounded-xl"
                   {...register("email", { required: "Email is required" })}
                   placeholder="john@example.com"
                 />
@@ -197,6 +193,7 @@ export default function AgencyStudents(): React.ReactElement {
                 <Label htmlFor="s-phone">Phone</Label>
                 <Input
                   id="s-phone"
+                  className="rounded-xl"
                   {...register("phone")}
                   placeholder="+1 234 567 890"
                 />
@@ -206,6 +203,7 @@ export default function AgencyStudents(): React.ReactElement {
                 <Label htmlFor="s-notes">Notes</Label>
                 <Textarea
                   id="s-notes"
+                  className="rounded-xl"
                   {...register("notes")}
                   placeholder="Any notes about this student..."
                   rows={3}
@@ -241,25 +239,30 @@ export default function AgencyStudents(): React.ReactElement {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))}
         </div>
       ) : students && students.length > 0 ? (
         <div className="space-y-3">
           {students.map((student) => (
-            <Card key={student._id}>
-              <CardContent className="flex items-center justify-between p-4">
+            <div
+              key={student._id}
+              className="rounded-xl border border-slate-100 bg-white p-4 transition-all hover:border-slate-200 hover:shadow-md"
+            >
+              <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0EA5E9]/10">
+                      <Users className="h-4 w-4 text-[#0EA5E9]" />
+                    </div>
                     <Link
                       to={`/agency/students/${student._id}`}
-                      className="font-semibold hover:text-primary"
+                      className="font-semibold text-[#0EA5E9] hover:underline"
                     >
                       {student.name}
                     </Link>
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
                     <span className="flex items-center gap-1">
                       <Mail className="h-3 w-3" />
                       {student.email}
@@ -273,7 +276,7 @@ export default function AgencyStudents(): React.ReactElement {
                     {student.notes && (
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
-                        {student.notes}
+                        <span className="truncate max-w-[200px]">{student.notes}</span>
                       </span>
                     )}
                   </div>
@@ -303,24 +306,22 @@ export default function AgencyStudents(): React.ReactElement {
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Users className="mb-4 h-16 w-16 text-muted-foreground/30" />
-            <h2 className="text-lg font-semibold">No students yet</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Add your first student to get started
-            </p>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-100 bg-white py-16">
+          <Users className="mb-4 h-16 w-16 text-slate-300" />
+          <h2 className="text-lg font-semibold text-[#0F172A]">No students yet</h2>
+          <p className="mb-4 text-sm text-slate-500">
+            Add your first student to get started
+          </p>
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Student
+          </Button>
+        </div>
       )}
     </div>
   );

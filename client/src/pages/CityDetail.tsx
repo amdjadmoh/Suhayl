@@ -1,10 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom"
 import { ArrowLeft, Globe, AlertCircle, Pencil, Trash2, Loader2 } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { useCityWithUniversities, useDeleteCity } from "@/lib/api"
 import { COUNTRY_FLAGS, STATUS_COLORS } from "@/lib/constants"
@@ -13,15 +10,15 @@ import type { City } from "@/types/city"
 function ScoreBar({ value, label }: { value: number; label: string }): React.ReactElement {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm text-slate-500">{label}</span>
       <div className="flex items-center gap-2">
-        <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
+        <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full bg-primary"
+            className="h-full rounded-full bg-[#0EA5E9]"
             style={{ width: `${(value / 10) * 100}%` }}
           />
         </div>
-        <span className="text-sm font-semibold">{value}/10</span>
+        <span className="text-sm font-medium text-[#0F172A]">{value}/10</span>
       </div>
     </div>
   )
@@ -68,20 +65,20 @@ export default function CityDetail(): React.ReactElement {
   if (isError || !data) {
     return (
       <div className="space-y-6">
-        <Button variant="outline" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-            <h2 className="mb-2 text-xl font-semibold">City not found</h2>
-            <p className="text-muted-foreground">
+        <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="rounded-xl border border-slate-100 bg-white p-12">
+          <div className="flex flex-col items-center justify-center">
+            <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+            <h2 className="mb-2 text-xl font-semibold text-[#0F172A]">City not found</h2>
+            <p className="text-sm text-slate-500">
               {error instanceof Error
                 ? error.message
                 : "The city details could not be loaded."}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     )
   }
@@ -90,149 +87,114 @@ export default function CityDetail(): React.ReactElement {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
             <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            {COUNTRY_FLAGS[city.country] ?? <Globe className="h-6 w-6" />}
-            {city.name}
-          </h1>
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+              <span className="mr-2">{COUNTRY_FLAGS[city.country] ?? <Globe className="inline h-6 w-6" />}</span>
+              {city.name}
+            </h1>
+            <p className="text-sm text-slate-500">{city.country} · {city.climate}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/cities/${city._id}/edit`}>
-              <Pencil className="mr-1 h-4 w-4" /> Edit
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-          >
+          <Link to={`/cities/${city._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
+            <Pencil className="h-4 w-4" /> Edit
+          </Link>
+          <button onClick={handleDelete} disabled={deleteMutation.isPending} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600">
             {deleteMutation.isPending ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+              <Trash2 className="h-4 w-4" />
             )}
             Delete
-          </Button>
+          </button>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">City Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Country
-              </span>
+        {/* City Information Card */}
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <Globe className="h-5 w-5 text-slate-400" /> City Information
+            </h3>
+          </div>
+          <div className="space-y-0 p-6">
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Country</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-base">
                   {COUNTRY_FLAGS[city.country] ?? <Globe className="h-4 w-4" />}
                 </span>
-                <span className="font-semibold">{city.country}</span>
+                <span className="text-sm font-medium text-[#0F172A]">{city.country}</span>
               </div>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Population
-              </span>
-              <span className="font-semibold">
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Population</span>
+              <span className="text-sm font-medium text-[#0F172A]">
                 {formatPopulation(city.population)}
               </span>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Capital City
-              </span>
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Capital City</span>
               {city.isCapital ? (
-                <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                <Badge className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
                   Capital
                 </Badge>
               ) : (
-                <span className="text-sm text-muted-foreground">No</span>
+                <span className="text-sm text-slate-400">No</span>
               )}
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Climate
-              </span>
-              <span className="font-semibold">{city.climate}</span>
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Climate</span>
+              <span className="text-sm font-medium text-[#0F172A]">{city.climate}</span>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Language
-              </span>
-              <span className="font-semibold">{city.language}</span>
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Language</span>
+              <span className="text-sm font-medium text-[#0F172A]">{city.language}</span>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Monthly Living Cost
-              </span>
-              <span className="font-semibold">
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Monthly Living Cost</span>
+              <span className="text-sm font-medium text-[#0F172A]">
                 ${city.monthlyLivingCost.toLocaleString()}/mo
               </span>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Avg Rent (Single)
-              </span>
-              <span className="font-semibold">
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Avg Rent (Single)</span>
+              <span className="text-sm font-medium text-[#0F172A]">
                 ${city.averageRentSingle.toLocaleString()}/mo
               </span>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                Avg Rent (Shared)
-              </span>
-              <span className="font-semibold">
+            <div className="flex items-center justify-between border-b border-slate-50 py-3">
+              <span className="text-sm text-slate-500">Avg Rent (Shared)</span>
+              <span className="text-sm font-medium text-[#0F172A]">
                 ${city.averageRentShared.toLocaleString()}/mo
               </span>
             </div>
 
             {city.internetSpeed && (
-              <>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Internet Speed
-                  </span>
-                  <span className="font-semibold">{city.internetSpeed} Mbps</span>
-                </div>
-              </>
+              <div className="flex items-center justify-between border-b border-slate-50 py-3">
+                <span className="text-sm text-slate-500">Internet Speed</span>
+                <span className="text-sm font-medium text-[#0F172A]">{city.internetSpeed} Mbps</span>
+              </div>
             )}
 
-            <Separator />
+            <div className="border-t border-slate-100 my-3" />
 
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Scores</h3>
+              <h3 className="text-sm font-medium text-slate-500">Scores</h3>
               <div className="space-y-2">
                 <ScoreBar value={city.qualityOfLifeScore} label="Quality of Life" />
                 <ScoreBar value={city.safetyScore} label="Safety" />
@@ -244,7 +206,7 @@ export default function CityDetail(): React.ReactElement {
 
             {(city.pros.length > 0 || city.cons.length > 0) && (
               <>
-                <Separator />
+                <div className="border-t border-slate-100 my-3" />
                 <div className="grid gap-3 sm:grid-cols-2">
                   {city.pros.length > 0 && (
                     <div>
@@ -292,35 +254,36 @@ export default function CityDetail(): React.ReactElement {
 
             {city.notes && (
               <>
-                <Separator />
+                <div className="border-t border-slate-100 my-3" />
                 <div>
-                  <h3 className="mb-1 text-sm font-medium text-muted-foreground">Notes</h3>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{city.notes}</p>
+                  <h3 className="mb-1 text-sm font-medium text-slate-500">Notes</h3>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#0F172A]">{city.notes}</p>
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Universities in {city.name} ({universities.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Universities Card */}
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <Globe className="h-5 w-5 text-slate-400" /> Universities in {city.name} ({universities.length})
+            </h3>
+          </div>
+          <div className="p-6">
             {universities.length > 0 ? (
               <div className="space-y-3">
                 {universities.map((uni) => (
                   <div
                     key={uni._id}
                     onClick={() => navigate(`/universities/${uni._id}`)}
-                    className="flex cursor-pointer flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="flex cursor-pointer flex-col gap-2 rounded-lg border border-slate-100 p-4 transition-all hover:border-slate-200"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h4 className="font-semibold">{uni.name}</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-semibold text-[#0F172A]">{uni.name}</h4>
+                        <p className="text-sm text-slate-500">
                           {uni.city}
                         </p>
                       </div>
@@ -330,8 +293,8 @@ export default function CityDetail(): React.ReactElement {
                         {uni.applicationStatus}
                       </Badge>
                     </div>
-                    <div className="flex gap-2 text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">
+                    <div className="flex gap-2 text-sm text-slate-500">
+                      <span className="font-medium text-[#0F172A]">
                         {uni.degreeLevel}
                       </span>
                       <span>·</span>
@@ -341,13 +304,13 @@ export default function CityDetail(): React.ReactElement {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
-                <Globe className="h-8 w-8 text-muted/50" />
+              <div className="flex flex-col items-center gap-2 py-8 text-center text-slate-500">
+                <Globe className="h-8 w-8 text-slate-300" />
                 <p>No universities added yet</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

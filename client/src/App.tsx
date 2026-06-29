@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/authContext";
 import Layout from "@/components/Layout";
+import { CompareProvider } from "@/lib/compareContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "@/pages/Dashboard";
 import Countries from "@/pages/Countries";
@@ -46,6 +47,7 @@ export default function App(): React.ReactElement {
       <BrowserRouter>
         <TooltipProvider>
           <AuthProvider>
+            <CompareProvider>
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Landing />} />
@@ -104,6 +106,7 @@ export default function App(): React.ReactElement {
                 </Route>
               </Route>
             </Routes>
+            </CompareProvider>
             <Toaster richColors position="top-right" />
           </AuthProvider>
         </TooltipProvider>

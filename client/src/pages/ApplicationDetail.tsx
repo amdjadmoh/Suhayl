@@ -3,8 +3,6 @@ import { useApplication, useDeleteApplication } from "@/lib/api";
 import { STATUS_COLORS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -24,9 +22,9 @@ function formatDate(dateStr?: string): string {
 function DetailRow({ label, value }: { label: string; value: string | number | undefined | React.ReactElement }): React.ReactElement {
   if (value === undefined || value === null || value === "") return <></>;
   return (
-    <div className="flex justify-between py-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
+    <div className="flex justify-between border-b border-slate-50 py-3 text-sm last:border-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-medium text-[#0F172A]">{value}</span>
     </div>
   );
 }
@@ -54,7 +52,9 @@ export default function ApplicationDetail(): React.ReactElement {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <Card><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+        <div className="rounded-xl border border-slate-100 bg-white p-6">
+          <Skeleton className="h-64 w-full" />
+        </div>
       </div>
     );
   }
@@ -62,9 +62,9 @@ export default function ApplicationDetail(): React.ReactElement {
   if (isError || !application) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">Application not found</h2>
-        <Button variant="outline" className="mt-4" onClick={() => navigate("/applications")}>Back</Button>
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">Application not found</h2>
+        <button onClick={() => navigate("/applications")} className="mt-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Back</button>
       </div>
     );
   }
@@ -79,22 +79,20 @@ export default function ApplicationDetail(): React.ReactElement {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/applications")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <button onClick={() => navigate("/applications")} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{prog?.name ?? "Application"}</h1>
-            <p className="text-muted-foreground">for {a.studentName}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{prog?.name ?? "Application"}</h1>
+            <p className="text-sm text-slate-500">for {a.studentName}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>{a.applicationStatus}</Badge>
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/applications/${a._id}/edit`}><Pencil className="mr-1 h-4 w-4" /> Edit</Link>
-          </Button>
+          <Link to={`/applications/${a._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors"><Pencil className="h-4 w-4" /> Edit</Link>
           <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm"><Trash2 className="mr-1 h-4 w-4 text-destructive" /> Delete</Button>
+              <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /> Delete</button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -114,16 +112,16 @@ export default function ApplicationDetail(): React.ReactElement {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Program + University Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <GraduationCap className="h-5 w-5" /> Program
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <GraduationCap className="h-5 w-5 text-slate-400" /> Program
+            </h3>
+          </div>
+          <div className="p-6">
             {prog && (
               <>
-                <DetailRow label="Program" value={<Link to={`/programs/${prog._id}`} className="text-primary hover:underline">{prog.name}</Link>} />
+                <DetailRow label="Program" value={<Link to={`/programs/${prog._id}`} className="text-[#0EA5E9] hover:underline">{prog.name}</Link>} />
                 <DetailRow label="Degree" value={prog.degreeLevel} />
                 <DetailRow label="Language" value={prog.languageOfInstruction} />
                 {prog.tuitionFee && (
@@ -131,105 +129,113 @@ export default function ApplicationDetail(): React.ReactElement {
                 )}
               </>
             )}
-            <Separator className="my-2" />
+            <div className="border-t border-slate-100 my-2" />
             {uni && (
               <>
-                <DetailRow label="University" value={<Link to={`/universities/${uni._id}`} className="text-primary hover:underline">{uni.name}</Link>} />
+                <DetailRow label="University" value={<Link to={`/universities/${uni._id}`} className="text-[#0EA5E9] hover:underline">{uni.name}</Link>} />
                 <DetailRow label="Country" value={uni.country} />
                 <DetailRow label="City" value={uni.city} />
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Application Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ClipboardList className="h-5 w-5" /> Application Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <div className="flex items-center gap-2 py-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{a.studentName}</span>
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <ClipboardList className="h-5 w-5 text-slate-400" /> Application Details
+            </h3>
+          </div>
+          <div className="p-6">
+            <div className="flex items-center gap-2 border-b border-slate-50 py-3 text-sm">
+              <User className="h-4 w-4 text-slate-400" />
+              <span className="font-medium text-[#0F172A]">{a.studentName}</span>
             </div>
-            <div className="flex items-center gap-2 py-2 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{a.studentEmail}</span>
+            <div className="flex items-center gap-2 border-b border-slate-50 py-3 text-sm">
+              <Mail className="h-4 w-4 text-slate-400" />
+              <span className="text-[#0F172A]">{a.studentEmail}</span>
             </div>
-            <Separator className="my-1" />
+            <div className="border-t border-slate-100 my-1" />
             <DetailRow label="Status" value={<Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>{a.applicationStatus}</Badge>} />
             <DetailRow label="Deadline" value={formatDate(a.applicationDeadline)} />
             {a.livingCostEstimate && <DetailRow label="Living Cost / Month" value={`€${a.livingCostEstimate.toLocaleString()}`} />}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Application Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5" /> Application Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+            <ClipboardList className="h-5 w-5 text-slate-400" /> Application Progress
+          </h3>
+        </div>
+        <div className="p-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Documents</p>
-              <p className="text-xs">{p.documentsObtained.length} obtained</p>
+              <p className="mb-2 text-xs font-medium text-slate-500">Documents</p>
+              <p className="text-xs text-[#0F172A]">{p.documentsObtained.length} obtained</p>
               {p.documentsObtained.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {p.documentsObtained.map((doc, i) => (
-                    <Badge key={i} className="bg-emerald-100 text-emerald-700 text-xs">✓ {doc}</Badge>
+                    <Badge key={i} className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-600">✓ {doc}</Badge>
                   ))}
                 </div>
               )}
             </div>
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Language Tests</p>
+              <p className="mb-2 text-xs font-medium text-slate-500">Language Tests</p>
               <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span>IELTS</span>{p.ieltsTaken && p.ieltsScore ? <span className="text-emerald-600 font-medium">{p.ieltsScore}</span> : <span className="text-muted-foreground">Not taken</span>}</div>
-                <div className="flex justify-between"><span>TOEFL</span>{p.toeflTaken && p.toeflScore ? <span className="text-emerald-600 font-medium">{p.toeflScore}</span> : <span className="text-muted-foreground">Not taken</span>}</div>
+                <div className="flex justify-between"><span className="text-slate-500">IELTS</span>{p.ieltsTaken && p.ieltsScore ? <span className="font-medium text-emerald-600">{p.ieltsScore}</span> : <span className="text-slate-400">Not taken</span>}</div>
+                <div className="flex justify-between"><span className="text-slate-500">TOEFL</span>{p.toeflTaken && p.toeflScore ? <span className="font-medium text-emerald-600">{p.toeflScore}</span> : <span className="text-slate-400">Not taken</span>}</div>
               </div>
             </div>
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Checklist</p>
+              <p className="mb-2 text-xs font-medium text-slate-500">Checklist</p>
               <div className="space-y-1 text-xs">
-                <div className="flex justify-between"><span>GPA Verified</span>{p.gpaVerified ? <span className="text-emerald-600">✓</span> : <span className="text-muted-foreground">—</span>}</div>
-                <div className="flex justify-between"><span>Recommendations</span><span className="font-medium">{p.recommendationsReceived}/{p.recommendationsRequested}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">GPA Verified</span>{p.gpaVerified ? <span className="text-emerald-600">✓</span> : <span className="text-slate-400">—</span>}</div>
+                <div className="flex justify-between"><span className="text-slate-500">Recommendations</span><span className="font-medium text-[#0F172A]">{p.recommendationsReceived}/{p.recommendationsRequested}</span></div>
                 <div className="flex justify-between">
-                  <span>SOP</span>
+                  <span className="text-slate-500">SOP</span>
                   <Badge variant="secondary" className={
-                    p.sopStatus === "final" ? "bg-emerald-100 text-emerald-700 text-xs" :
-                    p.sopStatus === "draft" ? "bg-amber-100 text-amber-700 text-xs" : "text-xs"
+                    p.sopStatus === "final" ? "rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-600" :
+                    p.sopStatus === "draft" ? "rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-50 text-amber-600" : "rounded-full px-2.5 py-0.5 text-xs font-medium"
                   }>{p.sopStatus.replace("_", " ")}</Badge>
                 </div>
-                <div className="flex justify-between"><span>Fee</span>{p.applicationFeePaid ? <span className="text-emerald-600">Paid</span> : <span className="text-muted-foreground">Unpaid</span>}</div>
-                {p.applicationSubmittedDate && <div className="flex justify-between"><span>Submitted</span><span className="font-medium">{formatDate(p.applicationSubmittedDate)}</span></div>}
+                <div className="flex justify-between"><span className="text-slate-500">Fee</span>{p.applicationFeePaid ? <span className="text-emerald-600">Paid</span> : <span className="text-slate-400">Unpaid</span>}</div>
+                {p.applicationSubmittedDate && <div className="flex justify-between"><span className="text-slate-500">Submitted</span><span className="font-medium text-[#0F172A]">{formatDate(p.applicationSubmittedDate)}</span></div>}
               </div>
             </div>
             {(p.visaApplied || p.interviewScheduled) && (
               <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Visa & Interview</p>
+                <p className="mb-2 text-xs font-medium text-slate-500">Visa & Interview</p>
                 <div className="space-y-1 text-xs">
-                  {p.visaApplied && <div className="flex justify-between"><span>Visa Applied</span><span className="text-emerald-600">✓</span></div>}
-                  {p.visaApproved !== undefined && <div className="flex justify-between"><span>Visa Approved</span>{p.visaApproved ? <span className="text-emerald-600">✓</span> : <span className="text-amber-600">Pending</span>}</div>}
-                  {p.interviewScheduled && <div className="flex justify-between"><span>Interview</span><span className="font-medium">{formatDate(p.interviewScheduled)}</span></div>}
-                  <div className="flex justify-between"><span>Interview Done</span>{p.interviewCompleted ? <span className="text-emerald-600">✓</span> : <span className="text-muted-foreground">—</span>}</div>
+                  {p.visaApplied && <div className="flex justify-between"><span className="text-slate-500">Visa Applied</span><span className="text-emerald-600">✓</span></div>}
+                  {p.visaApproved !== undefined && <div className="flex justify-between"><span className="text-slate-500">Visa Approved</span>{p.visaApproved ? <span className="text-emerald-600">✓</span> : <span className="text-amber-600">Pending</span>}</div>}
+                  {p.interviewScheduled && <div className="flex justify-between"><span className="text-slate-500">Interview</span><span className="font-medium text-[#0F172A]">{formatDate(p.interviewScheduled)}</span></div>}
+                  <div className="flex justify-between"><span className="text-slate-500">Interview Done</span>{p.interviewCompleted ? <span className="text-emerald-600">✓</span> : <span className="text-slate-400">—</span>}</div>
                 </div>
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {a.notes && (
-        <Card>
-          <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
-          <CardContent><p className="whitespace-pre-wrap text-sm">{a.notes}</p></CardContent>
-        </Card>
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <BookOpen className="h-5 w-5 text-slate-400" /> Notes
+            </h3>
+          </div>
+          <div className="p-6">
+            <p className="whitespace-pre-wrap text-sm text-[#0F172A]">{a.notes}</p>
+          </div>
+        </div>
       )}
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs text-slate-400">
         Created {formatDate(a.createdAt)} · Updated {formatDate(a.updatedAt)}
       </p>
     </div>

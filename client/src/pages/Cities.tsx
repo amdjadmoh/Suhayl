@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom"
-import { AlertCircle, Globe, MapPin, Plus } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { AlertCircle, Globe, MapPin, Plus, ArrowRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -11,13 +10,13 @@ import type { City } from "@/types/city"
 function ScoreBar({ value, label }: { value: number; label: string }): React.ReactElement {
   return (
     <div>
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{value}/10</span>
+      <div className="flex items-center justify-between text-xs mb-1.5">
+        <span className="text-slate-600 font-medium">{label}</span>
+        <span className="font-bold text-[#0F172A]">{value}/10</span>
       </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-primary"
+          className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-500"
           style={{ width: `${(value / 10) * 100}%` }}
         />
       </div>
@@ -30,11 +29,14 @@ export default function Cities(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Cities</h1>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[#0F172A]">Cities</h1>
+          <p className="mt-2 text-slate-500">Loading cities...</p>
+        </div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-64 w-full" />
+            <Skeleton key={i} className="h-72 w-full rounded-2xl" />
           ))}
         </div>
       </div>
@@ -43,74 +45,93 @@ export default function Cities(): React.ReactElement {
 
   if (isError) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Cities</h1>
-        <div className="flex items-center gap-2 text-destructive">
-          <AlertCircle className="h-5 w-5" />
-          <p>Failed to load cities.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20">
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load cities</h2>
+        <p className="text-sm text-slate-500">Please try again later</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Cities</h1>
-        <Button asChild>
-          <Link to="/cities/new">
-            <Plus className="mr-1 h-4 w-4" /> Add City
-          </Link>
-        </Button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 p-8 text-white">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-cyan-400 blur-3xl" />
+        </div>
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Cities</h1>
+            <p className="mt-2 text-cyan-100">Discover cities and their quality of life scores</p>
+          </div>
+          <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
+            <Link to="/cities/new">
+              <Plus className="mr-2 h-4 w-4" /> Add City
+            </Link>
+          </Button>
+        </div>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+      {/* Cities Grid */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {cities?.map((city) => (
           <Link
             key={city._id}
             to={`/cities/${city._id}`}
-            className="block outline-none rounded-xl transition-all hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring"
+            className="group block"
           >
-            <Card className="h-full hover:border-primary/30 hover:shadow-md transition-all">
-              <CardHeader className="flex flex-row items-start justify-between pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="text-xl">
-                    {COUNTRY_FLAGS[city.country] ?? <Globe className="h-5 w-5 text-muted-foreground" />}
-                  </span>
-                  <div className="flex flex-col">
-                    <span>{city.name}</span>
-                    <span className="text-sm font-normal text-muted-foreground">{city.country}</span>
+            <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:border-[#0EA5E9]/30 transition-all duration-300">
+              {/* Gradient accent */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-100 to-blue-100 text-2xl">
+                    {COUNTRY_FLAGS[city.country] ?? <Globe className="h-7 w-7 text-slate-400" />}
                   </div>
-                </CardTitle>
-                <div className="flex items-center gap-1">
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{city.name}</h3>
+                    <div className="flex items-center gap-1 text-sm text-slate-500 mt-0.5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {city.country}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
                   {city.isCapital && (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-xs">
+                    <Badge className="bg-amber-50 text-amber-700 border-amber-200 rounded-full">
                       Capital
                     </Badge>
                   )}
+                  <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-[#0EA5E9] group-hover:translate-x-1 transition-all" />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Living Cost</p>
-                    <p className="font-semibold">
-                      ${city.monthlyLivingCost.toLocaleString()}/mo
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-blue-50 p-3">
+                    <p className="text-xs text-blue-600 font-medium mb-1">Living Cost / Month</p>
+                    <p className="text-xl font-bold text-blue-700">
+                      ${city.monthlyLivingCost.toLocaleString()}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Rent (Shared)</p>
-                    <p className="font-semibold">
-                      ${city.averageRentShared.toLocaleString()}/mo
+                  <div className="rounded-xl bg-purple-50 p-3">
+                    <p className="text-xs text-purple-600 font-medium mb-1">Rent (Shared)</p>
+                    <p className="text-xl font-bold text-purple-700">
+                      ${city.averageRentShared.toLocaleString()}
                     </p>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+
+                <div className="space-y-3 pt-2">
                   <ScoreBar value={city.qualityOfLifeScore} label="Quality of Life" />
                   <ScoreBar value={city.studentFriendliness} label="Student Friendly" />
                   <ScoreBar value={city.englishFriendliness} label="English Friendly" />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
         ))}
       </div>

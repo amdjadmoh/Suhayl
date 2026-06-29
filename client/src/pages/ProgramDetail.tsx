@@ -1,10 +1,9 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useProgram, useDeleteProgram } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
+import { useCompare } from "@/lib/compareContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -19,6 +18,8 @@ import {
   Calendar,
   DollarSign,
   BookOpen,
+  GitCompare,
+  Check,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -46,9 +47,9 @@ function formatDate(dateStr?: string): string {
 function DetailRow({ label, value }: { label: string; value: string | number | undefined | React.ReactElement }): React.ReactElement {
   if (value === undefined || value === null || value === "") return <></>;
   return (
-    <div className="flex justify-between py-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
+    <div className="flex justify-between border-b border-slate-50 py-3 text-sm last:border-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-medium text-[#0F172A]">{value}</span>
     </div>
   );
 }
@@ -58,6 +59,8 @@ export default function ProgramDetail(): React.ReactElement {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const isStudent = user?.role === "student";
+  const { addToCompare, removeFromCompare, isInCompare } = useCompare();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data: program, isLoading, isError, error } = useProgram(id ?? "");
@@ -87,9 +90,9 @@ export default function ProgramDetail(): React.ReactElement {
   if (isError || !program) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">Program not found</h2>
-        <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>Back</Button>
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">Program not found</h2>
+        <button onClick={() => navigate(-1)} className="mt-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Back</button>
       </div>
     );
   }
@@ -102,34 +105,48 @@ export default function ProgramDetail(): React.ReactElement {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{p.name}</h1>
             {uni && (
-              <Link to={`/universities/${uni._id}`} className="text-sm text-muted-foreground hover:text-primary">
+              <Link to={`/universities/${uni._id}`} className="text-sm text-slate-500 hover:text-[#0EA5E9]">
                 {uni.name} · {uni.city}, {uni.country}
               </Link>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isAdmin && (
-            <Button size="sm" asChild>
-              <Link to={`/applications/new?programId=${p._id}`}>
-                <PlusCircle className="mr-1 h-4 w-4" /> Apply to this Program
+          {isStudent && (
+            <>
+              {isInCompare(p._id) ? (
+                <button onClick={() => removeFromCompare(p._id)}
+                  className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors">
+                  <Check className="h-4 w-4" /> Added to Compare
+                </button>
+              ) : (
+                <button onClick={() => addToCompare(p._id)}
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  <GitCompare className="h-4 w-4" /> Add to Compare
+                </button>
+              )}
+              <Link to={`/applications/new?programId=${p._id}`} className="inline-flex items-center gap-1 rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0284C7]">
+                <PlusCircle className="h-4 w-4" /> Apply
               </Link>
-            </Button>
+            </>
+          )}
+          {!isStudent && !isAdmin && (
+            <Link to={`/applications/new?programId=${p._id}`} className="inline-flex items-center gap-1 rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0284C7]">
+              <PlusCircle className="h-4 w-4" /> Apply to this Program
+            </Link>
           )}
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/programs/${p._id}/edit`}><Pencil className="mr-1 h-4 w-4" /> Edit</Link>
-              </Button>
+              <Link to={`/programs/${p._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors"><Pencil className="h-4 w-4" /> Edit</Link>
               <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm"><Trash2 className="mr-1 h-4 w-4 text-destructive" /> Delete</Button>
+                  <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /> Delete</button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -152,102 +169,106 @@ export default function ProgramDetail(): React.ReactElement {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* University Info */}
         {uni && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <GraduationCap className="h-5 w-5" /> University
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <DetailRow label="Name" value={<Link to={`/universities/${uni._id}`} className="text-primary hover:underline">{uni.name}</Link>} />
+          <div className="rounded-xl border border-slate-100 bg-white">
+            <div className="border-b border-slate-100 px-6 py-4">
+              <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+                <GraduationCap className="h-5 w-5 text-slate-400" /> University
+              </h3>
+            </div>
+            <div className="p-6">
+              <DetailRow label="Name" value={<Link to={`/universities/${uni._id}`} className="text-[#0EA5E9] hover:underline">{uni.name}</Link>} />
               <DetailRow label="Country" value={uni.country} />
               <DetailRow label="City" value={uni.city} />
               {uni.ranking && <DetailRow label="Ranking" value={`#${uni.ranking}`} />}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Program Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="h-5 w-5" /> Program Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <BookOpen className="h-5 w-5 text-slate-400" /> Program Details
+            </h3>
+          </div>
+          <div className="p-6">
             <DetailRow label="Degree Level" value={p.degreeLevel} />
             <DetailRow label="Language" value={p.languageOfInstruction} />
             <DetailRow label="Tuition" value={formatCurrency(p.tuitionFee, p.tuitionCurrency, p.tuitionPeriod)} />
             <DetailRow label="Deadline" value={formatDate(p.applicationDeadline)} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Requirements */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Requirements</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+            <BookOpen className="h-5 w-5 text-slate-400" /> Requirements
+          </h3>
+        </div>
+        <div className="grid gap-4 p-6 sm:grid-cols-2">
           {p.gpaRequirement && <DetailRow label="GPA Requirement" value={p.gpaRequirement} />}
           {p.ieltsRequirement && <DetailRow label="IELTS Requirement" value={p.ieltsRequirement} />}
           {p.toeflRequirement && <DetailRow label="TOEFL Requirement" value={p.toeflRequirement} />}
           {p.requiredDocuments.length > 0 && (
-            <div className="sm:col-span-2 py-2">
-              <span className="text-sm text-muted-foreground">Required Documents:</span>
+            <div className="py-2 sm:col-span-2">
+              <span className="text-sm text-slate-500">Required Documents:</span>
               <div className="mt-2 flex flex-wrap gap-1">
                 {p.requiredDocuments.map((doc, i) => (
-                  <Badge key={i} variant="outline">{doc}</Badge>
+                  <Badge key={i} variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">{doc}</Badge>
                 ))}
               </div>
             </div>
           )}
           {!p.gpaRequirement && !p.ieltsRequirement && !p.toeflRequirement && p.requiredDocuments.length === 0 && (
-            <p className="text-sm text-muted-foreground sm:col-span-2">No specific requirements</p>
+            <p className="text-sm text-slate-500 sm:col-span-2">No specific requirements</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Scholarship */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Scholarship</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between py-2 text-sm">
-            <span className="text-muted-foreground">Scholarship Available</span>
-            <Badge variant={p.scholarshipAvailable ? "default" : "secondary"}>
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+            <DollarSign className="h-5 w-5 text-slate-400" /> Scholarship
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="flex justify-between border-b border-slate-50 py-3 text-sm last:border-0">
+            <span className="text-slate-500">Scholarship Available</span>
+            <Badge variant={p.scholarshipAvailable ? "default" : "secondary"} className="rounded-full px-2.5 py-0.5 text-xs font-medium">
               {p.scholarshipAvailable ? "Available" : "Not Available"}
             </Badge>
           </div>
           {p.scholarshipAvailable && p.scholarshipDetails && (
-            <p className="mt-1 text-sm">{p.scholarshipDetails}</p>
+            <p className="mt-1 text-sm text-[#0F172A]">{p.scholarshipDetails}</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {p.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap text-sm">{p.notes}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!isAdmin && (
-        <div className="flex justify-center">
-          <Button size="lg" asChild>
-            <Link to={`/applications/new?programId=${p._id}`}>
-              <PlusCircle className="mr-2 h-5 w-5" /> Apply to {p.name}
-            </Link>
-          </Button>
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+              <BookOpen className="h-5 w-5 text-slate-400" /> Notes
+            </h3>
+          </div>
+          <div className="p-6">
+            <p className="whitespace-pre-wrap text-sm text-[#0F172A]">{p.notes}</p>
+          </div>
         </div>
       )}
 
-      <p className="text-center text-xs text-muted-foreground">
+      {!isStudent && !isAdmin && (
+        <div className="flex justify-center">
+          <Link to={`/applications/new?programId=${p._id}`} className="inline-flex items-center gap-2 rounded-xl bg-[#0EA5E9] px-6 py-3 text-base font-medium text-white transition-colors hover:bg-[#0284C7]">
+            <PlusCircle className="h-5 w-5" /> Apply to {p.name}
+          </Link>
+        </div>
+      )}
+
+      <p className="text-center text-xs text-slate-400">
         Created {formatDate(p.createdAt)} · Updated {formatDate(p.updatedAt)}
       </p>
     </div>

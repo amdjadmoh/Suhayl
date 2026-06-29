@@ -1,12 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAgencyApplications, useStudents } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   GraduationCap,
@@ -47,8 +41,8 @@ export default function AgencyDashboard(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Agency Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">Agency Dashboard</h1>
+        <p className="text-sm text-slate-500">
           Overview of your students and applications
         </p>
       </div>
@@ -62,77 +56,71 @@ export default function AgencyDashboard(): React.ReactElement {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Students
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{totalStudents}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Applications
-              </CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{totalApplications}</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-slate-100 bg-white p-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-500">Total Students</p>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0EA5E9]/10">
+                <Users className="h-5 w-5 text-[#0EA5E9]" />
+              </div>
+            </div>
+            <p className="mt-2 text-3xl font-bold text-[#0F172A]">{totalStudents}</p>
+          </div>
+          <div className="rounded-xl border border-slate-100 bg-white p-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-500">Total Applications</p>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+                <FileText className="h-5 w-5 text-violet-500" />
+              </div>
+            </div>
+            <p className="mt-2 text-3xl font-bold text-[#0F172A]">{totalApplications}</p>
+          </div>
         </div>
       )}
 
       {/* Quick actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="text-base font-semibold text-[#0F172A]">Quick Actions</h3>
+        </div>
+        <div className="p-6">
           <div className="grid gap-3 sm:grid-cols-3">
-            <Button variant="outline" className="h-auto flex-col gap-2 py-6" asChild>
+            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-slate-100 p-6 hover:border-slate-200 hover:shadow-md transition-all" asChild>
               <Link to="/agency/students">
-                <Users className="h-6 w-6" />
+                <Users className="h-6 w-6 text-[#0EA5E9]" />
                 <span className="font-medium">Manage Students</span>
-                <span className="text-xs text-muted-foreground">View, add, edit students</span>
+                <span className="text-xs text-slate-500">View, add, edit students</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 py-6" asChild>
+            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-slate-100 p-6 hover:border-slate-200 hover:shadow-md transition-all" asChild>
               <Link to="/agency/students">
-                <UserPlus className="h-6 w-6" />
+                <UserPlus className="h-6 w-6 text-[#0EA5E9]" />
                 <span className="font-medium">Add Student</span>
-                <span className="text-xs text-muted-foreground">Create a new student record</span>
+                <span className="text-xs text-slate-500">Create a new student record</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 py-6" asChild>
+            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-slate-100 p-6 hover:border-slate-200 hover:shadow-md transition-all" asChild>
               <Link to="/universities/new">
-                <PlusCircle className="h-6 w-6" />
+                <PlusCircle className="h-6 w-6 text-[#0EA5E9]" />
                 <span className="font-medium">Add Application</span>
-                <span className="text-xs text-muted-foreground">New university application</span>
+                <span className="text-xs text-slate-500">New university application</span>
               </Link>
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Recent applications */}
       {!isLoading && applications && applications.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Recent Applications</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/applications">
-                  View All <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <h3 className="text-base font-semibold text-[#0F172A]">Recent Applications</h3>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/applications">
+                View All <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="p-6">
             <div className="space-y-2">
               {applications.slice(0, 5).map((a) => {
                 const progName = typeof a.programId === "object" ? a.programId?.name : "Program";
@@ -141,11 +129,11 @@ export default function AgencyDashboard(): React.ReactElement {
                   <Link
                     key={a._id}
                     to={`/applications/${a._id}`}
-                    className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                    className="flex items-center justify-between rounded-lg border border-slate-100 p-3 transition-all hover:border-slate-200 hover:bg-slate-50/50"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{progName}</p>
-                      <p className="truncate text-sm text-muted-foreground">
+                      <p className="truncate font-medium text-[#0F172A]">{progName}</p>
+                      <p className="truncate text-sm text-slate-500">
                         {a.studentName}{uniName ? ` · ${uniName}` : ""}
                       </p>
                     </div>
@@ -153,27 +141,25 @@ export default function AgencyDashboard(): React.ReactElement {
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Empty state */}
       {!isLoading && applications?.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <GraduationCap className="mb-4 h-16 w-16 text-muted-foreground/30" />
-            <h2 className="text-lg font-semibold">No applications yet</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Start by adding a student and then a university application
-            </p>
-            <Button asChild>
-              <Link to="/agency/students">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Student
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-100 bg-white py-16">
+          <GraduationCap className="mb-4 h-16 w-16 text-slate-300" />
+          <h2 className="text-lg font-semibold text-[#0F172A]">No applications yet</h2>
+          <p className="mb-4 text-sm text-slate-500">
+            Start by adding a student and then a university application
+          </p>
+          <Button asChild>
+            <Link to="/agency/students">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add Student
+            </Link>
+          </Button>
+        </div>
       )}
     </div>
   );

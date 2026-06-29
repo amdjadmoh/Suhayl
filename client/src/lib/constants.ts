@@ -80,3 +80,18 @@ export const SORT_OPTIONS = [
   { value: "deadline", label: "Deadline" },
   { value: "ranking", label: "Ranking" },
 ] as const;
+
+export const FIELD_CATEGORIES = [
+  "Computer Science",
+  "Engineering",
+  "Business & Management",
+  "Medicine & Health",
+  "Law",
+  "Natural Sciences",
+  "Mathematics",
+  "Economics",
+  "Arts & Humanities",
+  "Architecture",
+  "Social Sciences",
+  "Environmental Science",
+] as const;

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react"
@@ -82,7 +82,7 @@ export default function AddEditCountry(): React.ReactElement {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <Card><CardContent className="p-6"><Skeleton className="h-96 w-full" /></CardContent></Card>
+        <div className="rounded-xl border border-slate-100 bg-white p-6"><Skeleton className="h-96 w-full" /></div>
       </div>
     )
   }
@@ -103,68 +103,74 @@ export default function AddEditCountry(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold tracking-tight">
+      <div className="flex items-center gap-3">
+        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
           {isEdit ? "Edit Country" : "Add Country"}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader><CardTitle>Basic Info</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-base font-semibold text-[#0F172A]">Basic Info</h3>
+          </div>
+          <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">Country Name <span className="text-destructive">*</span></Label>
-              <Input id="name" {...register("name", { required: "Name is required" })} placeholder="e.g. Germany" />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              <Label htmlFor="name" className="text-sm font-medium text-slate-700">Country Name <span className="text-red-500">*</span></Label>
+              <Input id="name" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("name", { required: "Name is required" })} placeholder="e.g. Germany" />
+              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Input id="currency" {...register("currency")} placeholder="EUR" />
+              <Label htmlFor="currency" className="text-sm font-medium text-slate-700">Currency</Label>
+              <Input id="currency" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("currency")} placeholder="EUR" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="livingCostEstimate">Living Cost/Month</Label>
-              <Input id="livingCostEstimate" type="number" {...register("livingCostEstimate", { setValueAs: (v) => Number(v) })} placeholder="900" />
+              <Label htmlFor="livingCostEstimate" className="text-sm font-medium text-slate-700">Living Cost/Month</Label>
+              <Input id="livingCostEstimate" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("livingCostEstimate", { setValueAs: (v) => Number(v) })} placeholder="900" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader><CardTitle>Visa Info</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-base font-semibold text-[#0F172A]">Visa Info</h3>
+          </div>
+          <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="visaRequirements">Visa Requirements <span className="text-destructive">*</span></Label>
-              <Textarea id="visaRequirements" {...register("visaRequirements", { required: "Required" })} rows={4} placeholder="Describe visa process..." />
-              {errors.visaRequirements && <p className="text-sm text-destructive">{errors.visaRequirements.message}</p>}
+              <Label htmlFor="visaRequirements" className="text-sm font-medium text-slate-700">Visa Requirements <span className="text-red-500">*</span></Label>
+              <Textarea id="visaRequirements" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("visaRequirements", { required: "Required" })} rows={4} placeholder="Describe visa process..." />
+              {errors.visaRequirements && <p className="text-sm text-red-500">{errors.visaRequirements.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="visaAcceptanceRate">Acceptance Rate (%)</Label>
-              <Input id="visaAcceptanceRate" type="number" {...register("visaAcceptanceRate", { setValueAs: (v) => Number(v) })} placeholder="85" />
+              <Label htmlFor="visaAcceptanceRate" className="text-sm font-medium text-slate-700">Acceptance Rate (%)</Label>
+              <Input id="visaAcceptanceRate" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("visaAcceptanceRate", { setValueAs: (v) => Number(v) })} placeholder="85" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="visaBankAccountAmount">Bank Account Required</Label>
-              <Input id="visaBankAccountAmount" type="number" {...register("visaBankAccountAmount", { setValueAs: (v) => Number(v) })} placeholder="11208" />
+              <Label htmlFor="visaBankAccountAmount" className="text-sm font-medium text-slate-700">Bank Account Required</Label>
+              <Input id="visaBankAccountAmount" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("visaBankAccountAmount", { setValueAs: (v) => Number(v) })} placeholder="11208" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="visaBankAccountLocked">Blocked Account</Label>
+              <Label htmlFor="visaBankAccountLocked" className="text-sm font-medium text-slate-700">Blocked Account</Label>
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="visaBankAccountLocked" checked={visaBankAccountLocked}
                   onCheckedChange={(checked) => setValue("visaBankAccountLocked", checked === true)} />
-                <Label htmlFor="visaBankAccountLocked">{visaBankAccountLocked ? "Locked (Blocked Account)" : "Regular Account"}</Label>
+                <Label htmlFor="visaBankAccountLocked" className="text-sm font-medium text-slate-700">{visaBankAccountLocked ? "Locked (Blocked Account)" : "Regular Account"}</Label>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader><CardTitle>Pros & Cons</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-base font-semibold text-[#0F172A]">Pros & Cons</h3>
+          </div>
+          <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="pros">Pros (one per line)</Label>
-              <Textarea id="pros" rows={5}
+              <Label htmlFor="pros" className="text-sm font-medium text-slate-700">Pros (one per line)</Label>
+              <Textarea id="pros" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" rows={5}
                 {...register("pros", {
                   setValueAs: (v: string | string[]) =>
                     Array.isArray(v) ? v : v ? v.split("\n").filter(Boolean) : [],
@@ -175,8 +181,8 @@ export default function AddEditCountry(): React.ReactElement {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cons">Cons (one per line)</Label>
-              <Textarea id="cons" rows={5}
+              <Label htmlFor="cons" className="text-sm font-medium text-slate-700">Cons (one per line)</Label>
+              <Textarea id="cons" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" rows={5}
                 {...register("cons", {
                   setValueAs: (v: string | string[]) =>
                     Array.isArray(v) ? v : v ? v.split("\n").filter(Boolean) : [],
@@ -186,19 +192,21 @@ export default function AddEditCountry(): React.ReactElement {
                 placeholder="Blocked account required&#10;Bureaucracy slow&#10;..."
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea id="notes" {...register("notes")} placeholder="Additional notes..." rows={3} />
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-base font-semibold text-[#0F172A]">Notes</h3>
+          </div>
+          <div className="p-6">
+            <Textarea id="notes" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("notes")} placeholder="Additional notes..." rows={3} />
+          </div>
+        </div>
 
         <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate("/countries")}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="button" variant="outline" className="border-slate-200 hover:bg-slate-50 rounded-xl" onClick={() => navigate("/countries")}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl">
             {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : <><Save className="mr-2 h-4 w-4" />{isEdit ? "Update" : "Save"} Country</>}
           </Button>
         </div>

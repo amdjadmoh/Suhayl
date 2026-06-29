@@ -1,8 +1,7 @@
 import { useStats, useAdminStats, useAgencyApplications, useStudents, useApplications } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
-import { STATUS_COLORS, COUNTRY_FLAGS } from "@/lib/constants";
+import { STATUS_COLORS } from "@/lib/constants";
 import type { Application } from "@/types/application";
-import type { University } from "@/types/university";
 import {
   GraduationCap,
   Globe,
@@ -17,14 +16,14 @@ import {
   FileText,
   UserPlus,
   BookOpen,
+  TrendingUp,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-
-// ─── Student Dashboard ──────────────────────────────────────────────────────
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -50,46 +49,51 @@ function StatusBreakdown({
   const total = byStatus.reduce((sum, s) => sum + s.count, 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Application Status</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {byStatus.map((item) => {
-            const pct =
-              total > 0 ? Math.round((item.count / total) * 100) : 0;
-            return (
-              <div key={item.status} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className={STATUS_COLORS[item.status]}
-                    >
-                      {item.status}
-                    </Badge>
-                    <span className="text-muted-foreground">{item.count}</span>
-                  </div>
-                  <span className="text-muted-foreground">{pct}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted">
-                  <div
-                    className="h-2 rounded-full bg-primary transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-          {byStatus.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-4">
-              No applications yet
-            </p>
-          )}
+    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+          <Award className="h-5 w-5 text-white" />
         </div>
-      </CardContent>
-    </Card>
+        <div>
+          <h3 className="text-lg font-semibold text-[#0F172A]">Application Status</h3>
+          <p className="text-sm text-slate-500">Overview of all applications</p>
+        </div>
+      </div>
+      <div className="space-y-4">
+        {byStatus.map((item) => {
+          const pct =
+            total > 0 ? Math.round((item.count / total) * 100) : 0;
+          return (
+            <div key={item.status} className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className={STATUS_COLORS[item.status]}
+                  >
+                    {item.status}
+                  </Badge>
+                  <span className="text-sm text-slate-500">{item.count}</span>
+                </div>
+                <span className="text-sm font-medium text-[#0F172A]">{pct}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {byStatus.length === 0 && (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm text-slate-500">No applications yet</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -115,58 +119,60 @@ function UpcomingDeadlines({
     );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <CalendarClock className="h-5 w-5" />
-          Upcoming Deadlines
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {upcoming.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-4">
-            No deadlines in the next 90 days
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {upcoming.map((a) => {
-              const days = daysUntil(a.applicationDeadline!);
-              const isUrgent = days <= 14;
-              const uniName =
-                typeof a.universityId === "object" ? a.universityId?.name : "University";
-              return (
-                <Link
-                  key={a._id}
-                  to={`/applications/${a._id}`}
-                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{uniName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {a.studentName}
-                    </p>
-                  </div>
-                  <div className="ml-3 flex items-center gap-2">
-                    {isUrgent && (
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                    )}
-                    <span
-                      className={
-                        isUrgent
-                          ? "text-sm font-medium text-red-500"
-                          : "text-sm text-muted-foreground"
-                      }
-                    >
-                      {days}d left
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
+          <CalendarClock className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-[#0F172A]">Upcoming Deadlines</h3>
+          <p className="text-sm text-slate-500">Next 90 days</p>
+        </div>
+      </div>
+      {upcoming.length === 0 ? (
+        <div className="text-center py-8">
+          <CalendarClock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">No deadlines in the next 90 days</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {upcoming.map((a) => {
+            const days = daysUntil(a.applicationDeadline!);
+            const isUrgent = days <= 14;
+            const uniName =
+              typeof a.universityId === "object" ? a.universityId?.name : "University";
+            return (
+              <Link
+                key={a._id}
+                to={`/applications/${a._id}`}
+                className="flex items-center justify-between rounded-xl border border-slate-100 p-4 transition-all hover:border-[#0EA5E9]/30 hover:shadow-md group"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{uniName}</p>
+                  <p className="text-sm text-slate-500">
+                    {a.studentName}
+                  </p>
+                </div>
+                <div className="ml-3 flex items-center gap-2">
+                  {isUrgent && (
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                  )}
+                  <span
+                    className={`text-sm font-medium ${
+                      isUrgent
+                        ? "text-red-500"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    {days}d left
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -184,73 +190,76 @@ function RecentlyAdded({
     .slice(0, 5);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Recently Added
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {recent.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-4">
-            No applications yet
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {recent.map((a) => {
-              const uniName =
-                typeof a.universityId === "object" ? a.universityId?.name : "University";
-              return (
-                <Link
-                  key={a._id}
-                  to={`/applications/${a._id}`}
-                  className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
+          <Clock className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-[#0F172A]">Recently Added</h3>
+          <p className="text-sm text-slate-500">Latest applications</p>
+        </div>
+      </div>
+      {recent.length === 0 ? (
+        <div className="text-center py-8">
+          <Clock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">No applications yet</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {recent.map((a) => {
+            const uniName =
+              typeof a.universityId === "object" ? a.universityId?.name : "University";
+            return (
+              <Link
+                key={a._id}
+                to={`/applications/${a._id}`}
+                className="flex items-center gap-4 rounded-xl border border-slate-100 p-4 transition-all hover:border-[#0EA5E9]/30 hover:shadow-md group"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9]/10 to-[#06B6D4]/10 flex-shrink-0">
+                  <GraduationCap className="h-6 w-6 text-[#0EA5E9]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{uniName}</p>
+                  <p className="text-xs text-slate-500">
+                    {a.studentName}
+                  </p>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={STATUS_COLORS[a.applicationStatus]}
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-lg">
-                    🎓
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{uniName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {a.studentName}
-                    </p>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={STATUS_COLORS[a.applicationStatus]}
-                  >
-                    {a.applicationStatus}
-                  </Badge>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  {a.applicationStatus}
+                </Badge>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
 function StatCardSkeleton(): React.ReactElement {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <Skeleton className="mb-2 h-4 w-24" />
-        <Skeleton className="h-8 w-16" />
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+      <div className="flex items-center justify-between mb-4">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-12 w-12 rounded-xl" />
+      </div>
+      <Skeleton className="h-8 w-16" />
+    </div>
   );
 }
 
 function StudentDashboard(): React.ReactElement {
   const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorObj } = useStats();
   const { data: appsData, isLoading: appsLoading } = useApplications();
+  const { user } = useAuth();
 
   const applications = appsData?.applications ?? [];
   const isLoading = statsLoading || appsLoading;
 
-  // Build byStatus from applications
   const byStatus: { status: string; count: number }[] = [];
   const statusMap = new Map<string, number>();
   for (const a of applications) {
@@ -263,9 +272,9 @@ function StudentDashboard(): React.ReactElement {
   if (statsError) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">Failed to load dashboard</h2>
-        <p className="text-sm text-muted-foreground">
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load dashboard</h2>
+        <p className="text-sm text-slate-500">
           {statsErrorObj instanceof Error ? statsErrorObj.message : "Unknown error"}
         </p>
       </div>
@@ -273,13 +282,21 @@ function StudentDashboard(): React.ReactElement {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-slate-900 to-slate-800 p-8 text-white">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-[#0EA5E9] blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-[#06B6D4] blur-3xl" />
+        </div>
+        <div className="relative">
+          <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.name}!</h1>
+          <p className="mt-2 text-slate-300">Here's what's happening with your applications</p>
+        </div>
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           <>
             <StatCardSkeleton />
@@ -289,50 +306,57 @@ function StudentDashboard(): React.ReactElement {
           </>
         ) : (
           <>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <FileText className="h-4 w-4" />
-                  Total Applications
+            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-[#0EA5E9]/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-slate-500">Total Applications</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] shadow-lg shadow-[#0EA5E9]/20">
+                  <FileText className="h-6 w-6 text-white" />
                 </div>
-                <p className="mt-1 text-3xl font-bold">
-                  {applications.length}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <GraduationCap className="h-4 w-4" />
-                  Total Universities
+              </div>
+              <p className="text-3xl font-bold text-[#0F172A]">{applications.length}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+                <TrendingUp className="h-3 w-3" />
+                <span>Active tracking</span>
+              </div>
+            </div>
+            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-violet-500/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-slate-500">Universities</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
+                  <GraduationCap className="h-6 w-6 text-white" />
                 </div>
-                <p className="mt-1 text-3xl font-bold">
-                  {stats?.totalUniversities ?? 0}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Globe className="h-4 w-4" />
-                  Countries
+              </div>
+              <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalUniversities ?? 0}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+                <CheckCircle2 className="h-3 w-3" />
+                <span>Available</span>
+              </div>
+            </div>
+            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-slate-500">Countries</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                  <Globe className="h-6 w-6 text-white" />
                 </div>
-                <p className="mt-1 text-3xl font-bold">
-                  {stats?.countriesCount ?? 0}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <DollarSign className="h-4 w-4" />
-                  Avg Tuition / Year
+              </div>
+              <p className="text-3xl font-bold text-[#0F172A]">{stats?.countriesCount ?? 0}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+                <Globe className="h-3 w-3" />
+                <span>Worldwide</span>
+              </div>
+            </div>
+            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-slate-500">Avg Tuition</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
+                  <DollarSign className="h-6 w-6 text-white" />
                 </div>
-                <p className="mt-1 text-3xl font-bold">
-                  {stats ? formatCurrency(stats.avgTuition) : "€0"}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="text-3xl font-bold text-[#0F172A]">{stats ? formatCurrency(stats.avgTuition) : "€0"}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+                <span>Per year</span>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -341,22 +365,14 @@ function StudentDashboard(): React.ReactElement {
       <div className="grid gap-6 lg:grid-cols-2">
         {isLoading ? (
           <>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-40 w-full" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-40 w-full" />
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+              <Skeleton className="h-6 w-40 mb-4" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+            <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+              <Skeleton className="h-6 w-40 mb-4" />
+              <Skeleton className="h-40 w-full" />
+            </div>
           </>
         ) : (
           <>
@@ -368,14 +384,10 @@ function StudentDashboard(): React.ReactElement {
 
       {/* Recently Added */}
       {isLoading ? (
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-32 w-full" />
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+          <Skeleton className="h-6 w-40 mb-4" />
+          <Skeleton className="h-32 w-full" />
+        </div>
       ) : (
         <RecentlyAdded applications={applications} />
       )}
@@ -383,17 +395,15 @@ function StudentDashboard(): React.ReactElement {
   );
 }
 
-// ─── Admin Dashboard ─────────────────────────────────────────────────────────
-
 function AdminDashboard(): React.ReactElement {
   const { data: stats, isLoading, isError, error } = useAdminStats();
 
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold">Failed to load platform stats</h2>
-        <p className="text-sm text-muted-foreground">
+        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load platform stats</h2>
+        <p className="text-sm text-slate-500">
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       </div>
@@ -401,131 +411,167 @@ function AdminDashboard(): React.ReactElement {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Platform Overview</h1>
-        <p className="text-sm text-muted-foreground">
-          Key metrics across the entire platform
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-slate-900 to-slate-800 p-8 text-white">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-[#0EA5E9] blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-violet-500 blur-3xl" />
+        </div>
+        <div className="relative">
+          <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
+          <p className="mt-2 text-slate-300">Key metrics across the entire platform</p>
+        </div>
       </div>
 
       {/* Stat cards */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 7 }).map((_, i) => (
             <StatCardSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                Total Users
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Total Users</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
+                <Users className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalUsers ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <GraduationCap className="h-4 w-4" />
-                Total Universities
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalUsers ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <TrendingUp className="h-3 w-3" />
+              <span>Active accounts</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-violet-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Universities</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
+                <GraduationCap className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalUniversities ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <BookOpen className="h-4 w-4" />
-                Total Programs
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalUniversities ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <CheckCircle2 className="h-3 w-3" />
+              <span>Registered</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Programs</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-indigo-500/20">
+                <BookOpen className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalPrograms ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Globe className="h-4 w-4" />
-                Total Countries
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalPrograms ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <BookOpen className="h-3 w-3" />
+              <span>Available</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Countries</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                <Globe className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalCountries ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                Total Cities
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalCountries ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <Globe className="h-3 w-3" />
+              <span>Worldwide</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-cyan-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Cities</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+                <MapPin className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalCities ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Building2 className="h-4 w-4" />
-                Total Agencies
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalCities ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <MapPin className="h-3 w-3" />
+              <span>Tracked</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-orange-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Agencies</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-500/20">
+                <Building2 className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalAgencies ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                Students Managed
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalAgencies ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <Building2 className="h-3 w-3" />
+              <span>Active</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Students Managed</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
+                <Users className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{stats?.totalStudentsManaged ?? 0}</p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalStudentsManaged ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <Users className="h-3 w-3" />
+              <span>Under guidance</span>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Role Breakdown */}
       {!isLoading && stats && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Users by Role</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(stats.byRole ?? []).map((item) => {
-                const total = stats.totalUsers || 1;
-                const pct = Math.round((item.count / total) * 100);
-                return (
-                  <div key={item.role} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium capitalize">{item.role}</span>
-                      <span className="text-muted-foreground">
-                        {item.count} ({pct}%)
-                      </span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-muted">
-                      <div
-                        className="h-2.5 rounded-full bg-primary transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              {(!stats.byRole || stats.byRole.length === 0) && (
-                <p className="text-center text-sm text-muted-foreground py-4">
-                  No user data available
-                </p>
-              )}
+        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4]">
+              <Users className="h-5 w-5 text-white" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h3 className="text-lg font-semibold text-[#0F172A]">Users by Role</h3>
+              <p className="text-sm text-slate-500">Distribution across user types</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {(stats.byRole ?? []).map((item) => {
+              const total = stats.totalUsers || 1;
+              const pct = Math.round((item.count / total) * 100);
+              return (
+                <div key={item.role} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium capitalize text-[#0F172A]">{item.role}</span>
+                    <span className="text-slate-500">
+                      {item.count} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {(!stats.byRole || stats.byRole.length === 0) && (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-sm text-slate-500">No user data available</p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
 }
-
-// ─── Agency Overview ─────────────────────────────────────────────────────────
 
 function AgencyOverview(): React.ReactElement {
   const { data: applications, isLoading: appLoading } = useAgencyApplications();
@@ -536,98 +582,118 @@ function AgencyOverview(): React.ReactElement {
   const totalStudents = students?.length ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Agency Overview</h1>
-        <p className="text-sm text-muted-foreground">
-          Summary of your students and applications
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-pink-500 blur-3xl" />
+        </div>
+        <div className="relative">
+          <h1 className="text-3xl font-bold tracking-tight">Agency Dashboard</h1>
+          <p className="mt-2 text-purple-100">Manage your students and track their progress</p>
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           <StatCardSkeleton />
           <StatCardSkeleton />
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                Total Students
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Total Students</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
+                <Users className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{totalStudents}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FileText className="h-4 w-4" />
-                Total Applications
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{totalStudents}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <Users className="h-3 w-3" />
+              <span>Under your guidance</span>
+            </div>
+          </div>
+          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-[#0EA5E9]/30 transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-medium text-slate-500">Total Applications</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] shadow-lg shadow-[#0EA5E9]/20">
+                <FileText className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-1 text-3xl font-bold">{totalApplications}</p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-3xl font-bold text-[#0F172A]">{totalApplications}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <FileText className="h-3 w-3" />
+              <span>Being tracked</span>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Recent Applications */}
       {!isLoading && applications && applications.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Recent Applications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {applications.slice(0, 5).map((a) => {
-                const uniName =
-                  typeof a.universityId === "object" ? a.universityId?.name : "University";
-                return (
-                  <Link
-                    key={a._id}
-                    to={`/applications/${a._id}`}
-                    className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{uniName}</p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {a.studentName}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
+        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#0F172A]">Recent Applications</h3>
+                <p className="text-sm text-slate-500">Latest student applications</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/applications" className="text-[#0EA5E9] hover:text-[#0284C7]">
+                View All <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {applications.slice(0, 5).map((a) => {
+              const uniName =
+                typeof a.universityId === "object" ? a.universityId?.name : "University";
+              return (
+                <Link
+                  key={a._id}
+                  to={`/applications/${a._id}`}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 p-4 transition-all hover:border-[#0EA5E9]/30 hover:shadow-md group"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{uniName}</p>
+                    <p className="truncate text-sm text-slate-500">
+                      {a.studentName}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-[#0EA5E9] transition-colors" />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {!isLoading && applications?.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <GraduationCap className="mb-4 h-16 w-16 text-muted-foreground/30" />
-            <h2 className="text-lg font-semibold">No applications yet</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Start by adding a student and a university application
-            </p>
-            <Button asChild>
-              <Link to="/agency/students">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Student
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0EA5E9]/10 to-[#06B6D4]/10 mx-auto mb-4">
+            <GraduationCap className="h-10 w-10 text-[#0EA5E9]" />
+          </div>
+          <h2 className="text-xl font-semibold text-[#0F172A] mb-2">No applications yet</h2>
+          <p className="text-slate-500 mb-6">
+            Start by adding a student and a university application
+          </p>
+          <Button asChild className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] hover:from-[#0284C7] hover:to-[#0891B2] text-white rounded-xl shadow-lg shadow-[#0EA5E9]/20">
+            <Link to="/agency/students">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add Student
+            </Link>
+          </Button>
+        </div>
       )}
     </div>
   );
 }
-
-// ─── Main Dashboard (role-aware) ──────────────────────────────────────────────
 
 export default function Dashboard(): React.ReactElement {
   const { user } = useAuth();

@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+;
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowLeft, Save, AlertCircle, Loader2 } from "lucide-react";
@@ -84,7 +84,7 @@ export default function AddEditUniversity(): React.ReactElement {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <Card><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+        <div className="rounded-xl border border-slate-100 bg-white p-6"><Skeleton className="h-64 w-full" /></div>
       </div>
     );
   }
@@ -101,62 +101,64 @@ export default function AddEditUniversity(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold tracking-tight">{isEdit ? "Edit University" : "Add University"}</h1>
+      <div className="flex items-center gap-3">
+        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{isEdit ? "Edit University" : "Add University"}</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader><CardTitle>University Information</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-100 bg-white">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-base font-semibold text-[#0F172A]">University Information</h3>
+          </div>
+          <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name">University Name <span className="text-destructive">*</span></Label>
-              <Input id="name" {...register("name", { required: "Name is required" })} placeholder="e.g. University of Oxford" />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              <Label htmlFor="name" className="text-sm font-medium text-slate-700">University Name <span className="text-red-500">*</span></Label>
+              <Input id="name" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("name", { required: "Name is required" })} placeholder="e.g. University of Oxford" />
+              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country">Country <span className="text-destructive">*</span></Label>
+              <Label htmlFor="country" className="text-sm font-medium text-slate-700">Country <span className="text-red-500">*</span></Label>
               <Select value={watch("country")} onValueChange={(v) => setValue("country", v)}>
-                <SelectTrigger><SelectValue placeholder="Select country..." /></SelectTrigger>
+                <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select country..." /></SelectTrigger>
                 <SelectContent>
                   {countries?.map((c) => (
                     <SelectItem key={c._id} value={c.name}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.country && <p className="text-sm text-destructive">{errors.country.message}</p>}
+              {errors.country && <p className="text-sm text-red-500">{errors.country.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="city">City <span className="text-destructive">*</span></Label>
-              <Input id="city" {...register("city", { required: "City is required" })} placeholder="e.g. Oxford" />
-              {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
+              <Label htmlFor="city" className="text-sm font-medium text-slate-700">City <span className="text-red-500">*</span></Label>
+              <Input id="city" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("city", { required: "City is required" })} placeholder="e.g. Oxford" />
+              {errors.city && <p className="text-sm text-red-500">{errors.city.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ranking">World Ranking</Label>
-              <Input id="ranking" type="number" {...register("ranking", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 5" />
+              <Label htmlFor="ranking" className="text-sm font-medium text-slate-700">World Ranking</Label>
+              <Input id="ranking" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("ranking", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 5" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="websiteUrl">Website URL</Label>
-              <Input id="websiteUrl" {...register("websiteUrl")} placeholder="https://..." />
+              <Label htmlFor="websiteUrl" className="text-sm font-medium text-slate-700">Website URL</Label>
+              <Input id="websiteUrl" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("websiteUrl")} placeholder="https://..." />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" {...register("notes")} placeholder="Any notes about this institution..." rows={3} />
+              <Label htmlFor="notes" className="text-sm font-medium text-slate-700">Notes</Label>
+              <Textarea id="notes" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("notes")} placeholder="Any notes about this institution..." rows={3} />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate("/universities")}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="button" variant="outline" className="border-slate-200 hover:bg-slate-50 rounded-xl" onClick={() => navigate("/universities")}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl">
             {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
               : <><Save className="mr-2 h-4 w-4" /> {isEdit ? "Update" : "Save"} University</>}
           </Button>
