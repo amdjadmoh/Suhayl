@@ -37,29 +37,13 @@ export async function getWithUniversities(
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const body = req.body as Record<string, unknown>
-
-  const name = body["name"]
-  const visaBankAccountAmount = body["visaBankAccountAmount"]
-  const visaBankAccountLocked = body["visaBankAccountLocked"]
-
-  if (
-    !name ||
-    visaBankAccountAmount == null ||
-    visaBankAccountLocked == null
-  ) {
-    res.status(400).json({
-      message:
-        "Missing required fields: name, visaAcceptanceRate, visaBankAccountAmount, visaBankAccountLocked",
-    })
-    return
-  }
-
+  // req.body is pre-validated by validate(createCountrySchema, "body")
   const country = await Country.create(req.body)
   res.status(201).json(country)
 }
 
 export async function update(req: Request, res: Response): Promise<void> {
+  // req.body is pre-validated by validate(updateCountrySchema, "body")
   const country = await Country.findByIdAndUpdate(req.params["id"], req.body, {
     new: true,
     runValidators: true,

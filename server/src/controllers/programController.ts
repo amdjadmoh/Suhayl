@@ -5,16 +5,17 @@ import { Application } from "../models/Application"
 
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter: Record<string, unknown> = {}
+  const query = req.query as Record<string, unknown>
 
-  const universityId = req.query["universityId"]
+  const universityId = query["universityId"]
   if (typeof universityId === "string" && universityId.length > 0) filter["universityId"] = universityId
 
-  const degreeLevel = req.query["degreeLevel"]
+  const degreeLevel = query["degreeLevel"]
   if (typeof degreeLevel === "string") filter["degreeLevel"] = degreeLevel
 
   // Combine search + field into an $and if both present
-  const search = req.query["search"]
-  const field = req.query["field"]
+  const search = query["search"]
+  const field = query["field"]
   const nameConditions: Record<string, unknown>[] = []
   if (typeof search === "string" && search.length > 0) {
     nameConditions.push({ name: { $regex: search, $options: "i" } })
@@ -23,13 +24,13 @@ export async function getAll(req: Request, res: Response): Promise<void> {
     nameConditions.push({ name: { $regex: field, $options: "i" } })
   }
   if (nameConditions.length === 1) {
-    Object.assign(filter, nameConditions[0])
+    Object.assign(filter, nameConditions[0]!)
   } else if (nameConditions.length > 1) {
     filter["$and"] = nameConditions
   }
 
   // Country filter – resolve country name to universities whose country matches
-  const country = req.query["country"]
+  const country = query["country"]
   if (typeof country === "string" && country.length > 0) {
     const matchingUnis = await University.find({ country: { $regex: country, $options: "i" } }).select("_id")
     const uniIds = matchingUnis.map((u) => u._id)
@@ -42,30 +43,30 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   }
 
   // Tuition range filter
-  const minTuition = req.query["minTuition"]
-  const maxTuition = req.query["maxTuition"]
-  if (typeof minTuition === "string" || typeof maxTuition === "string") {
+  const minTuition = query["minTuition"]
+  const maxTuition = query["maxTuition"]
+  if (typeof minTuition === "number" || typeof maxTuition === "number") {
     const tuitionFilter: Record<string, unknown> = {}
-    if (typeof minTuition === "string" && minTuition.length > 0) tuitionFilter["$gte"] = Number(minTuition)
-    if (typeof maxTuition === "string" && maxTuition.length > 0) tuitionFilter["$lte"] = Number(maxTuition)
+    if (typeof minTuition === "number" && minTuition > 0) tuitionFilter["$gte"] = minTuition
+    if (typeof maxTuition === "number" && maxTuition > 0) tuitionFilter["$lte"] = maxTuition
     if (Object.keys(tuitionFilter).length > 0) filter["tuitionFee"] = tuitionFilter
   }
 
   // GPA requirement filter (inside testRequirements)
-  const minGpa = req.query["minGpa"]
-  if (typeof minGpa === "string" && minGpa.length > 0) {
+  const minGpa = query["minGpa"]
+  if (typeof minGpa === "number" && minGpa > 0) {
     filter["$or"] = [
-      { testRequirements: { $elemMatch: { name: { $regex: /^gpa$/i }, minimumScore: { $lte: Number(minGpa) } } } },
+      { testRequirements: { $elemMatch: { name: { $regex: /^gpa$/i }, minimumScore: { $lte: minGpa } } } },
       { testRequirements: { $exists: false } },
       { testRequirements: { $size: 0 } },
     ]
   }
 
   // IELTS requirement filter (inside testRequirements)
-  const maxIelts = req.query["maxIelts"]
-  if (typeof maxIelts === "string" && maxIelts.length > 0) {
+  const maxIelts = query["maxIelts"]
+  if (typeof maxIelts === "number" && maxIelts > 0) {
     const ieltsFilter = [
-      { testRequirements: { $elemMatch: { name: { $regex: /^ielts$/i }, minimumScore: { $lte: Number(maxIelts) } } } },
+      { testRequirements: { $elemMatch: { name: { $regex: /^ielts$/i }, minimumScore: { $lte: maxIelts } } } },
       { testRequirements: { $exists: false } },
       { testRequirements: { $size: 0 } },
     ]
@@ -78,12 +79,12 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   }
 
   // Scholarship only
-  if (req.query["scholarshipOnly"] === "true") {
+  if (query["scholarshipOnly"] === "true") {
     filter["scholarshipAvailable"] = true
   }
 
   // City filter
-  const city = req.query["city"]
+  const city = query["city"]
   if (typeof city === "string" && city.length > 0) {
     const matchingUnis = await University.find({ city: { $regex: city, $options: "i" } }).select("_id")
     const uniIds = matchingUnis.map((u) => u._id)
@@ -109,7 +110,7 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   }
 
   // Visibility: show official OR created by current user OR admin sees all
-  const customOnly = req.query["customOnly"]
+  const customOnly = query["customOnly"]
   if (customOnly === "true" && req.user) {
     filter["isOfficial"] = false
     if (req.user.role !== "admin") filter["createdBy"] = req.user._id
@@ -261,33 +262,30 @@ export async function getByUniversity(req: Request, res: Response): Promise<void
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const body = req.body as Record<string, unknown>
-  const name = body["name"]
-  const universityId = body["universityId"]
-  const degreeLevel = body["degreeLevel"]
-  const tuitionFee = body["tuitionFee"]
-
-  if (!name || !universityId || !degreeLevel || tuitionFee == null) {
-    res
-      .status(400)
-      .json({
-        message:
-          "Missing required fields: name, universityId, degreeLevel, tuitionFee",
-      })
-    return
+  const body = req.body as {
+    name: string
+    universityId: string
+    degreeLevel: string
+    tuitionFee: number
   }
+  const { name, universityId, degreeLevel, tuitionFee } = body
 
   // Verify university exists
-  const university = await University.findById(universityId as string)
+  const university = await University.findById(universityId)
   if (!university) {
     res.status(404).json({ message: "University not found" })
     return
   }
 
-  req.body.createdBy = req.user?._id
-  req.body.isOfficial = false // user-created starts as unofficial
-  req.body.verificationStatus = "manual" // user-added is manually verified
-  const program = await Program.create(req.body)
+  // Build payload from parsed body — never pass req.body directly
+  const payload: Record<string, unknown> = {
+    ...req.body,
+    createdBy: req.user?._id,
+    isOfficial: false, // user-created starts as unofficial
+    verificationStatus: "manual", // user-added is manually verified
+  }
+
+  const program = await Program.create(payload)
   res.status(201).json(program)
 }
 
@@ -310,6 +308,7 @@ export async function update(req: Request, res: Response): Promise<void> {
     return
   }
 
+  // req.body is pre-validated by validate(updateProgramSchema, "body")
   const program = await Program.findByIdAndUpdate(req.params["id"], req.body, {
     new: true,
     runValidators: true,
