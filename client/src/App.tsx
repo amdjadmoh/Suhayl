@@ -30,6 +30,9 @@ import AgencyDashboard from "@/pages/AgencyDashboard";
 import AgencyStudents from "@/pages/AgencyStudents";
 import AgencyStudentDetail from "@/pages/AgencyStudentDetail";
 import Users from "@/pages/Users";
+import UserDetail from "@/pages/UserDetail";
+import Saved from "@/pages/Saved";
+import Matches from "@/pages/Matches";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,7 +77,7 @@ export default function App(): React.ReactElement {
                   <Route path="universities" element={<Universities />} />
                   <Route
                     path="universities/new"
-                    element={<ProtectedRoute role="admin"><AddEditUniversity /></ProtectedRoute>}
+                    element={<AddEditUniversity />}
                   />
                   <Route
                     path="universities/:id"
@@ -87,7 +90,7 @@ export default function App(): React.ReactElement {
 
                   {/* Program routes — admin write, all read */}
                   <Route path="programs" element={<Programs />} />
-                  <Route path="programs/new" element={<ProtectedRoute role="admin"><AddEditProgram /></ProtectedRoute>} />
+                  <Route path="programs/new" element={<AddEditProgram />} />
                   <Route path="programs/:id" element={<ProgramDetail />} />
                   <Route path="programs/:id/edit" element={<ProtectedRoute role="admin"><AddEditProgram /></ProtectedRoute>} />
 
@@ -98,7 +101,10 @@ export default function App(): React.ReactElement {
                   <Route path="applications/:id/edit" element={<AddEditApplication />} />
 
                   {/* Other routes */}
+                  <Route path="saved" element={<Saved />} />
+                  <Route path="matches" element={<Matches />} />
                   <Route path="users" element={<ProtectedRoute role="admin"><Users /></ProtectedRoute>} />
+                  <Route path="users/:id" element={<ProtectedRoute role="admin"><UserDetail /></ProtectedRoute>} />
                   <Route path="compare" element={<ProtectedRoute role="student"><Compare /></ProtectedRoute>} />
                   <Route path="agency" element={<ProtectedRoute role="agency"><AgencyDashboard /></ProtectedRoute>} />
                   <Route path="agency/students" element={<ProtectedRoute role="agency"><AgencyStudents /></ProtectedRoute>} />

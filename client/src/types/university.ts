@@ -6,6 +6,8 @@ export interface University {
   ranking?: number
   websiteUrl?: string
   notes?: string
+  createdBy?: string
+  isOfficial?: boolean
   createdAt: string
   updatedAt: string
 }

@@ -92,7 +92,7 @@ export default function ApplicationsTracker(): React.ReactElement {
   APPLICATION_STATUSES.forEach((s) => { byStatus[s] = applications.filter((a) => a.applicationStatus === s); });
 
   const [selectedStatus, setSelectedStatus] = useState(() => {
-    return APPLICATION_STATUSES.find((s) => (byStatus[s]?.length ?? 0) > 0) ?? "Wishlist";
+    return APPLICATION_STATUSES.find((s) => (byStatus[s]?.length ?? 0) > 0) ?? "Preparing";
   });
 
   if (isError) {

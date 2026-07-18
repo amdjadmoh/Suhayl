@@ -95,6 +95,28 @@ export async function create(req: Request, res: Response): Promise<void> {
     applicationProgress: req.body["applicationProgress"] || {},
   }
 
+  // Auto-populate testScores from program's testRequirements if not provided
+  let appProgress = payload["applicationProgress"] as Record<string, unknown> | undefined
+  if (!appProgress) {
+    appProgress = {}
+    payload["applicationProgress"] = appProgress
+  }
+  if (!appProgress["testScores"]) {
+    appProgress["testScores"] = (program.testRequirements || []).map(
+      (t: { name: string }) => ({ name: t.name, taken: false })
+    )
+  }
+
+  // Auto-populate SOP status if program requires it
+  if (program.requiresSOP && !appProgress["sopStatus"]) {
+    appProgress["sopStatus"] = "not_started"
+  }
+
+  // Auto-populate recommendation letters count if program requires them
+  if (program.recommendationLetters > 0 && !appProgress["recommendationsRequested"]) {
+    appProgress["recommendationsRequested"] = program.recommendationLetters
+  }
+
   if (req.user) {
     if (req.user.role === "student") {
       payload["createdBy"] = req.user._id
@@ -115,6 +137,16 @@ export async function create(req: Request, res: Response): Promise<void> {
   }
 
   const application = await Application.create(payload)
+
+  // Auto-fill deadline from program if not provided
+  if (!application.applicationDeadline) {
+    const prog = await Program.findById(programId as string).select("applicationDeadline")
+    if (prog?.applicationDeadline) {
+      application.set("applicationDeadline", prog.applicationDeadline)
+      await application.save()
+    }
+  }
+
   res.status(201).json(application)
 }
 

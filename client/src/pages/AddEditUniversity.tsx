@@ -108,6 +108,12 @@ export default function AddEditUniversity(): React.ReactElement {
         <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{isEdit ? "Edit University" : "Add University"}</h1>
       </div>
 
+      {!isEdit && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700">
+          Custom university — visible only to you until reviewed by an admin
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="rounded-xl border border-slate-100 bg-white">
           <div className="border-b border-slate-100 px-6 py-4">

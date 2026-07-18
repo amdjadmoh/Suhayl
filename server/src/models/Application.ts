@@ -1,11 +1,11 @@
 import { Schema, model, type Document, Types } from "mongoose"
 
 const APPLICATION_STATUSES = [
-  "Wishlist",
   "Preparing",
   "Applied",
   "Accepted",
   "Rejected",
+  "Waitlisted",
   "Enrolled",
 ] as const
 type ApplicationStatus = (typeof APPLICATION_STATUSES)[number]
@@ -15,11 +15,7 @@ type SopStatus = (typeof SOP_STATUSES)[number]
 
 export interface IApplicationProgress {
   documentsObtained: readonly string[]
-  ieltsTaken: boolean
-  ieltsScore?: number
-  toeflTaken: boolean
-  toeflScore?: number
-  gpaVerified: boolean
+  testScores: { name: string; taken: boolean; score?: number }[]
   recommendationsRequested: number
   recommendationsReceived: number
   sopStatus: SopStatus
@@ -29,6 +25,8 @@ export interface IApplicationProgress {
   visaApproved?: boolean
   interviewScheduled?: Date
   interviewCompleted: boolean
+  visaDocumentsObtained: readonly string[]
+  visaDocumentsPending: readonly string[]
 }
 
 export interface IApplication {
@@ -41,7 +39,6 @@ export interface IApplication {
   readonly applicationDeadline?: Date
   readonly applicationProgress: IApplicationProgress
   readonly notes?: string
-  readonly livingCostEstimate?: number
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -58,18 +55,17 @@ const applicationSchema = new Schema<IApplicationDocument>(
     applicationStatus: {
       type: String,
       enum: APPLICATION_STATUSES,
-      default: "Wishlist",
+      default: "Preparing",
     },
     applicationDeadline: { type: Date },
     applicationProgress: {
       type: new Schema<IApplicationProgress>(
         {
           documentsObtained: { type: [String], default: [] },
-          ieltsTaken: { type: Boolean, default: false },
-          ieltsScore: { type: Number },
-          toeflTaken: { type: Boolean, default: false },
-          toeflScore: { type: Number },
-          gpaVerified: { type: Boolean, default: false },
+          testScores: {
+            type: [{ _id: false, name: String, taken: { type: Boolean, default: false }, score: Number }],
+            default: [],
+          },
           recommendationsRequested: { type: Number, default: 0 },
           recommendationsReceived: { type: Number, default: 0 },
           sopStatus: {
@@ -83,13 +79,14 @@ const applicationSchema = new Schema<IApplicationDocument>(
           visaApproved: { type: Boolean },
           interviewScheduled: { type: Date },
           interviewCompleted: { type: Boolean, default: false },
+          visaDocumentsObtained: { type: [String], default: [] },
+          visaDocumentsPending: { type: [String], default: [] },
         },
         { _id: false }
       ),
       default: {},
     },
     notes: { type: String },
-    livingCostEstimate: { type: Number },
   },
   { timestamps: true }
 )

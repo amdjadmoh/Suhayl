@@ -39,6 +39,8 @@ export async function getStats(_req: Request, res: Response): Promise<void> {
     totalAgencies,
     totalStudents,
     totalStudentsManaged,
+    customUniversities,
+    customPrograms,
   ] = await Promise.all([
     User.countDocuments(),
     University.countDocuments(),
@@ -49,6 +51,8 @@ export async function getStats(_req: Request, res: Response): Promise<void> {
     User.countDocuments({ role: "agency" }),
     Student.countDocuments(),
     User.countDocuments({ role: "student" }),
+    University.countDocuments({ isOfficial: false }),
+    Program.countDocuments({ isOfficial: false }),
   ])
 
   const byRole = await User.aggregate([
@@ -67,6 +71,8 @@ export async function getStats(_req: Request, res: Response): Promise<void> {
     totalAgencies,
     totalStudents,
     totalStudentsManaged,
+    customUniversities,
+    customPrograms,
     byRole,
   })
 }

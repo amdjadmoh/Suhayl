@@ -1,4 +1,4 @@
-import { useStats, useAdminStats, useAgencyApplications, useStudents, useApplications } from "@/lib/api";
+import { useAdminStats, useAgencyApplications, useStudents, useApplications } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { STATUS_COLORS } from "@/lib/constants";
 import type { Application } from "@/types/application";
@@ -8,7 +8,6 @@ import {
   MapPin,
   Building2,
   Users,
-  DollarSign,
   Award,
   CalendarClock,
   Clock,
@@ -24,15 +23,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
 
 function daysUntil(dateStr: string): number {
   const now = new Date();
@@ -253,33 +243,37 @@ function StatCardSkeleton(): React.ReactElement {
 }
 
 function StudentDashboard(): React.ReactElement {
-  const { data: stats, isLoading: statsLoading, isError: statsError, error: statsErrorObj } = useStats();
   const { data: appsData, isLoading: appsLoading } = useApplications();
   const { user } = useAuth();
 
   const applications = appsData?.applications ?? [];
-  const isLoading = statsLoading || appsLoading;
+  const isLoading = appsLoading;
 
   const byStatus: { status: string; count: number }[] = [];
   const statusMap = new Map<string, number>();
+  const countries = new Set<string>();
   for (const a of applications) {
     statusMap.set(a.applicationStatus, (statusMap.get(a.applicationStatus) ?? 0) + 1);
+    const progObj = typeof a.programId === "object" ? a.programId : null;
+    const country = progObj?.universityId?.country;
+    if (country) countries.add(country);
   }
   for (const [status, count] of statusMap.entries()) {
     byStatus.push({ status, count });
   }
 
-  if (statsError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load dashboard</h2>
-        <p className="text-sm text-slate-500">
-          {statsErrorObj instanceof Error ? statsErrorObj.message : "Unknown error"}
-        </p>
-      </div>
-    );
-  }
+  const acceptedCount = statusMap.get("Accepted") ?? 0;
+  const enrolledCount = statusMap.get("Enrolled") ?? 0;
+
+  // Find closest upcoming deadline
+  const now = new Date();
+  const upcoming = applications
+    .filter((a) => {
+      if (!a.applicationDeadline) return false;
+      return new Date(a.applicationDeadline) >= now;
+    })
+    .sort((a, b) => new Date(a.applicationDeadline!).getTime() - new Date(b.applicationDeadline!).getTime());
+  const nextDeadlineDays = upcoming.length > 0 ? daysUntil(upcoming[0].applicationDeadline!) : null;
 
   return (
     <div className="space-y-8">
@@ -314,47 +308,62 @@ function StudentDashboard(): React.ReactElement {
                 </div>
               </div>
               <p className="text-3xl font-bold text-[#0F172A]">{applications.length}</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
-                <TrendingUp className="h-3 w-3" />
-                <span>Active tracking</span>
+              <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+                <span>{byStatus.length} status{byStatus.length !== 1 ? "es" : ""}</span>
               </div>
             </div>
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-violet-500/30 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Universities</p>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
-                  <GraduationCap className="h-6 w-6 text-white" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalUniversities ?? 0}</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
-                <CheckCircle2 className="h-3 w-3" />
-                <span>Available</span>
-              </div>
-            </div>
+
             <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Countries</p>
+                <p className="text-sm font-medium text-slate-500">Countries Exploring</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
                   <Globe className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-[#0F172A]">{stats?.countriesCount ?? 0}</p>
+              <p className="text-3xl font-bold text-[#0F172A]">{countries.size}</p>
               <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
-                <Globe className="h-3 w-3" />
-                <span>Worldwide</span>
+                <MapPin className="h-3 w-3" />
+                <span>{countries.size > 0 ? [...countries].slice(0, 2).join(", ") + (countries.size > 2 ? "…" : "") : "Add your first"}</span>
               </div>
             </div>
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
+
+            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Avg Tuition</p>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
-                  <DollarSign className="h-6 w-6 text-white" />
+                <p className="text-sm font-medium text-slate-500">Accepted</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/20">
+                  <CheckCircle2 className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-[#0F172A]">{stats ? formatCurrency(stats.avgTuition) : "€0"}</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-                <span>Per year</span>
+              <p className="text-3xl font-bold text-[#0F172A]">{acceptedCount + enrolledCount}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+                {enrolledCount > 0 && <><CheckCircle2 className="h-3 w-3" /> {enrolledCount} enrolled</>}
+                {acceptedCount > 0 && !enrolledCount && <><CheckCircle2 className="h-3 w-3" /> Offers in hand</>}
+                {acceptedCount === 0 && enrolledCount === 0 && <span>Keep applying</span>}
+              </div>
+            </div>
+
+            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-slate-500">Next Deadline</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
+                  <CalendarClock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-[#0F172A]">
+                {nextDeadlineDays !== null ? nextDeadlineDays : "—"}
+              </p>
+              <div className="mt-2 flex items-center gap-1 text-xs">
+                {nextDeadlineDays !== null ? (
+                  nextDeadlineDays <= 7 ? (
+                    <><AlertCircle className="h-3 w-3 text-red-500" /><span className="text-red-500">Urgent — {nextDeadlineDays} day{nextDeadlineDays !== 1 ? "s" : ""}</span></>
+                  ) : nextDeadlineDays <= 30 ? (
+                    <span className="text-amber-600">{nextDeadlineDays} days away</span>
+                  ) : (
+                    <span className="text-slate-500">{nextDeadlineDays} days away</span>
+                  )
+                ) : (
+                  <span className="text-slate-400">No deadlines set</span>
+                )}
               </div>
             </div>
           </>

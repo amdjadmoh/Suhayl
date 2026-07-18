@@ -7,14 +7,19 @@ export interface Program {
   tuitionFee: number
   tuitionCurrency: string
   tuitionPeriod: "Year" | "Semester" | "Total"
-  gpaRequirement?: number
-  ieltsRequirement?: number
-  toeflRequirement?: number
+  testRequirements: { name: string; minimumScore: number }[]
   scholarshipAvailable: boolean
   scholarshipDetails?: string
+  requiresSOP: boolean
+  recommendationLetters: number
+  applicationFee?: number
   requiredDocuments: string[]
   applicationDeadline?: string
+  programUrl?: string
   notes?: string
+  createdBy?: string
+  isOfficial?: boolean
+  verificationStatus: "manual" | "ai" | "none"
   createdAt: string
   updatedAt: string
 }

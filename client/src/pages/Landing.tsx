@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/authContext";
 import {
   GraduationCap,
   ClipboardList,
@@ -12,12 +13,14 @@ import {
   FileText,
   TrendingUp,
   Shield,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function Landing(): React.ReactElement {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-white">
@@ -36,19 +39,30 @@ export default function Landing(): React.ReactElement {
             <a href="#roles" className="text-sm text-slate-500 hover:text-[#0F172A] transition-colors">For agencies</a>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/login")}
-              className="text-slate-600 hover:text-[#0F172A] text-sm"
-            >
-              Sign in
-            </Button>
-            <Button
-              onClick={() => navigate("/register")}
-              className="bg-[#0F172A] hover:bg-[#1E293B] text-white text-sm rounded-lg"
-            >
-              Get started
-            </Button>
+            {user ? (
+              <Button
+                onClick={() => navigate("/dashboard")}
+                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-sm rounded-lg"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/login")}
+                  className="text-slate-600 hover:text-[#0F172A] text-sm"
+                >
+                  Sign in
+                </Button>
+                <Button
+                  onClick={() => navigate("/register")}
+                  className="bg-[#0F172A] hover:bg-[#1E293B] text-white text-sm rounded-lg"
+                >
+                  Get started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>

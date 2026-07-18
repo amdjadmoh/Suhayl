@@ -1,4 +1,4 @@
-import { Schema, model, type Document } from "mongoose"
+import { Schema, model, type Document, Types } from "mongoose"
 
 export interface IUniversity {
   readonly name: string
@@ -7,6 +7,8 @@ export interface IUniversity {
   readonly ranking?: number
   readonly websiteUrl?: string
   readonly notes?: string
+  readonly createdBy?: Types.ObjectId
+  readonly isOfficial: boolean
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -21,6 +23,8 @@ const universitySchema = new Schema<IUniversityDocument>(
     ranking: { type: Number },
     websiteUrl: { type: String },
     notes: { type: String },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    isOfficial: { type: Boolean, default: true },
   },
   { timestamps: true }
 )

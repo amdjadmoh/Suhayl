@@ -1,10 +1,6 @@
 export interface ApplicationProgress {
   documentsObtained: string[]
-  ieltsTaken: boolean
-  ieltsScore?: number
-  toeflTaken: boolean
-  toeflScore?: number
-  gpaVerified: boolean
+  testScores: { name: string; taken: boolean; score?: number }[]
   recommendationsRequested: number
   recommendationsReceived: number
   sopStatus: "not_started" | "draft" | "final"
@@ -14,6 +10,8 @@ export interface ApplicationProgress {
   visaApproved?: boolean
   interviewScheduled?: string
   interviewCompleted: boolean
+  visaDocumentsObtained: string[]
+  visaDocumentsPending: string[]
 }
 
 export interface Application {
@@ -35,16 +33,15 @@ export interface Application {
   agencyId?: string
   createdBy?: string
   applicationStatus:
-    | "Wishlist"
     | "Preparing"
     | "Applied"
     | "Accepted"
     | "Rejected"
+    | "Waitlisted"
     | "Enrolled"
   applicationDeadline?: string
   applicationProgress: ApplicationProgress
   notes?: string
-  livingCostEstimate?: number
   createdAt: string
   updatedAt: string
 }

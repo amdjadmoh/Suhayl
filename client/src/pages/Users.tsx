@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
   useUsers,
@@ -315,7 +316,9 @@ export default function UsersPage(): React.ReactElement {
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-[#0F172A] truncate">{user.name}</p>
+                      <Link to={`/users/${user._id}`} className="font-semibold text-[#0F172A] truncate hover:text-[#0EA5E9] transition-colors">
+                        {user.name}
+                      </Link>
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <Mail className="h-3.5 w-3.5" />
                         {user.email}

@@ -8,6 +8,17 @@ import { COUNTRY_FLAGS } from "@/lib/constants"
 import type { City } from "@/types/city"
 import { getErrorMessage } from "@/lib/utils"
 
+const verificationStyles: Record<string, string> = {
+  manual: "bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full",
+  ai: "bg-amber-100 text-amber-700 border-amber-200 rounded-full",
+  none: "bg-red-100 text-red-700 border-red-200 rounded-full",
+};
+const verificationLabels: Record<string, string> = {
+  manual: "✓ Verified",
+  ai: "⚠ AI-Verified",
+  none: "⚠ Unverified",
+};
+
 export default function CountryDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -97,8 +108,11 @@ export default function CountryDetail(): React.ReactElement {
             <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
               <span className="mr-2">{COUNTRY_FLAGS[country.name] ?? <Globe className="inline h-6 w-6" />}</span>
               {country.name}
+              <Badge className={`ml-2 ${verificationStyles[country.verificationStatus || "ai"]}`}>
+                {verificationLabels[country.verificationStatus || "ai"]}
+              </Badge>
             </h1>
-            <p className="text-sm text-slate-500">{country.visaAcceptanceRate}% visa acceptance rate · {country.currency}</p>
+            <p className="text-sm text-slate-500">{country.currency}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -125,33 +139,75 @@ export default function CountryDetail(): React.ReactElement {
             </h3>
           </div>
           <div className="space-y-4 p-6">
-            <div>
-              <h3 className="mb-1 text-sm font-medium text-slate-500">
-                Requirements
-              </h3>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#0F172A]">
-                {country.visaRequirements}
-              </p>
-            </div>
-
-            <div className="border-t border-slate-100" />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">
-                Acceptance Rate
-              </span>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className="h-full rounded-full bg-[#0EA5E9]"
-                    style={{ width: `${country.visaAcceptanceRate}%` }}
-                  />
+            {country.visaType && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Visa Type</span>
+                  <span className="text-sm font-medium text-[#0F172A] text-right max-w-[60%]">{country.visaType}</span>
                 </div>
-                <span className="text-sm font-medium text-[#0F172A]">
-                  {country.visaAcceptanceRate}%
-                </span>
-              </div>
-            </div>
+              </>
+            )}
+
+            {country.proofOfFundsMonthly != null && country.proofOfFundsMonthly > 0 && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Proof of Funds/Month</span>
+                  <span className="text-sm font-medium text-[#0F172A]">{formatCurrency(country.proofOfFundsMonthly)}</span>
+                </div>
+              </>
+            )}
+
+            {country.whereToApply && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Where to Apply</span>
+                  <span className="text-sm font-medium text-[#0F172A] text-right max-w-[60%]">{country.whereToApply}</span>
+                </div>
+              </>
+            )}
+
+            {country.processingTime && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Processing Time</span>
+                  <span className="text-sm font-medium text-[#0F172A]">{country.processingTime}</span>
+                </div>
+              </>
+            )}
+
+            {country.workPermit && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Work Permit</span>
+                  <span className="text-sm font-medium text-[#0F172A]">{country.workPermit}</span>
+                </div>
+              </>
+            )}
+
+            {country.postGraduationVisa && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Post-Graduation Visa</span>
+                  <span className="text-sm font-medium text-[#0F172A] text-right max-w-[60%]">{country.postGraduationVisa}</span>
+                </div>
+              </>
+            )}
+
+            {country.additionalVisaNotes && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div className="flex items-start justify-between">
+                  <span className="text-sm text-slate-500">Additional Notes</span>
+                  <span className="text-sm text-[#0F172A] text-right max-w-[60%] whitespace-pre-wrap">{country.additionalVisaNotes}</span>
+                </div>
+              </>
+            )}
 
             <div className="border-t border-slate-100" />
 
@@ -197,6 +253,24 @@ export default function CountryDetail(): React.ReactElement {
               </span>
               <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">{country.currency}</Badge>
             </div>
+
+            {country.requiredDocuments?.length > 0 && (
+              <>
+                <div className="border-t border-slate-100" />
+                <div>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Required Visa Documents ({country.requiredDocuments.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {country.requiredDocuments.map((doc, i) => (
+                      <span key={i} className="bg-slate-100 text-slate-700 rounded-full px-3 py-1 text-xs">
+                        {doc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {(country.pros.length > 0 || country.cons.length > 0) && (
               <>

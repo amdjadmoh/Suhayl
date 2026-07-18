@@ -112,3 +112,36 @@ export async function getMe(req: Request, res: Response): Promise<void> {
 
   res.json({ user: sanitizeUser(user) })
 }
+
+// GET /api/auth/preferences — returns the user's preferences
+export async function getPreferences(req: Request, res: Response): Promise<void> {
+  if (!req.user) { res.status(401).json({ message: "Authentication required" }); return }
+  const user = await User.findById(req.user._id)
+  if (!user) { res.status(404).json({ message: "User not found" }); return }
+  res.json({
+    preferredMonthlyBudget: user.preferredMonthlyBudget,
+    gpa: user.gpa,
+    ieltsScore: user.ieltsScore,
+    preferredCountries: user.preferredCountries,
+    preferredCurrency: user.preferredCurrency,
+  })
+}
+
+// PUT /api/auth/preferences — updates the user's preferences
+export async function updatePreferences(req: Request, res: Response): Promise<void> {
+  if (!req.user) { res.status(401).json({ message: "Authentication required" }); return }
+  const { preferredMonthlyBudget, gpa, ieltsScore, preferredCountries, preferredCurrency } = req.body
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { preferredMonthlyBudget, gpa, ieltsScore, preferredCountries, preferredCurrency },
+    { new: true, runValidators: false }
+  )
+  if (!user) { res.status(404).json({ message: "User not found" }); return }
+  res.json({
+    preferredMonthlyBudget: user.preferredMonthlyBudget,
+    gpa: user.gpa,
+    ieltsScore: user.ieltsScore,
+    preferredCountries: user.preferredCountries,
+    preferredCurrency: user.preferredCurrency,
+  })
+}
