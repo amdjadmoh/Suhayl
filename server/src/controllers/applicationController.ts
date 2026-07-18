@@ -3,6 +3,7 @@ import "../middleware/auth"
 import { Application } from "../models/Application"
 import { Program } from "../models/Program"
 import { Student } from "../models/Student"
+import { buildApplicationCalendar } from "../services/calendar"
 
 const POPULATE_PROGRAM = {
   path: "programId",
@@ -203,4 +204,18 @@ export async function remove(req: Request, res: Response): Promise<void> {
 
   await Application.findByIdAndDelete(req.params["id"])
   res.json({ message: "Application deleted" })
+}
+
+export async function getCalendar(req: Request, res: Response): Promise<void> {
+  const user = req.user!
+  const icsString = await buildApplicationCalendar(
+    user._id,
+    user.role as "student" | "agency" | "admin",
+  )
+  res.setHeader("Content-Type", "text/calendar; charset=utf-8")
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="wannaout-deadlines.ics"',
+  )
+  res.send(icsString)
 }
