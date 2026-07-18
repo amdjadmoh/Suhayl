@@ -78,12 +78,13 @@ export async function getStats(_req: Request, res: Response): Promise<void> {
 }
 
 export async function createUser(req: Request, res: Response): Promise<void> {
-  const { email, password, name, role } = req.body as Record<string, unknown>
-
-  if (!email || !password || !name || !role) {
-    res.status(400).json({ message: "Missing required fields: email, password, name, role" })
-    return
+  const body = req.body as {
+    email: string
+    password: string
+    name: string
+    role: "admin" | "student" | "agency"
   }
+  const { email, password, name, role } = body
 
   const existing = await User.findOne({ email })
   if (existing) {
@@ -91,13 +92,13 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const passwordHash = await bcrypt.hash(password as string, 10)
+  const passwordHashValue = await bcrypt.hash(password, 10)
   const user = await User.create({
     email,
-    passwordHash,
+    passwordHash: passwordHashValue,
     name,
     role,
-  } as any)
+  })
 
   res.status(201).json({
     _id: user._id,
@@ -111,14 +112,10 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 
 export async function updateUser(req: Request, res: Response): Promise<void> {
   const id = req.params["id"]
-  const { email, name, role } = req.body as Record<string, unknown>
+  // req.body is pre-validated by validate(updateUserSchema, "body")
+  const updates = req.body as Record<string, unknown>
 
-  const updates: Record<string, unknown> = {}
-  if (email) updates["email"] = email
-  if (name) updates["name"] = name
-  if (role) updates["role"] = role
-
-  const user = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true } as any).select("-passwordHash")
+  const user = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).select("-passwordHash")
   if (!user) {
     res.status(404).json({ message: "User not found" })
     return

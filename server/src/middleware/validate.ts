@@ -1,0 +1,34 @@
+import { type ZodType } from "zod"
+import type { Request, Response, NextFunction } from "express"
+
+/**
+ * Middleware factory that validates `req[target]` against a Zod schema.
+ * On success, replaces the target with the parsed (stripped) value.
+ * On failure, returns 400 with field-level error details.
+ *
+ * @example
+ *   router.post("/", validate(createSchema, "body"), controller)
+ *   router.get("/", validate(listQuerySchema, "query"), controller)
+ */
+export function validate<T>(
+  schema: ZodType<T>,
+  target: "body" | "query" | "params"
+): (req: Request, res: Response, next: NextFunction) => void {
+  return (req, res, next) => {
+    const result = schema.safeParse(req[target])
+    if (!result.success) {
+      res.status(400).json({
+        message: "Validation failed",
+        errors: result.error.issues.map((i) => ({
+          path: i.path,
+          message: i.message,
+        })),
+      })
+      return
+    }
+    // Replace the target with the parsed (stripped / coerced) data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(req as any)[target] = result.data
+    next()
+  }
+}

@@ -27,12 +27,12 @@ export async function getById(req: Request, res: Response): Promise<void> {
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const { name, email } = req.body as Record<string, unknown>
-  if (!name || !email) {
-    res.status(400).json({ message: "Name and email are required" })
-    return
+  // req.body is pre-validated by validate(createStudentSchema, "body")
+  const payload: Record<string, unknown> = {
+    ...req.body,
+    agencyId: new Types.ObjectId(req.user!._id),
   }
-  const student = await Student.create({ ...req.body, agencyId: new Types.ObjectId(req.user!._id) })
+  const student = await Student.create(payload)
   res.status(201).json(student)
 }
 
@@ -42,6 +42,7 @@ export async function update(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: "Missing student ID" })
     return
   }
+  // req.body is pre-validated by validate(updateStudentSchema, "body")
   const student = await Student.findOneAndUpdate(
     { _id: id, agencyId: new Types.ObjectId(req.user!._id) },
     req.body,

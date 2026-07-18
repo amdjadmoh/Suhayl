@@ -7,13 +7,9 @@ export async function getFavorites(req: Request, res: Response): Promise<void> {
 }
 
 export async function addFavorite(req: Request, res: Response): Promise<void> {
-  const { type, itemId } = req.body
-  if (!type || !itemId || !["country", "city", "university", "program"].includes(type)) {
-    res.status(400).json({ message: "Invalid type or itemId" })
-    return
-  }
+  const { type, itemId } = req.body as { type: string; itemId: string }
   try {
-    const fav = await Favorite.create({ userId: req.user!._id, type, itemId })
+    const fav = await Favorite.create({ userId: req.user!._id, type: type as any, itemId: itemId as any })
     res.status(201).json(fav)
   } catch (err: any) {
     if (err.code === 11000) {

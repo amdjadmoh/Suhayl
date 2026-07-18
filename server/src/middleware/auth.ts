@@ -9,8 +9,7 @@ declare global {
   }
 }
 
-const JWT_SECRET: string =
-  process.env["JWT_SECRET"] ?? "super_secret_key_for_wannaout_dev"
+const JWT_SECRET: string = process.env["JWT_SECRET"]!
 
 export interface JwtPayload {
   _id: string

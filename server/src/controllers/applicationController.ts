@@ -25,14 +25,13 @@ function buildApplicationFilter(user?: Request["user"]): Record<string, unknown>
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter = buildApplicationFilter(req.user)
 
-  const status = req.query["status"]
-  if (typeof status === "string" && status.length > 0) {
-    filter["applicationStatus"] = status
+  const query = req.query as { status?: string; search?: string }
+  if (query["status"] != null && query["status"].length > 0) {
+    filter["applicationStatus"] = query["status"]
   }
 
-  const search = req.query["search"]
-  if (typeof search === "string" && search.length > 0) {
-    filter["studentName"] = { $regex: search, $options: "i" }
+  if (query["search"] != null && query["search"].length > 0) {
+    filter["studentName"] = { $regex: query["search"], $options: "i" }
   }
 
   const [applications, total] = await Promise.all([
@@ -71,49 +70,43 @@ export async function getById(req: Request, res: Response): Promise<void> {
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const body = req.body as Record<string, unknown>
-  const programId = body["programId"]
-  const studentName = body["studentName"]
-  const studentEmail = body["studentEmail"]
-
-  if (!programId || !studentName || !studentEmail) {
-    res.status(400).json({
-      message: "Missing required fields: programId, studentName, studentEmail",
-    })
-    return
+  const body = req.body as {
+    programId: string
+    studentName: string
+    studentEmail: string
+    studentId?: string
+    notes?: string
   }
+  const { programId, studentName, studentEmail, studentId } = body
 
   // Verify program exists
-  const program = await Program.findById(programId as string)
+  const program = await Program.findById(programId)
   if (!program) {
     res.status(404).json({ message: "Program not found" })
     return
   }
 
   const payload: Record<string, unknown> = {
-    ...req.body,
-    applicationProgress: req.body["applicationProgress"] || {},
+    programId,
+    studentName,
+    studentEmail,
+    notes: body["notes"],
+    applicationProgress: {},
   }
 
   // Auto-populate testScores from program's testRequirements if not provided
-  let appProgress = payload["applicationProgress"] as Record<string, unknown> | undefined
-  if (!appProgress) {
-    appProgress = {}
-    payload["applicationProgress"] = appProgress
-  }
-  if (!appProgress["testScores"]) {
-    appProgress["testScores"] = (program.testRequirements || []).map(
-      (t: { name: string }) => ({ name: t.name, taken: false })
-    )
-  }
+  const appProgress = payload["applicationProgress"] as Record<string, unknown>
+  appProgress["testScores"] = (program.testRequirements || []).map(
+    (t: { name: string }) => ({ name: t.name, taken: false })
+  )
 
   // Auto-populate SOP status if program requires it
-  if (program.requiresSOP && !appProgress["sopStatus"]) {
+  if (program.requiresSOP) {
     appProgress["sopStatus"] = "not_started"
   }
 
   // Auto-populate recommendation letters count if program requires them
-  if (program.recommendationLetters > 0 && !appProgress["recommendationsRequested"]) {
+  if (program.recommendationLetters > 0) {
     appProgress["recommendationsRequested"] = program.recommendationLetters
   }
 
@@ -122,10 +115,9 @@ export async function create(req: Request, res: Response): Promise<void> {
       payload["createdBy"] = req.user._id
     } else if (req.user.role === "agency") {
       payload["agencyId"] = req.user._id
-      const sid = body["studentId"]
-      if (sid) {
+      if (studentId) {
         const student = await Student.findOne({
-          _id: sid as string,
+          _id: studentId,
           agencyId: req.user._id,
         })
         if (student) {
@@ -140,7 +132,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
   // Auto-fill deadline from program if not provided
   if (!application.applicationDeadline) {
-    const prog = await Program.findById(programId as string).select("applicationDeadline")
+    const prog = await Program.findById(programId).select("applicationDeadline")
     if (prog?.applicationDeadline) {
       application.set("applicationDeadline", prog.applicationDeadline)
       await application.save()
@@ -173,6 +165,7 @@ export async function update(req: Request, res: Response): Promise<void> {
     }
   }
 
+  // req.body is pre-validated by validate(updateApplicationSchema, "body")
   const application = await Application.findByIdAndUpdate(
     req.params["id"],
     req.body,

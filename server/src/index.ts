@@ -2,7 +2,10 @@ import dotenv from "dotenv"
 dotenv.config()
 
 import express, { type Request, type Response, type NextFunction } from "express"
+import helmet from "helmet"
 import cors from "cors"
+import rateLimit from "express-rate-limit"
+import { ZodError } from "zod"
 import path from "path"
 import fs from "fs"
 import mongoose from "mongoose"
@@ -35,8 +38,40 @@ const MONGODB_URI =
 //   Prod (tsc):         __dirname = <repo>/server/dist → ../.. → <repo>
 const DATA_DIR = path.resolve(__dirname, "..", "..", "data", "db")
 
-app.use(cors({ origin: "http://localhost:5173" }))
+// ── CORS ───────────────────────────────────────────────────────────────────
+const corsOrigins = process.env["CORS_ORIGINS"]
+  ? process.env["CORS_ORIGINS"].split(",").map((s) => s.trim())
+  : ["http://localhost:5173"]
+
+if (process.env["NODE_ENV"] === "production" && !process.env["CORS_ORIGINS"]) {
+  throw new Error("CORS_ORIGINS must be set in production")
+}
+
+// ── Security headers (before CORS so helmet sets headers first) ─────────
+app.use(helmet())
+app.use(cors({ origin: corsOrigins }))
 app.use(express.json())
+
+// ── Rate limiting ─────────────────────────────────────────────────────────
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+})
+app.use("/api/", globalLimiter)
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { message: "Too many requests, please try again later." },
+})
+app.use("/api/auth/login", authLimiter)
+app.use("/api/auth/register", authLimiter)
 
 app.use("/api/universities", universityRouter)
 app.use("/api/stats", statsRouter)
@@ -61,12 +96,32 @@ if (process.env["NODE_ENV"] === "production") {
 
 app.use(
   (err: Error, _req: Request, res: Response, _next: NextFunction): void => {
+    if (err instanceof ZodError) {
+      res.status(400).json({
+        message: "Validation failed",
+        errors: err.issues.map((i) => ({
+          path: i.path,
+          message: i.message,
+        })),
+      })
+      return
+    }
     console.error("Unhandled error:", err.message)
     res.status(500).json({ message: "Internal server error" })
   }
 )
 
 async function start(): Promise<void> {
+  // ── JWT secret fail-fast check ──────────────────────────────────────────
+  if (!process.env["JWT_SECRET"]) {
+    if (process.env["NODE_ENV"] === "production") {
+      throw new Error("JWT_SECRET must be set in production")
+    }
+    console.warn(
+      "WARNING: JWT_SECRET is not set. Auth tokens will fail to sign/verify."
+    )
+  }
+
   let uri = MONGODB_URI
 
   try {

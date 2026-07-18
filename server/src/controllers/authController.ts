@@ -1,10 +1,9 @@
 import type { Request, Response } from "express"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
-import { User, type IUserDocument, type UserRole } from "../models/User"
+import { User, type IUserDocument } from "../models/User"
 
-const JWT_SECRET: string =
-  process.env["JWT_SECRET"] ?? "super_secret_key_for_wannaout_dev"
+const JWT_SECRET: string = process.env["JWT_SECRET"]!
 
 function signToken(user: IUserDocument): string {
   return jwt.sign(
@@ -28,25 +27,14 @@ function sanitizeUser(user: IUserDocument) {
 /**
  * POST /api/auth/register
  * Only allows student and agency registration.
+ * Body is pre-validated by validate(registerSchema, "body") middleware.
  */
 export async function register(req: Request, res: Response): Promise<void> {
   const { email, password, name, role } = req.body as {
-    email?: string
-    password?: string
-    name?: string
-    role?: UserRole
-  }
-
-  if (!email || !password || !name || !role) {
-    res.status(400).json({
-      message: "Missing required fields: email, password, name, role",
-    })
-    return
-  }
-
-  if (role !== "student" && role !== "agency") {
-    res.status(400).json({ message: "Role must be 'student' or 'agency'" })
-    return
+    email: string
+    password: string
+    name: string
+    role: "student" | "agency"
   }
 
   const existing = await User.findOne({ email })
@@ -56,9 +44,9 @@ export async function register(req: Request, res: Response): Promise<void> {
   }
 
   const salt = await bcrypt.genSalt(10)
-  const passwordHash = await bcrypt.hash(password, salt)
+  const passwordHashValue = await bcrypt.hash(password, salt)
 
-  const user = await User.create({ email, passwordHash, name, role } as any)
+  const user = await User.create({ email, passwordHash: passwordHashValue, name, role })
 
   const token = signToken(user)
   res.status(201).json({ token, user: sanitizeUser(user) })
@@ -66,25 +54,21 @@ export async function register(req: Request, res: Response): Promise<void> {
 
 /**
  * POST /api/auth/login
+ * Body is pre-validated by validate(loginSchema, "body") middleware.
  */
 export async function login(req: Request, res: Response): Promise<void> {
   const { email, password } = req.body as {
-    email?: string
-    password?: string
+    email: string
+    password: string
   }
 
-  if (!email || !password) {
-    res.status(400).json({ message: "Missing required fields: email, password" })
-    return
-  }
-
-  const user = await User.findOne({ email })
+  const user = await User.findOne({ email }).select("+passwordHash")
   if (!user) {
     res.status(401).json({ message: "Invalid email or password" })
     return
   }
 
-  const match = await bcrypt.compare(password, (user as any).passwordHash)
+  const match = await bcrypt.compare(password, user.passwordHash)
   if (!match) {
     res.status(401).json({ message: "Invalid email or password" })
     return

@@ -55,21 +55,14 @@ export async function getById(req: Request, res: Response): Promise<void> {
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const body = req.body as Record<string, unknown>
-  const name = body["name"]
-  const country = body["country"]
-  const city = body["city"]
-
-  if (!name || !country || !city) {
-    res.status(400).json({
-      message: "Missing required fields: name, country, city",
-    })
-    return
+  // req.body is pre-validated by validate(createUniversitySchema, "body")
+  // Build payload from parsed body — never pass req.body directly
+  const payload: Record<string, unknown> = {
+    ...req.body,
+    createdBy: req.user?._id,
+    isOfficial: false, // user-created starts as unofficial
   }
-
-  req.body.createdBy = req.user?._id
-  req.body.isOfficial = false // user-created starts as unofficial
-  const university = await University.create(req.body)
+  const university = await University.create(payload)
   res.status(201).json(university)
 }
 
@@ -92,6 +85,7 @@ export async function update(req: Request, res: Response): Promise<void> {
     return
   }
 
+  // req.body is pre-validated by validate(updateUniversitySchema, "body")
   const university = await University.findByIdAndUpdate(
     req.params["id"],
     req.body,

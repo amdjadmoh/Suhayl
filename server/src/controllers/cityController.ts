@@ -50,47 +50,13 @@ export async function getWithUniversities(
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const body = req.body as Record<string, unknown>
-
-  const name = body["name"]
-  const country = body["country"]
-  const averageRentSingle = body["averageRentSingle"]
-  const averageRentShared = body["averageRentShared"]
-  const monthlyLivingCost = body["monthlyLivingCost"]
-  const qualityOfLifeScore = body["qualityOfLifeScore"]
-  const safetyScore = body["safetyScore"]
-  const publicTransportScore = body["publicTransportScore"]
-  const studentFriendliness = body["studentFriendliness"]
-  const englishFriendliness = body["englishFriendliness"]
-  const language = body["language"]
-  const climate = body["climate"]
-
-  if (
-    !name ||
-    !country ||
-    averageRentSingle == null ||
-    averageRentShared == null ||
-    monthlyLivingCost == null ||
-    qualityOfLifeScore == null ||
-    safetyScore == null ||
-    publicTransportScore == null ||
-    studentFriendliness == null ||
-    englishFriendliness == null ||
-    !language ||
-    !climate
-  ) {
-    res.status(400).json({
-      message:
-        "Missing required fields: name, country, averageRentSingle, averageRentShared, monthlyLivingCost, qualityOfLifeScore, safetyScore, publicTransportScore, studentFriendliness, englishFriendliness, language, climate",
-    })
-    return
-  }
-
+  // req.body is pre-validated by validate(createCitySchema, "body")
   const city = await City.create(req.body)
   res.status(201).json(city)
 }
 
 export async function update(req: Request, res: Response): Promise<void> {
+  // req.body is pre-validated by validate(updateCitySchema, "body")
   const city = await City.findByIdAndUpdate(req.params["id"], req.body, {
     new: true,
     runValidators: true,
