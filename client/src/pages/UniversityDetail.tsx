@@ -155,6 +155,8 @@ export default function UniversityDetail(): React.ReactElement {
   const u = university;
   const country = countries?.find((c) => c.name === u.country);
   const city = cities?.find((c) => c.name === u.city);
+  const isCreator = !!user && u.createdBy === user._id;
+  const canEdit = isAdmin || (isCreator && !u.isOfficial);
 
   return (
     <div className="space-y-6">
@@ -176,11 +178,13 @@ export default function UniversityDetail(): React.ReactElement {
               <PlusCircle className="h-4 w-4" /> Add Custom Program
             </Link>
           )}
+          {canEdit && (
+            <Link to={`/universities/${u._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+              <Pencil className="h-4 w-4" /> Edit
+            </Link>
+          )}
           {isAdmin && (
             <>
-              <Link to={`/universities/${u._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
-                <Pencil className="h-4 w-4" /> Edit
-              </Link>
               <Button onClick={handleToggleOfficial} variant="outline" size="sm" disabled={toggleOfficial.isPending} className="border-slate-200 rounded-lg">
                 {toggleOfficial.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Shield className="mr-1 h-3 w-3" />}
                 {u.isOfficial ? "Make Custom" : "Make Official"}
@@ -227,7 +231,7 @@ export default function UniversityDetail(): React.ReactElement {
               </a>
             </div>
           )}
-          {u.notes && <p className="text-sm text-slate-500">{u.notes}</p>}
+          {u.notes && <p className="whitespace-pre-wrap text-sm text-slate-500">{u.notes}</p>}
           {!u.websiteUrl && !u.notes && (
             <p className="text-sm text-slate-500">No additional information available.</p>
           )}

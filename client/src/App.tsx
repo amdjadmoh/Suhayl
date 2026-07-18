@@ -85,14 +85,14 @@ export default function App(): React.ReactElement {
                   />
                   <Route
                     path="universities/:id/edit"
-                    element={<ProtectedRoute role="admin"><AddEditUniversity /></ProtectedRoute>}
+                    element={<ProtectedRoute><AddEditUniversity /></ProtectedRoute>}
                   />
 
                   {/* Program routes — admin write, all read */}
                   <Route path="programs" element={<Programs />} />
                   <Route path="programs/new" element={<AddEditProgram />} />
                   <Route path="programs/:id" element={<ProgramDetail />} />
-                  <Route path="programs/:id/edit" element={<ProtectedRoute role="admin"><AddEditProgram /></ProtectedRoute>} />
+                  <Route path="programs/:id/edit" element={<ProtectedRoute><AddEditProgram /></ProtectedRoute>} />
 
                   {/* Application routes */}
                   <Route path="applications" element={<ApplicationsTracker />} />

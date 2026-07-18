@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { authenticate, optionalAuth } from "../middleware/auth"
+import { authenticate } from "../middleware/auth"
 import {
   getAll,
   getById,
@@ -10,8 +10,8 @@ import {
 
 export const applicationRouter = Router()
 
-applicationRouter.get("/", optionalAuth, getAll)
-applicationRouter.get("/:id", optionalAuth, getById)
+applicationRouter.get("/", authenticate, getAll)
+applicationRouter.get("/:id", authenticate, getById)
 applicationRouter.post("/", authenticate, create)
 applicationRouter.put("/:id", authenticate, update)
 applicationRouter.delete("/:id", authenticate, remove)

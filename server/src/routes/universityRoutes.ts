@@ -19,6 +19,7 @@ universityRouter.get("/:id", optionalAuth, getById)
 
 // Write operations
 universityRouter.post("/", authenticate, create)
-universityRouter.put("/:id", authenticate, authorize("admin"), update)
+// PUT authorizes per-resource inside the controller: admin OR (creator AND custom).
+universityRouter.put("/:id", authenticate, update)
 universityRouter.put("/:id/toggle-official", authenticate, authorize("admin"), toggleOfficial)
 universityRouter.delete("/:id", authenticate, authorize("admin"), remove)
