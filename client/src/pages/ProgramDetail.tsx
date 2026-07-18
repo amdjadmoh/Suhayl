@@ -1,5 +1,12 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useProgram, useDeleteProgram, useToggleProgramOfficial } from "@/lib/api";
+import {
+  useProgram,
+  useDeleteProgram,
+  useToggleProgramOfficial,
+  useFavorites,
+  useAddFavorite,
+  useRemoveFavorite,
+} from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { useCompare } from "@/lib/compareContext";
 import { Button } from "@/components/ui/button";
@@ -20,6 +27,7 @@ import {
   Check,
   Shield,
   Globe,
+  Star,
 } from "lucide-react";
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/utils";
@@ -78,6 +86,9 @@ export default function ProgramDetail(): React.ReactElement {
   const { data: program, isLoading, isError } = useProgram(id ?? "");
   const deleteMutation = useDeleteProgram();
   const toggleProgOfficial = useToggleProgramOfficial();
+  const { data: favorites } = useFavorites();
+  const addFavorite = useAddFavorite();
+  const removeFavorite = useRemoveFavorite();
 
   async function handleDelete(): Promise<void> {
     if (!id) return;
@@ -112,6 +123,25 @@ export default function ProgramDetail(): React.ReactElement {
 
   const p = program;
   const uni = typeof p.universityId === "object" ? p.universityId : null;
+
+  const isFavorited = !!favorites?.some(
+    (f) => f.type === "program" && f.itemId === p._id,
+  );
+  const favoritePending = addFavorite.isPending || removeFavorite.isPending;
+
+  async function handleToggleFavorite(): Promise<void> {
+    try {
+      if (isFavorited) {
+        await removeFavorite.mutateAsync({ type: "program", itemId: p._id });
+        toast.success("Removed from saved");
+      } else {
+        await addFavorite.mutateAsync({ type: "program", itemId: p._id });
+        toast.success("Saved");
+      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to update saved items"));
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -149,6 +179,20 @@ export default function ProgramDetail(): React.ReactElement {
                   <GitCompare className="h-4 w-4" /> Add to Compare
                 </button>
               )}
+              <button
+                onClick={handleToggleFavorite}
+                disabled={favoritePending}
+                aria-pressed={isFavorited}
+                title={isFavorited ? "Remove from saved" : "Save program"}
+                className={
+                  isFavorited
+                    ? "inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                    : "inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                }
+              >
+                <Star className={`h-4 w-4${isFavorited ? " fill-current" : ""}`} />
+                {isFavorited ? "Saved" : "Save"}
+              </button>
               <Link to={`/applications/new?programId=${p._id}`} className="inline-flex items-center gap-1 rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0284C7]">
                 <PlusCircle className="h-4 w-4" /> Apply
               </Link>
