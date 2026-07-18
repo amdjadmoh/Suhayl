@@ -4,6 +4,9 @@ export interface University {
   country: string
   city: string
   ranking?: number
+  qsRank?: number | null
+  theRank?: number | null
+  arwuRank?: number | null
   websiteUrl?: string
   notes?: string
   createdBy?: string

@@ -47,6 +47,9 @@ export default function AddEditUniversity(): React.ReactElement {
       country: "",
       city: "",
       ranking: undefined,
+      qsRank: null,
+      theRank: null,
+      arwuRank: null,
       websiteUrl: "",
       notes: "",
     },
@@ -59,6 +62,9 @@ export default function AddEditUniversity(): React.ReactElement {
         country: existing.country,
         city: existing.city,
         ranking: existing.ranking,
+        qsRank: existing.qsRank ?? null,
+        theRank: existing.theRank ?? null,
+        arwuRank: existing.arwuRank ?? null,
         websiteUrl: existing.websiteUrl ?? "",
         notes: existing.notes ?? "",
       });
@@ -148,6 +154,21 @@ export default function AddEditUniversity(): React.ReactElement {
             <div className="space-y-2">
               <Label htmlFor="ranking" className="text-sm font-medium text-slate-700">World Ranking</Label>
               <Input id="ranking" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("ranking", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 5" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="qsRank" className="text-sm font-medium text-slate-700">QS World Ranking</Label>
+              <Input id="qsRank" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("qsRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 10" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="theRank" className="text-sm font-medium text-slate-700">Times Higher Education Ranking</Label>
+              <Input id="theRank" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("theRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 15" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="arwuRank" className="text-sm font-medium text-slate-700">ARWU / Shanghai Ranking</Label>
+              <Input id="arwuRank" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("arwuRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 20" />
             </div>
 
             <div className="space-y-2">

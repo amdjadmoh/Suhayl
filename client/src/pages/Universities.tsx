@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useUniversities, useCountries, useFavorites, useAddFavorite, useRemoveFavorite } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
@@ -191,6 +191,8 @@ export default function Universities(): React.ReactElement {
     searchParams.get("search") ?? "",
   );
 
+  const [top100, setTop100] = useState(false);
+
   const search = searchParams.get("search") ?? "";
   const country = searchParams.get("country") ?? "";
   const customOnly = searchParams.get("customOnly") ?? "";
@@ -235,9 +237,10 @@ export default function Universities(): React.ReactElement {
   function clearFilters(): void {
     setSearchInput("");
     setSearchParams({});
+    setTop100(false);
   }
 
-  const hasFilters = search || country || customOnly;
+  const hasFilters = search || country || customOnly || top100;
 
   if (isError) {
     return (
@@ -252,6 +255,13 @@ export default function Universities(): React.ReactElement {
   }
 
   const universities = data?.universities ?? [];
+
+  const filteredUniversities = useMemo(() => {
+    if (!top100) return universities;
+    return universities.filter(
+      (u) => u.qsRank !== null && u.qsRank !== undefined && u.qsRank <= 100
+    );
+  }, [universities, top100]);
 
   return (
     <div className="space-y-8">
@@ -328,6 +338,17 @@ export default function Universities(): React.ReactElement {
           </div>
         )}
 
+        <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-slate-200 bg-white">
+          <Checkbox
+            id="top100"
+            checked={top100}
+            onCheckedChange={(checked) => setTop100(checked === true)}
+          />
+          <Label htmlFor="top100" className="text-sm text-slate-600 whitespace-nowrap cursor-pointer">
+            Top 100 globally
+          </Label>
+        </div>
+
         {hasFilters && (
           <Button variant="outline" size="icon" onClick={clearFilters} className="rounded-xl">
             <X className="h-4 w-4" />
@@ -342,7 +363,7 @@ export default function Universities(): React.ReactElement {
             <UniversityCardSkeleton key={i} />
           ))}
         </div>
-      ) : universities.length === 0 ? (
+      ) : filteredUniversities.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 mx-auto mb-4">
             <GraduationCap className="h-10 w-10 text-violet-500" />
@@ -355,10 +376,10 @@ export default function Universities(): React.ReactElement {
       ) : (
         <>
           <p className="text-sm text-slate-500">
-            {data?.total ?? universities.length} universit{universities.length === 1 ? "y" : "ies"} found
+            {filteredUniversities.length} universit{filteredUniversities.length === 1 ? "y" : "ies"} found
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {universities.map((u) => (
+            {filteredUniversities.map((u) => (
               <UniversityCard key={u._id} university={u} isAdmin={isAdmin}
                 isFav={favoritesMap[u._id] ?? false} isLoggedIn={isLoggedIn}
                 showOfficialToggle={isAdmin && customOnly === "true"}
