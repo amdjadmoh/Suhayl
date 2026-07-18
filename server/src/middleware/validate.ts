@@ -26,9 +26,17 @@ export function validate<T>(
       })
       return
     }
-    // Replace the target with the parsed (stripped / coerced) data
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(req as any)[target] = result.data
+    // Replace the target with the parsed (stripped / coerced) data.
+    // Express 5 defines `req.query` and `req.params` as getter-only properties
+    // on the prototype, so a plain assignment throws. Use Object.defineProperty
+    // to shadow the prototype getter with a writable instance property.
+    // `req.body` is a plain instance property and works either way; we use the
+    // same path for uniformity.
+    Object.defineProperty(req, target, {
+      value: result.data,
+      writable: true,
+      configurable: true,
+    })
     next()
   }
 }
