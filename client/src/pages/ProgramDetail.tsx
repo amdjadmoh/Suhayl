@@ -123,6 +123,8 @@ export default function ProgramDetail(): React.ReactElement {
 
   const p = program;
   const uni = typeof p.universityId === "object" ? p.universityId : null;
+  const isCreator = !!user && p.createdBy === user._id;
+  const canEdit = isAdmin || (isCreator && !p.isOfficial);
 
   const isFavorited = !!favorites?.some(
     (f) => f.type === "program" && f.itemId === p._id,
@@ -203,13 +205,15 @@ export default function ProgramDetail(): React.ReactElement {
               <PlusCircle className="h-4 w-4" /> Apply to this Program
             </Link>
           )}
+          {canEdit && (
+            <Link to={`/programs/${p._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors"><Pencil className="h-4 w-4" /> Edit</Link>
+          )}
           {isAdmin && (
             <>
               <Button onClick={() => toggleProgOfficial.mutate(p._id)} variant="outline" size="sm" disabled={toggleProgOfficial.isPending} className="border-slate-200 rounded-lg">
                 {toggleProgOfficial.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Shield className="mr-1 h-3 w-3" />}
                 {p.isOfficial ? "Make Custom" : "Make Official"}
               </Button>
-              <Link to={`/programs/${p._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors"><Pencil className="h-4 w-4" /> Edit</Link>
               <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
                   <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /> Delete</button>

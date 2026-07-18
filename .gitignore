@@ -43,3 +43,6 @@ Desktop.ini
 .playwright-mcp/
 *.png
 !client/public/*.png
+
+# Runtime database (mongodb-memory-server persistence)
+data/db/

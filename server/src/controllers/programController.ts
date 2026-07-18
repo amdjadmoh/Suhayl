@@ -292,14 +292,28 @@ export async function create(req: Request, res: Response): Promise<void> {
 }
 
 export async function update(req: Request, res: Response): Promise<void> {
+  const existing = await Program.findById(req.params["id"])
+  if (!existing) {
+    res.status(404).json({ message: "Program not found" })
+    return
+  }
+
+  // Admin can edit any program. Non-admin can only edit custom programs
+  // they themselves created — they cannot edit official (admin-curated)
+  // programs even if they happen to be the recorded creator.
+  const isAdmin = req.user?.role === "admin"
+  const isCreator = existing.createdBy?.toString() === req.user?._id
+  if (!isAdmin && (!isCreator || existing.isOfficial)) {
+    res.status(403).json({
+      message: "You can only edit custom programs you created",
+    })
+    return
+  }
+
   const program = await Program.findByIdAndUpdate(req.params["id"], req.body, {
     new: true,
     runValidators: true,
   })
-  if (!program) {
-    res.status(404).json({ message: "Program not found" })
-    return
-  }
   res.json(program)
 }
 

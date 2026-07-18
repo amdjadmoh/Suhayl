@@ -278,7 +278,7 @@ export default function AgencyStudentDetail(): React.ReactElement {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Notes</p>
-                  <p className="text-sm font-medium text-[#0F172A]">{student.notes}</p>
+                  <p className="whitespace-pre-wrap text-sm font-medium text-[#0F172A]">{student.notes}</p>
                 </div>
               </div>
             )}

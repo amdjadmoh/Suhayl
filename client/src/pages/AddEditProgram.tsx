@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import type { ProgramFormData } from "@/types/program";
@@ -7,6 +7,8 @@ import {
   useUpdateProgram,
   useProgram,
   useUniversities,
+  useCountries,
+  useCreateUniversity,
 } from "@/lib/api";
 import {
   CURRENCIES,
@@ -18,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -28,7 +31,7 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Save, X, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, X, AlertCircle, Loader2, Plus, Building2 } from "lucide-react";
 import { getErrorMessage } from "@/lib/utils";
 
 export default function AddEditProgram(): React.ReactElement {
@@ -38,10 +41,25 @@ export default function AddEditProgram(): React.ReactElement {
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
+  // Country is a transient filter (not part of ProgramFormData — the chosen
+  // university already carries its country), so it lives in local state.
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [showCustomUniForm, setShowCustomUniForm] = useState(false);
+  const [customUniName, setCustomUniName] = useState("");
+  const [customUniCity, setCustomUniCity] = useState("");
+
+  // One-shot guard so the ?universityId= preselect runs at most once, even if
+  // the universities query refetches (e.g. after creating a custom university).
+  const preselectApplied = useRef(false);
+
   const { data: existing, isLoading } = useProgram(id ?? "");
-  const { data: universities } = useUniversities();
+  const { data: universities } = useUniversities(
+    selectedCountry ? { country: selectedCountry } : undefined,
+  );
+  const { data: countries } = useCountries();
   const createMutation = useCreateProgram();
   const updateMutation = useUpdateProgram();
+  const createUniversityMutation = useCreateUniversity();
 
   const {
     register,
@@ -85,6 +103,10 @@ export default function AddEditProgram(): React.ReactElement {
 
   useEffect(() => {
     if (isEdit && existing) {
+      const uniCountry =
+        typeof existing.universityId === "object"
+          ? existing.universityId?.country ?? ""
+          : "";
       reset({
         name: existing.name,
         universityId:
@@ -110,10 +132,54 @@ export default function AddEditProgram(): React.ReactElement {
         notes: existing.notes ?? "",
       });
       setTestReqs(existing.testRequirements ?? []);
-    } else if (!isEdit && preselectedUniId) {
-      setValue("universityId", preselectedUniId);
+      if (uniCountry) setSelectedCountry(uniCountry);
+    } else if (
+      !isEdit &&
+      preselectedUniId &&
+      !preselectApplied.current &&
+      universities
+    ) {
+      const uni = universities.universities.find(
+        (u) => u._id === preselectedUniId,
+      );
+      if (uni) {
+        setValue("universityId", preselectedUniId);
+        setSelectedCountry(uni.country);
+        preselectApplied.current = true;
+      }
     }
-  }, [existing, isEdit, reset, preselectedUniId, setValue]);
+  }, [existing, isEdit, reset, preselectedUniId, setValue, universities]);
+
+  function handleCountryChange(value: string): void {
+    setSelectedCountry(value);
+    // The previously chosen university may no longer be in the filtered list,
+    // so clear it to keep the form consistent.
+    setValue("universityId", "");
+    // Reset the custom-uni expander since it was scoped to the previous country.
+    setShowCustomUniForm(false);
+    setCustomUniName("");
+    setCustomUniCity("");
+  }
+
+  async function handleCreateCustomUniversity(): Promise<void> {
+    const name = customUniName.trim();
+    const city = customUniCity.trim();
+    if (!selectedCountry || !name || !city) return;
+    try {
+      const created = await createUniversityMutation.mutateAsync({
+        name,
+        country: selectedCountry,
+        city,
+      });
+      setValue("universityId", created._id);
+      setShowCustomUniForm(false);
+      setCustomUniName("");
+      setCustomUniCity("");
+      toast.success("University added");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to add university"));
+    }
+  }
 
   function addDocument(): void {
     const trimmed = documentInput.trim();
@@ -203,22 +269,110 @@ export default function AddEditProgram(): React.ReactElement {
               {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label className="text-sm font-medium text-slate-700">Country <span className="text-red-500">*</span></Label>
+              <Select value={selectedCountry} onValueChange={handleCountryChange}>
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue placeholder="Select country first..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries?.map((c) => (
+                    <SelectItem key={c._id} value={c.name}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
               <Label className="text-sm font-medium text-slate-700">University <span className="text-red-500">*</span></Label>
               <Select
                 value={(watch("universityId") as string) ?? ""}
                 onValueChange={(v) => setValue("universityId", v)}
+                disabled={!selectedCountry}
               >
                 <SelectTrigger className="rounded-lg">
-                  <SelectValue placeholder="Select university..." />
+                  <SelectValue placeholder={selectedCountry ? "Select university..." : "Select a country first"} />
                 </SelectTrigger>
                 <SelectContent>
                   {universities?.universities?.map((u) => (
-                    <SelectItem key={u._id} value={u._id}>{u.name} — {u.country}</SelectItem>
+                    <SelectItem key={u._id} value={u._id}>{u.name} — {u.city}</SelectItem>
                   ))}
+                  {selectedCountry && universities?.universities?.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-slate-500">No universities yet for this country</div>
+                  )}
                 </SelectContent>
               </Select>
               {errors.universityId && <p className="text-sm text-red-500">{errors.universityId.message}</p>}
+              {!showCustomUniForm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomUniForm(true)}
+                  disabled={!selectedCountry}
+                  className="inline-flex items-center gap-1 text-sm text-[#0EA5E9] hover:underline disabled:text-slate-400 disabled:cursor-not-allowed disabled:no-underline"
+                >
+                  <Plus className="h-3 w-3" /> Don&apos;t see your university? Add it
+                </button>
+              ) : (
+                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Building2 className="h-4 w-4 text-slate-400" />
+                    <span>Adding to</span>
+                    <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 rounded-full">{selectedCountry}</Badge>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="customUniName" className="text-xs font-medium text-slate-500">University Name <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="customUniName"
+                        value={customUniName}
+                        onChange={(e) => setCustomUniName(e.target.value)}
+                        placeholder="e.g. University of Oxford"
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="customUniCity" className="text-xs font-medium text-slate-500">City <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="customUniCity"
+                        value={customUniCity}
+                        onChange={(e) => setCustomUniCity(e.target.value)}
+                        placeholder="e.g. Oxford"
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCustomUniForm(false);
+                        setCustomUniName("");
+                        setCustomUniCity("");
+                      }}
+                      className="border-slate-200 hover:bg-slate-50 rounded-xl"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCreateCustomUniversity}
+                      disabled={
+                        !customUniName.trim() ||
+                        !customUniCity.trim() ||
+                        createUniversityMutation.isPending
+                      }
+                      className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl"
+                    >
+                      {createUniversityMutation.isPending ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</>
+                      ) : (
+                        <><Plus className="mr-2 h-4 w-4" /> Add University</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
