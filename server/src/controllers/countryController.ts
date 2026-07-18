@@ -40,21 +40,17 @@ export async function create(req: Request, res: Response): Promise<void> {
   const body = req.body as Record<string, unknown>
 
   const name = body["name"]
-  const visaRequirements = body["visaRequirements"]
-  const visaAcceptanceRate = body["visaAcceptanceRate"]
   const visaBankAccountAmount = body["visaBankAccountAmount"]
   const visaBankAccountLocked = body["visaBankAccountLocked"]
 
   if (
     !name ||
-    !visaRequirements ||
-    visaAcceptanceRate == null ||
     visaBankAccountAmount == null ||
     visaBankAccountLocked == null
   ) {
     res.status(400).json({
       message:
-        "Missing required fields: name, visaRequirements, visaAcceptanceRate, visaBankAccountAmount, visaBankAccountLocked",
+        "Missing required fields: name, visaAcceptanceRate, visaBankAccountAmount, visaBankAccountLocked",
     })
     return
   }

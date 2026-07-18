@@ -21,6 +21,18 @@ function buildFilter(query: Request["query"]): Record<string, unknown> {
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter = buildFilter(req.query)
 
+  // Visibility: show official OR created by current user OR admin sees all
+  const customOnly = req.query["customOnly"]
+  if (customOnly === "true" && req.user) {
+    filter["isOfficial"] = false
+    if (req.user.role !== "admin") filter["createdBy"] = req.user._id
+  } else if (req.user?.role !== "admin") {
+    filter["$or"] = [
+      { isOfficial: true },
+      ...(req.user ? [{ createdBy: req.user._id }] : []),
+    ]
+  }
+
   const [universities, total] = await Promise.all([
     University.find(filter).sort({ name: 1 }),
     University.countDocuments(filter),
@@ -32,6 +44,11 @@ export async function getById(req: Request, res: Response): Promise<void> {
   const university = await University.findById(req.params["id"])
   if (!university) {
     res.status(404).json({ message: "University not found" })
+    return
+  }
+  // Non-admin users can only see official or their own
+  if (req.user?.role !== "admin" && !university.isOfficial && university.createdBy?.toString() !== req.user?._id) {
+    res.status(403).json({ message: "Forbidden" })
     return
   }
   res.json(university)
@@ -50,6 +67,8 @@ export async function create(req: Request, res: Response): Promise<void> {
     return
   }
 
+  req.body.createdBy = req.user?._id
+  req.body.isOfficial = false // user-created starts as unofficial
   const university = await University.create(req.body)
   res.status(201).json(university)
 }
@@ -64,6 +83,14 @@ export async function update(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: "University not found" })
     return
   }
+  res.json(university)
+}
+
+export async function toggleOfficial(req: Request, res: Response): Promise<void> {
+  const university = await University.findById(req.params["id"])
+  if (!university) { res.status(404).json({ message: "Not found" }); return }
+  ;(university as any).isOfficial = !(university as any).isOfficial
+  await university.save()
   res.json(university)
 }
 

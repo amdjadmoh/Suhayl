@@ -3,13 +3,20 @@ export interface Country {
   name: string
   currency: string
   livingCostEstimate: number
-  visaRequirements: string
-  visaAcceptanceRate: number
   visaBankAccountAmount: number
   visaBankAccountLocked: boolean
   pros: string[]
   cons: string[]
+  requiredDocuments: string[]
+  visaType?: string
+  proofOfFundsMonthly?: number
+  whereToApply?: string
+  processingTime?: string
+  workPermit?: string
+  postGraduationVisa?: string
+  additionalVisaNotes?: string
   notes?: string
+  verificationStatus: "manual" | "ai" | "none"
   createdAt: string
   updatedAt: string
 }

@@ -1,5 +1,5 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useProgram, useDeleteProgram } from "@/lib/api";
+import { useProgram, useDeleteProgram, useToggleProgramOfficial } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { useCompare } from "@/lib/compareContext";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import {
   BookOpen,
   GitCompare,
   Check,
+  Shield,
+  Globe,
 } from "lucide-react";
 import { useState } from "react";
 import { getErrorMessage } from "@/lib/utils";
@@ -30,6 +32,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
+const verificationStyles: Record<string, string> = {
+  manual: "bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full",
+  ai: "bg-amber-100 text-amber-700 border-amber-200 rounded-full",
+  none: "bg-red-100 text-red-700 border-red-200 rounded-full",
+};
+const verificationLabels: Record<string, string> = {
+  manual: "✓ Verified",
+  ai: "⚠ AI-Verified",
+  none: "⚠ Unverified",
+};
 
 function formatCurrency(amount: number, currency: string, period: string): string {
   return new Intl.NumberFormat("en-US", {
@@ -64,6 +77,7 @@ export default function ProgramDetail(): React.ReactElement {
 
   const { data: program, isLoading, isError } = useProgram(id ?? "");
   const deleteMutation = useDeleteProgram();
+  const toggleProgOfficial = useToggleProgramOfficial();
 
   async function handleDelete(): Promise<void> {
     if (!id) return;
@@ -108,7 +122,12 @@ export default function ProgramDetail(): React.ReactElement {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{p.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+              {p.name}
+              <Badge className={`ml-2 ${verificationStyles[p.verificationStatus || "ai"]}`}>
+                {verificationLabels[p.verificationStatus || "ai"]}
+              </Badge>
+            </h1>
             {uni && (
               <Link to={`/universities/${uni._id}`} className="text-sm text-slate-500 hover:text-[#0EA5E9]">
                 {uni.name} · {uni.city}, {uni.country}
@@ -142,6 +161,10 @@ export default function ProgramDetail(): React.ReactElement {
           )}
           {isAdmin && (
             <>
+              <Button onClick={() => toggleProgOfficial.mutate(p._id)} variant="outline" size="sm" disabled={toggleProgOfficial.isPending} className="border-slate-200 rounded-lg">
+                {toggleProgOfficial.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Shield className="mr-1 h-3 w-3" />}
+                {p.isOfficial ? "Make Custom" : "Make Official"}
+              </Button>
               <Link to={`/programs/${p._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors"><Pencil className="h-4 w-4" /> Edit</Link>
               <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
@@ -195,6 +218,17 @@ export default function ProgramDetail(): React.ReactElement {
             <DetailRow label="Language" value={p.languageOfInstruction} />
             <DetailRow label="Tuition" value={formatCurrency(p.tuitionFee, p.tuitionCurrency, p.tuitionPeriod)} />
             <DetailRow label="Deadline" value={formatDate(p.applicationDeadline)} />
+            {p.requiresSOP && <DetailRow label="SOP Required" value="Yes" />}
+            {p.recommendationLetters > 0 && <DetailRow label="Recommendation Letters" value={String(p.recommendationLetters)} />}
+            {p.applicationFee != null && <DetailRow label="Application Fee" value={`€${p.applicationFee}`} />}
+            {p.programUrl && (
+              <div className="flex items-center gap-2 py-3">
+                <Globe className="h-4 w-4 text-slate-400" />
+                <a href={p.programUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#0EA5E9] hover:underline">
+                  Program Website
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -207,9 +241,9 @@ export default function ProgramDetail(): React.ReactElement {
           </h3>
         </div>
         <div className="grid gap-4 p-6 sm:grid-cols-2">
-          {p.gpaRequirement && <DetailRow label="GPA Requirement" value={p.gpaRequirement} />}
-          {p.ieltsRequirement && <DetailRow label="IELTS Requirement" value={p.ieltsRequirement} />}
-          {p.toeflRequirement && <DetailRow label="TOEFL Requirement" value={p.toeflRequirement} />}
+          {p.testRequirements?.map((tr, i) => (
+            <DetailRow key={i} label={`${tr.name} Requirement`} value={tr.minimumScore} />
+          ))}
           {p.requiredDocuments.length > 0 && (
             <div className="py-2 sm:col-span-2">
               <span className="text-sm text-slate-500">Required Documents:</span>
@@ -220,7 +254,7 @@ export default function ProgramDetail(): React.ReactElement {
               </div>
             </div>
           )}
-          {!p.gpaRequirement && !p.ieltsRequirement && !p.toeflRequirement && p.requiredDocuments.length === 0 && (
+          {(!p.testRequirements || p.testRequirements.length === 0) && p.requiredDocuments.length === 0 && (
             <p className="text-sm text-slate-500 sm:col-span-2">No specific requirements</p>
           )}
         </div>

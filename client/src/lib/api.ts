@@ -43,6 +43,7 @@ api.interceptors.request.use((config) => {
 interface UniversityQueryParams {
   search?: string;
   country?: string;
+  customOnly?: string;
 }
 
 export async function getUniversities(
@@ -147,13 +148,35 @@ export function useDeleteUniversity(): UseMutationResult<
   });
 }
 
+export async function toggleUniversityOfficial(id: string): Promise<University> {
+  const res = await api.put(`/universities/${id}/toggle-official`);
+  return res.data;
+}
+
+export function useToggleUniversityOfficial(): UseMutationResult<University, Error, string> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: toggleUniversityOfficial,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["universities"] });
+    },
+  });
+}
+
 // ─── Programs (degree offerings at universities) ────────────────────────────
 
-interface ProgramQueryParams {
+export interface ProgramQueryParams {
   search?: string;
   country?: string;
   degreeLevel?: string;
   field?: string;
+  city?: string;
+  minTuition?: string;
+  maxTuition?: string;
+  minGpa?: string;
+  maxIelts?: string;
+  scholarshipOnly?: string;
+  customOnly?: string;
 }
 
 export async function getPrograms(
@@ -263,6 +286,21 @@ export function useDeleteProgram(): UseMutationResult<
   });
 }
 
+export async function toggleProgramOfficial(id: string): Promise<Program> {
+  const res = await api.put(`/programs/${id}/toggle-official`);
+  return res.data;
+}
+
+export function useToggleProgramOfficial(): UseMutationResult<Program, Error, string> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: toggleProgramOfficial,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["programs"] });
+    },
+  });
+}
+
 // ─── Applications (role-scoped, linked to programs) ─────────────────────────
 
 interface ApplicationQueryParams {
@@ -342,8 +380,9 @@ export function useUpdateApplication(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }) => updateApplication(id, data),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["applications", variables.id] });
     },
   });
 }
@@ -588,7 +627,7 @@ export async function registerUser(
 
 export async function getMe(): Promise<User> {
   const response = await api.get("/auth/me");
-  return response.data;
+  return response.data.user;
 }
 
 // ─── Agency ──────────────────────────────────────────────────────────────────
@@ -789,4 +828,144 @@ export function useUpdateUserByAdmin(): UseMutationResult<
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["users"] }),
   });
+}
+
+// ─── Favorites ────────────────────────────────────────────────────────────────
+
+export interface Favorite {
+  _id: string
+  userId: string
+  type: "country" | "city" | "university" | "program"
+  itemId: string
+}
+
+export async function getFavorites(): Promise<Favorite[]> {
+  const res = await api.get("/favorites")
+  return res.data
+}
+
+export async function addFavorite(type: string, itemId: string): Promise<Favorite> {
+  const res = await api.post("/favorites", { type, itemId })
+  return res.data
+}
+
+export async function removeFavorite(type: string, itemId: string): Promise<void> {
+  await api.delete(`/favorites/${type}/${itemId}`)
+}
+
+export function useFavorites(): UseQueryResult<Favorite[]> {
+  return useQuery({ queryKey: ["favorites"], queryFn: getFavorites })
+}
+
+export function useAddFavorite(): UseMutationResult<Favorite, Error, { type: string; itemId: string }> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ type, itemId }) => addFavorite(type, itemId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["favorites"] }),
+  })
+}
+
+export function useRemoveFavorite(): UseMutationResult<void, Error, { type: string; itemId: string }> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ type, itemId }) => removeFavorite(type, itemId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["favorites"] }),
+  })
+}
+
+// ─── Matches ──────────────────────────────────────────────────────────────────
+
+export interface MatchResult extends Program {
+  matchScore: number
+}
+
+export async function getMatches(params: { budget?: number; gpa?: number; ielts?: number; countries?: string }): Promise<{ matches: MatchResult[]; total: number }> {
+  const res = await api.get("/programs/matches", { params })
+  return res.data
+}
+
+export function useMatches(params: { budget?: number; gpa?: number; ielts?: number; countries?: string }, enabled?: boolean): UseQueryResult<{ matches: MatchResult[]; total: number }> {
+  return useQuery({
+    queryKey: ["matches", params],
+    queryFn: () => getMatches(params),
+    enabled,
+  })
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface NotificationItem {
+  _id: string
+  userId: string
+  type: "deadline" | "status_change" | "system"
+  title: string
+  message: string
+  link?: string
+  read: boolean
+  createdAt: string
+}
+
+export async function getNotifications(): Promise<{ notifications: NotificationItem[]; unreadCount: number }> {
+  const res = await api.get("/notifications")
+  return res.data
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  await api.put(`/notifications/${id}/read`)
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await api.put("/notifications/read-all")
+}
+
+export function useNotifications(): UseQueryResult<{ notifications: NotificationItem[]; unreadCount: number }> {
+  return useQuery({ queryKey: ["notifications"], queryFn: getNotifications, refetchInterval: 60000 })
+}
+
+export function useMarkNotificationRead(): UseMutationResult<void, Error, string> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  })
+}
+
+export function useMarkAllRead(): UseMutationResult<void, Error, void> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: markAllNotificationsRead,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  })
+}
+
+// ─── User Preferences ─────────────────────────────────────────────────────────
+
+export interface UserPreferences {
+  preferredMonthlyBudget?: number
+  gpa?: number
+  ieltsScore?: number
+  preferredCountries?: string[]
+  preferredCurrency?: string
+}
+
+export async function getPreferences(): Promise<UserPreferences> {
+  const res = await api.get("/auth/preferences")
+  return res.data
+}
+
+export async function updatePreferences(prefs: Partial<UserPreferences>): Promise<UserPreferences> {
+  const res = await api.put("/auth/preferences", prefs)
+  return res.data
+}
+
+export function usePreferences(): UseQueryResult<UserPreferences> {
+  return useQuery({ queryKey: ["preferences"], queryFn: getPreferences })
+}
+
+export function useUpdatePreferences(): UseMutationResult<UserPreferences, Error, Partial<UserPreferences>> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: updatePreferences,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["preferences"] }),
+  })
 }

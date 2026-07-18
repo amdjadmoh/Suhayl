@@ -7,6 +7,11 @@ export interface IUser {
   passwordHash: string
   name: string
   role: UserRole
+  preferredMonthlyBudget?: number
+  gpa?: number
+  ieltsScore?: number
+  preferredCountries?: string[]
+  preferredCurrency?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -23,6 +28,11 @@ const userSchema = new Schema<IUserDocument>(
       enum: ["admin", "student", "agency"],
       required: true,
     },
+    preferredMonthlyBudget: { type: Number },
+    gpa: { type: Number },
+    ieltsScore: { type: Number },
+    preferredCountries: { type: [String] },
+    preferredCurrency: { type: String },
   },
   { timestamps: true }
 )

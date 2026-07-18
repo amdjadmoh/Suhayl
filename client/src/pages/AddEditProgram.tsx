@@ -53,19 +53,21 @@ export default function AddEditProgram(): React.ReactElement {
   } = useForm<ProgramFormData>({
     defaultValues: {
       name: "",
-      universityId: "",
+      universityId: preselectedUniId || "",
       degreeLevel: "Master",
       languageOfInstruction: "",
       tuitionFee: 0,
       tuitionCurrency: "EUR",
       tuitionPeriod: "Year",
-      gpaRequirement: undefined,
-      ieltsRequirement: undefined,
-      toeflRequirement: undefined,
+      testRequirements: [],
       scholarshipAvailable: false,
       scholarshipDetails: "",
+      requiresSOP: false,
+      recommendationLetters: 0,
+      applicationFee: undefined,
       requiredDocuments: [],
       applicationDeadline: "",
+      programUrl: "",
       notes: "",
     },
   });
@@ -73,6 +75,13 @@ export default function AddEditProgram(): React.ReactElement {
   const scholarshipAvailable = watch("scholarshipAvailable");
   const requiredDocuments = watch("requiredDocuments") ?? [];
   const [documentInput, setDocumentInput] = useState("");
+
+  const [testReqs, setTestReqs] = useState<{ name: string; minimumScore: number }[]>([]);
+  const [selectedTest, setSelectedTest] = useState("");
+  const [customTestName, setCustomTestName] = useState("");
+  const [newTestScore, setNewTestScore] = useState("");
+
+  const COMMON_TESTS = ["GPA", "IELTS", "TOEFL", "TCF", "DELF", "DALF", "SAT", "GRE", "GMAT"];
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -87,17 +96,20 @@ export default function AddEditProgram(): React.ReactElement {
         tuitionFee: existing.tuitionFee,
         tuitionCurrency: existing.tuitionCurrency,
         tuitionPeriod: existing.tuitionPeriod,
-        gpaRequirement: existing.gpaRequirement,
-        ieltsRequirement: existing.ieltsRequirement,
-        toeflRequirement: existing.toeflRequirement,
+        testRequirements: existing.testRequirements,
         scholarshipAvailable: existing.scholarshipAvailable,
         scholarshipDetails: existing.scholarshipDetails ?? "",
+        requiresSOP: existing.requiresSOP,
+        recommendationLetters: existing.recommendationLetters,
+        applicationFee: existing.applicationFee,
         requiredDocuments: existing.requiredDocuments,
         applicationDeadline: existing.applicationDeadline
           ? existing.applicationDeadline.split("T")[0] ?? ""
           : "",
+        programUrl: existing.programUrl ?? "",
         notes: existing.notes ?? "",
       });
+      setTestReqs(existing.testRequirements ?? []);
     } else if (!isEdit && preselectedUniId) {
       setValue("universityId", preselectedUniId);
     }
@@ -113,6 +125,24 @@ export default function AddEditProgram(): React.ReactElement {
 
   function removeDocument(index: number): void {
     setValue("requiredDocuments", requiredDocuments.filter((_, i) => i !== index));
+  }
+
+  function addTestRequirement(): void {
+    const name = selectedTest === "Custom" ? customTestName.trim() : selectedTest;
+    if (name && newTestScore) {
+      const updated = [...testReqs, { name, minimumScore: Number(newTestScore) }];
+      setTestReqs(updated);
+      setValue("testRequirements", updated);
+      setSelectedTest("");
+      setCustomTestName("");
+      setNewTestScore("");
+    }
+  }
+
+  function removeTestRequirement(index: number): void {
+    const updated = testReqs.filter((_, i) => i !== index);
+    setTestReqs(updated);
+    setValue("testRequirements", updated);
   }
 
   async function onSubmit(data: ProgramFormData): Promise<void> {
@@ -238,17 +268,45 @@ export default function AddEditProgram(): React.ReactElement {
                 <SelectContent>{TUITION_PERIODS.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="gpaRequirement" className="text-sm font-medium text-slate-700">GPA Requirement</Label>
-              <Input id="gpaRequirement" type="number" step="0.1" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("gpaRequirement", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 3.0" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ieltsRequirement" className="text-sm font-medium text-slate-700">IELTS Requirement</Label>
-              <Input id="ieltsRequirement" type="number" step="0.5" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("ieltsRequirement", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 6.5" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="toeflRequirement" className="text-sm font-medium text-slate-700">TOEFL Requirement</Label>
-              <Input id="toeflRequirement" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("toeflRequirement", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 90" />
+            <div className="sm:col-span-3 space-y-2">
+              <Label className="text-sm font-medium text-slate-700">Test Requirements</Label>
+              <div className="flex flex-wrap gap-2">
+                <Select value={selectedTest} onValueChange={(v) => { setSelectedTest(v); if (v !== "Custom") setCustomTestName(""); }}>
+                  <SelectTrigger className="rounded-lg w-40">
+                    <SelectValue placeholder="Select test..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMMON_TESTS.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                    <SelectItem value="Custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                {selectedTest === "Custom" && (
+                  <Input value={customTestName} onChange={(e) => setCustomTestName(e.target.value)}
+                    placeholder="Test name..." className="rounded-lg border-slate-200 w-40" />
+                )}
+                <Input type="number" value={newTestScore} onChange={(e) => setNewTestScore(e.target.value)}
+                  placeholder="Min score" className="rounded-lg border-slate-200 w-32" />
+                <Button type="button" variant="outline"
+                  className="border-slate-200 hover:bg-slate-50 rounded-xl"
+                  onClick={addTestRequirement}
+                  disabled={!((selectedTest && selectedTest !== "Custom") || (selectedTest === "Custom" && customTestName.trim())) || !newTestScore}>
+                  Add
+                </Button>
+              </div>
+              {testReqs.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {testReqs.map((t, i) => (
+                    <span key={i} className="bg-slate-100 text-slate-700 rounded-full px-3 py-1 text-sm inline-flex items-center gap-1">
+                      {t.name}: {t.minimumScore}
+                      <button type="button" onClick={() => removeTestRequirement(i)} className="ml-1 rounded-full hover:text-red-500">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -262,6 +320,11 @@ export default function AddEditProgram(): React.ReactElement {
             <div className="space-y-2">
               <Label htmlFor="deadline" className="text-sm font-medium text-slate-700">Application Deadline</Label>
               <Input id="deadline" type="date" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("applicationDeadline")} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="programUrl" className="text-sm font-medium text-slate-700">Program URL</Label>
+              <Input id="programUrl" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("programUrl")} placeholder="https://..." />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
@@ -297,6 +360,25 @@ export default function AddEditProgram(): React.ReactElement {
                 <Textarea id="scholarshipDetails" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("scholarshipDetails")}
                   placeholder="Describe available scholarships..." rows={2} />
               )}
+            </div>
+
+            {/* SOP, Recommendations & Fee */}
+            <div className="space-y-2 sm:col-span-2">
+              <div className="grid gap-4 sm:grid-cols-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="requiresSOP" checked={watch("requiresSOP") || false}
+                    onCheckedChange={(c) => setValue("requiresSOP", c === true)} />
+                  <Label htmlFor="requiresSOP" className="text-sm font-medium text-slate-700">Requires SOP</Label>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="recLetters" className="text-xs font-medium text-slate-500">Recommendation Letters</Label>
+                  <Input id="recLetters" type="number" min="0" className="rounded-lg border-slate-200" {...register("recommendationLetters", { setValueAs: (v) => Number(v) })} placeholder="0" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="appFee" className="text-xs font-medium text-slate-500">Application Fee (€)</Label>
+                  <Input id="appFee" type="number" className="rounded-lg border-slate-200" {...register("applicationFee", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="Optional" />
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -183,8 +183,7 @@ export default function Compare(): React.ReactElement {
                     <TableRow label="Language" values={programs.map((p) => p.languageOfInstruction)} />
                     <TableRow label="Tuition" values={programs.map((p) => formatCurrency(p.tuitionFee, p.tuitionCurrency, p.tuitionPeriod))} />
                     <TableRow label="Deadline" values={programs.map((p) => formatDate(p.applicationDeadline))} />
-                    <TableRow label="GPA Req." values={programs.map((p) => p.gpaRequirement?.toString() ?? "—")} />
-                    <TableRow label="IELTS Req." values={programs.map((p) => p.ieltsRequirement?.toString() ?? "—")} />
+                    <TableRow label="Test Req." values={programs.map((p) => (p.testRequirements ?? []).map((tr) => `${tr.name} ${tr.minimumScore}`).join(", ") || "—")} />
                     <TableRow
                       label="Scholarship"
                       values={programs.map((p) => (p.scholarshipAvailable ? "Available" : "No"))}

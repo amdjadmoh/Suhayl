@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useUniversities, useCountries } from "@/lib/api";
+import { useUniversities, useCountries, useFavorites, useAddFavorite, useRemoveFavorite } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { COUNTRY_FLAGS } from "@/lib/constants";
 import type { University } from "@/types/university";
@@ -13,6 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Search,
@@ -35,17 +38,26 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useDeleteUniversity } from "@/lib/api";
+import { useDeleteUniversity, useToggleUniversityOfficial } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
 
 function UniversityCard({
   university,
   isAdmin,
+  isFav,
+  isLoggedIn,
+  showOfficialToggle,
+  onToggleFavorite,
 }: {
   university: University;
   isAdmin: boolean;
+  isFav: boolean;
+  isLoggedIn: boolean;
+  showOfficialToggle?: boolean;
+  onToggleFavorite: (type: string, itemId: string, isFav: boolean) => void;
 }): React.ReactElement {
   const deleteMutation = useDeleteUniversity();
+  const toggleUniOfficial = useToggleUniversityOfficial();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   async function handleDelete(): Promise<void> {
@@ -61,19 +73,35 @@ function UniversityCard({
     <div className="group relative overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-xl hover:border-[#0EA5E9]/30 transition-all duration-300">
       {/* Gradient accent */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-      
+
+      {/* Favorite button */}
+      {isLoggedIn && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite("university", university._id, isFav); }}
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+          title={isFav ? "Remove from saved" : "Save"}
+        >
+          <Star className={`h-5 w-5 ${isFav ? "fill-amber-400 text-amber-400" : "text-slate-300 hover:text-amber-400"}`} />
+        </button>
+      )}
+
       <div className="p-6">
         <Link to={`/universities/${university._id}`}>
           <div className="flex items-start justify-between mb-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-2xl">
               {COUNTRY_FLAGS[university.country] ?? ""}
             </div>
-            {university.ranking && (
-              <div className="flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                #{university.ranking}
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              {university.isOfficial === false && (
+                <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200 rounded-full px-2 py-0.5">Custom</Badge>
+              )}
+              {university.ranking && (
+                <div className="flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                  #{university.ranking}
+                </div>
+              )}
+            </div>
           </div>
 
           <h3 className="text-lg font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors mb-2">
@@ -88,6 +116,24 @@ function UniversityCard({
 
         {isAdmin && (
           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+            {showOfficialToggle && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 rounded-xl"
+                disabled={toggleUniOfficial.isPending}
+                onClick={async () => {
+                  try {
+                    await toggleUniOfficial.mutateAsync(university._id);
+                    toast.success(university.isOfficial ? "Marked as custom" : "Marked as official");
+                  } catch {
+                    toast.error("Failed to toggle official status");
+                  }
+                }}
+              >
+                {university.isOfficial ? "Make Custom" : "Make Official"}
+              </Button>
+            )}
             <Button variant="outline" size="sm" className="flex-1 rounded-xl" asChild>
               <Link to={`/universities/${university._id}/edit`}>
                 <Pencil className="mr-1.5 h-4 w-4" />
@@ -139,6 +185,7 @@ function UniversityCardSkeleton(): React.ReactElement {
 export default function Universities(): React.ReactElement {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const isLoggedIn = !!user;
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(
     searchParams.get("search") ?? "",
@@ -146,12 +193,30 @@ export default function Universities(): React.ReactElement {
 
   const search = searchParams.get("search") ?? "";
   const country = searchParams.get("country") ?? "";
+  const customOnly = searchParams.get("customOnly") ?? "";
 
   const { data, isLoading, isError, error } = useUniversities({
     search: search || undefined,
     country: country || undefined,
+    customOnly: customOnly || undefined,
   });
   const { data: countries } = useCountries();
+  const { data: favorites } = useFavorites();
+  const addFav = useAddFavorite();
+  const removeFav = useRemoveFavorite();
+
+  const favoritesMap: Record<string, boolean> = {};
+  if (favorites) {
+    favorites.forEach((f) => { favoritesMap[f.itemId] = true; });
+  }
+
+  function handleToggleFavorite(type: string, itemId: string, isFav: boolean): void {
+    if (isFav) {
+      removeFav.mutate({ type, itemId });
+    } else {
+      addFav.mutate({ type, itemId });
+    }
+  }
 
   function updateFilter(key: string, value: string): void {
     const params = new URLSearchParams(searchParams);
@@ -172,7 +237,7 @@ export default function Universities(): React.ReactElement {
     setSearchParams({});
   }
 
-  const hasFilters = search || country;
+  const hasFilters = search || country || customOnly;
 
   if (isError) {
     return (
@@ -201,13 +266,22 @@ export default function Universities(): React.ReactElement {
             <h1 className="text-3xl font-bold tracking-tight">Universities</h1>
             <p className="mt-2 text-purple-100">Explore top institutions worldwide</p>
           </div>
-          {isAdmin && (
-            <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-              <Link to="/universities/new">
-                <Plus className="mr-2 h-4 w-4" /> Add University
-              </Link>
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {(isLoggedIn && !isAdmin) && (
+              <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
+                <Link to="/universities/new">
+                  <Plus className="mr-2 h-4 w-4" /> Add Custom University
+                </Link>
+              </Button>
+            )}
+            {isAdmin && (
+              <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
+                <Link to="/universities/new">
+                  <Plus className="mr-2 h-4 w-4" /> Add Official
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -241,6 +315,19 @@ export default function Universities(): React.ReactElement {
           </SelectContent>
         </Select>
 
+        {isLoggedIn && (
+          <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-slate-200 bg-white">
+            <Checkbox
+              id="customOnly"
+              checked={customOnly === "true"}
+              onCheckedChange={(checked) => updateFilter("customOnly", checked ? "true" : "")}
+            />
+            <Label htmlFor="customOnly" className="text-sm text-slate-600 whitespace-nowrap cursor-pointer">
+              {isAdmin ? "All Custom Programs" : "My Custom Only"}
+            </Label>
+          </div>
+        )}
+
         {hasFilters && (
           <Button variant="outline" size="icon" onClick={clearFilters} className="rounded-xl">
             <X className="h-4 w-4" />
@@ -272,7 +359,10 @@ export default function Universities(): React.ReactElement {
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {universities.map((u) => (
-              <UniversityCard key={u._id} university={u} isAdmin={isAdmin} />
+              <UniversityCard key={u._id} university={u} isAdmin={isAdmin}
+                isFav={favoritesMap[u._id] ?? false} isLoggedIn={isLoggedIn}
+                showOfficialToggle={isAdmin && customOnly === "true"}
+                onToggleFavorite={handleToggleFavorite} />
             ))}
           </div>
         </>

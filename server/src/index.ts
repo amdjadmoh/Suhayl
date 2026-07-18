@@ -17,6 +17,10 @@ import { studentRouter } from "./routes/studentRoutes"
 import { adminRouter } from "./routes/adminRoutes"
 import { applicationRouter } from "./routes/applicationRoutes"
 import { programRouter } from "./routes/programRoutes"
+import favoriteRoutes from "./routes/favoriteRoutes"
+import notificationRoutes from "./routes/notificationRoutes"
+import { Application } from "./models/Application"
+import { Notification } from "./models/Notification"
 
 const app = express()
 const PORT = process.env["PORT"] ?? "5000"
@@ -36,6 +40,8 @@ app.use("/api/students", studentRouter)
 app.use("/api/admin", adminRouter)
 app.use("/api/applications", applicationRouter)
 app.use("/api/programs", programRouter)
+app.use("/api/favorites", favoriteRoutes)
+app.use("/api/notifications", notificationRoutes)
 
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")
@@ -71,6 +77,48 @@ async function start(): Promise<void> {
   app.listen(parseInt(PORT, 10), () => {
     console.log(`Server running on http://localhost:${PORT}`)
   })
+
+  // Deadline checker — runs 5s after startup and every 24h
+  async function checkDeadlines(): Promise<void> {
+    const now = new Date()
+    const thirtyDays = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    const apps = await Application.find({
+      applicationDeadline: { $gte: now, $lte: thirtyDays },
+    }).populate("programId", "name")
+
+    for (const app of apps) {
+      if (!app.createdBy) continue
+      const deadline = new Date(app.applicationDeadline!)
+      const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const progName = (app.programId as any)?.name ?? "a program"
+      const title = daysLeft <= 7
+        ? `⚠️ Deadline in ${daysLeft} days!`
+        : `Deadline in ${daysLeft} days`
+      const message = `"${progName}" application is due in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}.`
+
+      // Check if notification already exists for this app deadline within 24h
+      const exists = await Notification.findOne({
+        userId: app.createdBy as any,
+        type: "deadline",
+        message,
+        createdAt: { $gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+      })
+      if (!exists) {
+        await Notification.create({
+          userId: app.createdBy as any,
+          type: "deadline",
+          title,
+          message,
+          link: `/applications/${app._id}`,
+        })
+      }
+    }
+    console.log(`Checked deadlines: ${apps.length} upcoming`)
+  }
+
+  setTimeout(checkDeadlines, 5000)
+  setInterval(checkDeadlines, 24 * 60 * 60 * 1000)
 }
 
 start()

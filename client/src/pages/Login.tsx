@@ -45,6 +45,12 @@ export default function Login(): React.ReactElement {
         </div>
 
         <div className="rounded-2xl bg-white p-8 shadow-xl">
+          <div className="mb-4">
+            <Link to="/" className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5m7-7l-7 7 7 7"/></svg>
+              Back to home
+            </Link>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600">

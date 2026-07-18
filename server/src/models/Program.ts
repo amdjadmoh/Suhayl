@@ -11,14 +11,19 @@ export interface IProgram {
   tuitionFee: number
   tuitionCurrency: string
   tuitionPeriod: (typeof TUITION_PERIODS)[number]
-  gpaRequirement?: number
-  ieltsRequirement?: number
-  toeflRequirement?: number
+  testRequirements: { name: string; minimumScore: number }[]
   scholarshipAvailable: boolean
   scholarshipDetails?: string
   requiredDocuments: string[]
+  requiresSOP: boolean
+  recommendationLetters: number
+  applicationFee?: number
   applicationDeadline?: Date
+  programUrl?: string
   notes?: string
+  createdBy?: Types.ObjectId
+  isOfficial: boolean
+  verificationStatus: "manual" | "ai" | "none"
   createdAt: Date
   updatedAt: Date
 }
@@ -34,14 +39,22 @@ const programSchema = new Schema<IProgramDocument>(
     tuitionFee: { type: Number, required: true },
     tuitionCurrency: { type: String, default: "EUR" },
     tuitionPeriod: { type: String, enum: TUITION_PERIODS, default: "Year" },
-    gpaRequirement: { type: Number },
-    ieltsRequirement: { type: Number },
-    toeflRequirement: { type: Number },
+    testRequirements: {
+      type: [{ _id: false, name: String, minimumScore: Number }],
+      default: [],
+    },
     scholarshipAvailable: { type: Boolean, default: false },
     scholarshipDetails: { type: String },
     requiredDocuments: { type: [String], default: [] },
+    requiresSOP: { type: Boolean, default: false },
+    recommendationLetters: { type: Number, default: 0 },
+    applicationFee: { type: Number },
     applicationDeadline: { type: Date },
+    programUrl: { type: String },
     notes: { type: String },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+    isOfficial: { type: Boolean, default: true },
+    verificationStatus: { type: String, enum: ["manual", "ai", "none"], default: "ai" },
   },
   { timestamps: true }
 )
