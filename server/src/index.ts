@@ -25,6 +25,12 @@ import favoriteRoutes from "./routes/favoriteRoutes"
 import notificationRoutes from "./routes/notificationRoutes"
 import { Application } from "./models/Application"
 import { Notification } from "./models/Notification"
+import { sendEmail, isEmailEnabled } from "./services/email"
+import { renderDeadlineReminder } from "./templates/email/render"
+
+// In-memory email dedup — tracks (userId, applicationId) combos that have
+// received a deadline email. Resets on server restart (acceptable for MVP).
+const emailedDeadlines = new Set<string>()
 
 const app = express()
 const PORT = process.env["PORT"] ?? "5000"
@@ -34,8 +40,8 @@ const MONGODB_URI =
 // Persistent storage location for the in-memory MongoDB fallback. Resolved
 // relative to the compiled file so the path is stable regardless of the
 // process's working directory.
-//   Dev  (ts-node-dev): __dirname = <repo>/server/src  → ../.. → <repo>
-//   Prod (tsc):         __dirname = <repo>/server/dist → ../.. → <repo>
+//   Dev  (ts-node-dev): __dirname = <repo>/server/src  -> ../.. -> <repo>
+//   Prod (tsc):         __dirname = <repo>/server/dist -> ../.. -> <repo>
 const DATA_DIR = path.resolve(__dirname, "..", "..", "data", "db")
 
 // ── CORS ───────────────────────────────────────────────────────────────────
@@ -154,7 +160,9 @@ async function start(): Promise<void> {
 
     const apps = await Application.find({
       applicationDeadline: { $gte: now, $lte: thirtyDays },
-    }).populate("programId", "name")
+    })
+      .populate("programId", "name")
+      .populate("createdBy", "email name")
 
     for (const app of apps) {
       if (!app.createdBy) continue
@@ -181,6 +189,46 @@ async function start(): Promise<void> {
           message,
           link: `/applications/${app._id}`,
         })
+
+        // ── Email reminder (only for urgent deadlines) ─────────
+        if (daysLeft <= 7 && isEmailEnabled()) {
+          const userObj = app.createdBy as { email?: string; name?: string } | null
+          const userEmail = userObj?.email
+          if (userEmail) {
+            const dedupKey = `${String(app._id)}_${String((app.createdBy as any)?._id ?? app.createdBy)}`
+            if (!emailedDeadlines.has(dedupKey)) {
+              try {
+                // Build props conditionally to satisfy exactOptionalPropertyTypes
+                const reminderProps: Parameters<typeof renderDeadlineReminder>[0] = {
+                  programName: progName,
+                  daysLeft,
+                  applicationUrl: `/applications/${app._id}`,
+                }
+                if (userObj?.name) {
+                  reminderProps.studentName = userObj.name
+                }
+                const { html, text } = await renderDeadlineReminder(reminderProps)
+                const emailMsg: { to: string; subject: string; html: string; text?: string } = {
+                  to: userEmail,
+                  subject: title,
+                  html,
+                }
+                if (text) {
+                  emailMsg.text = text
+                }
+                const result = await sendEmail(emailMsg)
+                if (result.ok) {
+                  emailedDeadlines.add(dedupKey)
+                } else {
+                  console.error(`Deadline email failed for app ${app._id}:`, result.error)
+                }
+              } catch (err: unknown) {
+                const errMsg = err instanceof Error ? err.message : String(err)
+                console.error(`Deadline email threw for app ${app._id}:`, errMsg)
+              }
+            }
+          }
+        }
       }
     }
     console.log(`Checked deadlines: ${apps.length} upcoming`)
