@@ -5,6 +5,9 @@ export interface IUniversity {
   readonly country: string
   readonly city: string
   readonly ranking?: number
+  readonly qsRank?: number | null
+  readonly theRank?: number | null
+  readonly arwuRank?: number | null
   readonly websiteUrl?: string
   readonly notes?: string
   readonly createdBy?: Types.ObjectId
@@ -21,6 +24,9 @@ const universitySchema = new Schema<IUniversityDocument>(
     country: { type: String, required: true },
     city: { type: String, required: true },
     ranking: { type: Number },
+    qsRank: { type: Number, default: null, index: true, sparse: true },
+    theRank: { type: Number, default: null, index: true, sparse: true },
+    arwuRank: { type: Number, default: null },
     websiteUrl: { type: String },
     notes: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },

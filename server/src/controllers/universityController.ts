@@ -122,6 +122,22 @@ export async function remove(req: Request, res: Response): Promise<void> {
   res.json({ message: "University deleted" })
 }
 
+export async function updateRankings(req: Request, res: Response): Promise<void> {
+  const existing = await University.findById(req.params["id"])
+  if (!existing) {
+    res.status(404).json({ message: "University not found" })
+    return
+  }
+
+  // req.body is pre-validated by validate(updateRankingsSchema, "body")
+  const university = await University.findByIdAndUpdate(
+    req.params["id"],
+    req.body,
+    { new: true, runValidators: true }
+  )
+  res.json(university)
+}
+
 export async function getCountries(_req: Request, res: Response): Promise<void> {
   const countries = await University.distinct("country")
   res.json(countries)
