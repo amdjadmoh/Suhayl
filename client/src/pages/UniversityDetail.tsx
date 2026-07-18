@@ -18,8 +18,8 @@ import {
   Calendar,
   Search,
   X,
-  Check,
   Shield,
+  Trophy,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { getErrorMessage } from "@/lib/utils";
@@ -66,7 +66,6 @@ export default function UniversityDetail(): React.ReactElement {
   const deleteMutation = useDeleteUniversity();
   const deleteProgramMutation = useDeleteProgram();
   const toggleOfficial = useToggleUniversityOfficial();
-  const toggleProgOfficial = useToggleProgramOfficial();
   const [deleteProgOpen, setDeleteProgOpen] = useState<string | null>(null);
   const isLoggedIn = !!user;
 
@@ -235,6 +234,43 @@ export default function UniversityDetail(): React.ReactElement {
           {!u.websiteUrl && !u.notes && (
             <p className="text-sm text-slate-500">No additional information available.</p>
           )}
+        </div>
+      </div>
+
+      {/* Rankings */}
+      <div className="rounded-xl border border-slate-100 bg-white">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
+            <Trophy className="h-5 w-5 text-slate-400" /> Rankings
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid gap-6 sm:grid-cols-3">
+            <div className="text-center">
+              {u.qsRank != null ? (
+                <p className="text-3xl font-bold text-[#0F172A]">#{u.qsRank}</p>
+              ) : (
+                <p className="text-sm text-slate-400">Not ranked</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">QS World Ranking</p>
+            </div>
+            <div className="text-center">
+              {u.theRank != null ? (
+                <p className="text-3xl font-bold text-[#0F172A]">#{u.theRank}</p>
+              ) : (
+                <p className="text-sm text-slate-400">Not ranked</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">Times Higher Education</p>
+            </div>
+            <div className="text-center">
+              {u.arwuRank != null ? (
+                <p className="text-3xl font-bold text-[#0F172A]">#{u.arwuRank}</p>
+              ) : (
+                <p className="text-sm text-slate-400">Not ranked</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">ARWU / Shanghai</p>
+            </div>
+          </div>
         </div>
       </div>
 

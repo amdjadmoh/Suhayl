@@ -1,13 +1,11 @@
 import { Link } from "react-router-dom";
 import { useFavorites, useCountries, useUniversities, usePrograms } from "@/lib/api";
-import { useAuth } from "@/lib/authContext";
-import { Star, Globe, GraduationCap, BookOpen, AlertCircle, ArrowRight } from "lucide-react";
+import { Star, Globe, GraduationCap, BookOpen, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { COUNTRY_FLAGS } from "@/lib/constants";
 
 export default function Saved(): React.ReactElement {
-  const { user } = useAuth();
   const { data: favorites, isLoading: favsLoading } = useFavorites();
   const { data: countries } = useCountries();
   const { data: unisData } = useUniversities();

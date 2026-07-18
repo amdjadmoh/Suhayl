@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { usePrograms, useCountries, useCities, useFavorites, useAddFavorite, useRemoveFavorite, useToggleProgramOfficial } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { useCompare } from "@/lib/compareContext";
-import { DEGREE_LEVELS, FIELD_CATEGORIES, COUNTRY_FLAGS } from "@/lib/constants";
+import { DEGREE_LEVELS, COUNTRY_FLAGS } from "@/lib/constants";
 import type { Program } from "@/types/program";
 import type { Country } from "@/types/country";
 import type { City } from "@/types/city";
@@ -16,8 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Search, X, MapPin, AlertCircle, BookOpen, Calendar,
-  DollarSign, GitCompare, Check, Star, Heart, Loader2, Plus,
+  DollarSign, GitCompare, Check, Star, Loader2, Plus,
 } from "lucide-react";
+import { toast } from "sonner";
 
 function formatCurrency(amount: number, currency: string, period: string): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) + ` / ${period.toLowerCase()}`;

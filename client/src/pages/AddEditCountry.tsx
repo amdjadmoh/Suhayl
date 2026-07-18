@@ -237,7 +237,7 @@ export default function AddEditCountry(): React.ReactElement {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label className="text-sm font-medium text-slate-700">Info Reliability</Label>
-              <Select value={watch("verificationStatus") ?? "ai"} onValueChange={(v) => setValue("verificationStatus", v)}>
+              <Select value={watch("verificationStatus") ?? "ai"} onValueChange={(v) => setValue("verificationStatus", v as CountryFormData["verificationStatus"])}>
                 <SelectTrigger className="rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
