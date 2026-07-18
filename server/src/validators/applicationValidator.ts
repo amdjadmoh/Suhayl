@@ -37,6 +37,10 @@ const applicationProgressSchema = z
   })
   .strict()
 
+// Accept both ISO datetime ("2026-12-15T00:00:00Z") and date-only ("2026-12-15")
+// because the client's <Input type="date"> produces date-only strings.
+const deadlineSchema = z.union([z.string().datetime(), z.string().date()])
+
 export const createApplicationSchema = z
   .object({
     programId: z.string().min(1, "programId is required"),
@@ -44,6 +48,12 @@ export const createApplicationSchema = z
     studentEmail: z.string().email("studentEmail must be valid"),
     studentId: z.string().optional(),
     notes: z.string().optional(),
+    // Client may send these on create; the controller ignores them and
+    // auto-populates from the program / model defaults. Accepted here so
+    // the strict schema doesn't reject the client's payload.
+    applicationStatus: applicationStatusEnum.optional(),
+    applicationDeadline: deadlineSchema.optional(),
+    applicationProgress: applicationProgressSchema.optional(),
   })
   .strict()
 
@@ -53,7 +63,7 @@ export const updateApplicationSchema = z
     studentEmail: z.string().email().optional(),
     applicationStatus: applicationStatusEnum.optional(),
     applicationProgress: applicationProgressSchema.optional(),
-    applicationDeadline: z.string().datetime().optional(),
+    applicationDeadline: deadlineSchema.optional(),
     notes: z.string().optional(),
   })
   .strict()
