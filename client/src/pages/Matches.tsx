@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Sparkles, Search, MapPin, BookOpen, DollarSign, AlertCircle,
+  Sparkles, Search, MapPin, DollarSign, AlertCircle,
 } from "lucide-react";
 import {
   Select,

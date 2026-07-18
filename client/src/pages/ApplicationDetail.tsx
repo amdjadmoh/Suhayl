@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   ArrowLeft, Trash2, AlertCircle, Loader2, ClipboardList, User, Mail,
-  GraduationCap, BookOpen, Send, Check, Pencil, X,
+  GraduationCap, Send, Check, Pencil, X,
 } from "lucide-react";
 import { useState } from "react";
 import type { Program } from "@/types/program";
@@ -68,7 +68,7 @@ export default function ApplicationDetail(): React.ReactElement {
   async function toggleProgress(update: Partial<ApplicationProgress>): Promise<void> {
     if (isReadOnly) return;
     if (!application || !id) return;
-    const key = Object.keys(update)[0];
+    const key = Object.keys(update)[0] ?? null;
     setUpdating(key);
     const payload: any = {
       programId: typeof application.programId === "string" ? application.programId : application.programId?._id ?? "",
@@ -462,7 +462,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       loading={updating === `testScores.${i}.taken`}
                       onClick={() => {
                         const newScores = [...p.testScores];
-                        newScores[i] = { ...newScores[i], taken: !ts.taken };
+                        newScores[i] = { ...ts, taken: !ts.taken };
                         toggleProgress({ testScores: newScores });
                       }}
                     />
@@ -471,7 +471,7 @@ export default function ApplicationDetail(): React.ReactElement {
                         value={ts.score ?? ""}
                         onChange={(e) => {
                           const newScores = [...p.testScores];
-                          newScores[i] = { ...newScores[i], score: e.target.value ? parseFloat(e.target.value) : undefined };
+                          newScores[i] = { ...ts, score: e.target.value ? parseFloat(e.target.value) : undefined };
                           toggleProgress({ testScores: newScores });
                         }}
                       />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import type { ApplicationFormData } from "@/types/application";
@@ -7,7 +7,6 @@ import {
   useUpdateApplication,
   useApplication,
   usePrograms,
-  useStudents,
 } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { APPLICATION_STATUSES } from "@/lib/constants";
@@ -35,7 +34,6 @@ export default function AddEditApplication(): React.ReactElement {
 
   const { data: existing, isLoading: appLoading } = useApplication(id ?? "");
   const { data: programs } = usePrograms();
-  const { data: students } = useStudents();
   const createMutation = useCreateApplication();
   const updateMutation = useUpdateApplication();
 

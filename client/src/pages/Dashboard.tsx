@@ -273,7 +273,7 @@ function StudentDashboard(): React.ReactElement {
       return new Date(a.applicationDeadline) >= now;
     })
     .sort((a, b) => new Date(a.applicationDeadline!).getTime() - new Date(b.applicationDeadline!).getTime());
-  const nextDeadlineDays = upcoming.length > 0 ? daysUntil(upcoming[0].applicationDeadline!) : null;
+  const nextDeadlineDays = upcoming.length > 0 ? daysUntil(upcoming[0]!.applicationDeadline!) : null;
 
   return (
     <div className="space-y-8">
