@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAgencyApplications, useStudents } from "@/lib/api";
+import { useAgencyApplications, useStudents, api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -10,7 +10,20 @@ import {
   UserPlus,
   FileText,
   ArrowRight,
+  Download,
 } from "lucide-react";
+
+async function exportApplicationsCsv(): Promise<void> {
+  const response = await api.get("/agency/applications/export.csv", { responseType: "blob" });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `agency-applications-${new Date().toISOString().split("T")[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
 
 export default function AgencyDashboard(): React.ReactElement {
   const {
@@ -40,11 +53,20 @@ export default function AgencyDashboard(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">Agency Dashboard</h1>
-        <p className="text-sm text-slate-500">
-          Overview of your students and applications
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">Agency Dashboard</h1>
+          <p className="text-sm text-slate-500">
+            Overview of your students and applications
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="rounded-xl border-slate-100"
+          onClick={exportApplicationsCsv}
+        >
+          <Download className="mr-2 h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       {/* Summary cards */}

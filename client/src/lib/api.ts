@@ -21,7 +21,7 @@ import type { City, CityWithUniversities, CityFormData } from "@/types/city";
 import type { User, AuthResponse } from "@/types/auth";
 import type { Student } from "@/types/student";
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: "/api",
   timeout: 15000,
   headers: {

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useApplications } from "@/lib/api";
+import { useApplications, api } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { STATUS_COLORS, APPLICATION_STATUSES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Calendar, GraduationCap, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
+
+async function downloadCalendar(): Promise<void> {
+  const response = await api.get("/applications/calendar.ics", { responseType: "blob" });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "wannaout-deadlines.ics");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
 
 function daysUntil(dateStr?: string): number | null {
   if (!dateStr) return null;
@@ -120,13 +132,22 @@ export default function ApplicationsTracker(): React.ReactElement {
             <h1 className="text-3xl font-bold tracking-tight">Applications Tracker</h1>
             <p className="mt-2 text-sky-100">{applications.length} application{applications.length === 1 ? "" : "s"} tracked</p>
           </div>
-          {canAdd && (
-            <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-              <Link to="/applications/new">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Application
-              </Link>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm rounded-xl"
+              onClick={downloadCalendar}
+            >
+              <Calendar className="mr-2 h-4 w-4" /> Download Calendar
             </Button>
-          )}
+            {canAdd && (
+              <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
+                <Link to="/applications/new">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Application
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

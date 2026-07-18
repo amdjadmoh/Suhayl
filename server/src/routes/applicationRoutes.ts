@@ -12,10 +12,12 @@ import {
   create,
   update,
   remove,
+  getCalendar,
 } from "../controllers/applicationController"
 
 export const applicationRouter = Router()
 
+applicationRouter.get("/calendar.ics", authenticate, getCalendar)
 applicationRouter.get("/", authenticate, validate(listApplicationsQuerySchema, "query"), getAll)
 applicationRouter.get("/:id", authenticate, getById)
 applicationRouter.post("/", authenticate, validate(createApplicationSchema, "body"), create)
