@@ -128,8 +128,8 @@ export default function AgencyStudentDetail(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Student not found</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-foreground">Student not found</h2>
+        <p className="text-sm text-muted-foreground">
           {error instanceof Error ? error.message : ""}
         </p>
         <Button variant="outline" className="mt-4" asChild>
@@ -146,12 +146,12 @@ export default function AgencyStudentDetail(): React.ReactElement {
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
             <Link to="/agency/students">
-              <ArrowLeft className="h-5 w-5 text-[#0F172A]" />
+              <ArrowLeft className="h-5 w-5 text-foreground" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{student.name}</h1>
-            <p className="text-sm text-slate-500">Student Details</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{student.name}</h1>
+            <p className="text-sm text-muted-foreground">Student Details</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -242,43 +242,43 @@ export default function AgencyStudentDetail(): React.ReactElement {
       </div>
 
       {/* Student info card */}
-      <div className="rounded-xl border border-slate-100 bg-white">
-        <div className="border-b border-slate-100 px-6 py-4">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-            <User className="h-5 w-5 text-slate-400" />
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-6 py-4">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <User className="h-5 w-5 text-muted-foreground" />
             Contact Information
           </h3>
         </div>
         <div className="p-6">
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0EA5E9]/10">
-                <Mail className="h-4 w-4 text-[#0EA5E9]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                <Mail className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-slate-500">Email</p>
-                <p className="text-sm font-medium text-[#0F172A]">{student.email}</p>
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="text-sm font-medium text-foreground">{student.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0EA5E9]/10">
-                <Phone className="h-4 w-4 text-[#0EA5E9]" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                <Phone className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-slate-500">Phone</p>
-                <p className="text-sm font-medium text-[#0F172A]">
+                <p className="text-xs text-muted-foreground">Phone</p>
+                <p className="text-sm font-medium text-foreground">
                   {student.phone ?? "Not provided"}
                 </p>
               </div>
             </div>
             {student.notes && (
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0EA5E9]/10">
-                  <FileText className="h-4 w-4 text-[#0EA5E9]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                  <FileText className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Notes</p>
-                  <p className="whitespace-pre-wrap text-sm font-medium text-[#0F172A]">{student.notes}</p>
+                  <p className="text-xs text-muted-foreground">Notes</p>
+                  <p className="whitespace-pre-wrap text-sm font-medium text-foreground">{student.notes}</p>
                 </div>
               </div>
             )}
@@ -287,9 +287,9 @@ export default function AgencyStudentDetail(): React.ReactElement {
       </div>
 
       {/* Applications */}
-      <div className="rounded-xl border border-slate-100 bg-white">
-        <div className="border-b border-slate-100 px-6 py-4">
-          <h3 className="text-base font-semibold text-[#0F172A]">
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-6 py-4">
+          <h3 className="text-base font-semibold text-foreground">
             Applications ({studentApplications.length})
           </h3>
         </div>
@@ -302,13 +302,13 @@ export default function AgencyStudentDetail(): React.ReactElement {
                   <Link
                     key={a._id}
                     to={`/applications/${a._id}`}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 p-3 transition-all hover:border-slate-200 hover:bg-slate-50/50"
+                    className="flex items-center justify-between rounded-lg border border-border p-3 transition-all hover:border-border hover:bg-muted/50"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-[#0F172A]">
+                      <p className="truncate font-medium text-foreground">
                         {progName}
                       </p>
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         {a.applicationDeadline && (
                           <>
                             <span>Deadline: {new Date(a.applicationDeadline).toLocaleDateString()}</span>
@@ -330,8 +330,8 @@ export default function AgencyStudentDetail(): React.ReactElement {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10">
-              <GraduationCap className="mb-3 h-12 w-12 text-slate-300" />
-              <p className="text-sm text-slate-500">
+              <GraduationCap className="mb-3 h-12 w-12 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
                 No applications yet
               </p>
               <Button variant="outline" size="sm" className="mt-3" asChild>

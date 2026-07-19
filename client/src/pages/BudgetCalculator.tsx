@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { usePrograms, useBudgetCalculation } from "@/lib/api";
-import type { Program } from "@/types/program";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -39,7 +38,7 @@ export default function BudgetCalculator(): React.ReactElement {
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-emerald-400 blur-3xl" />
         </div>
         <div className="relative">
@@ -51,10 +50,10 @@ export default function BudgetCalculator(): React.ReactElement {
       </div>
 
       {/* Program Selector */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-border shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg text-[#0F172A]">
-            <Calculator className="h-5 w-5 text-[#0EA5E9]" />
+          <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+            <Calculator className="h-5 w-5 text-primary" />
             Select a Program
           </CardTitle>
         </CardHeader>
@@ -66,7 +65,7 @@ export default function BudgetCalculator(): React.ReactElement {
               value={selectedProgramId}
               onValueChange={(v) => setSelectedProgramId(v)}
             >
-              <SelectTrigger className="w-full rounded-lg border-slate-200">
+              <SelectTrigger className="w-full rounded-lg border-border">
                 <SelectValue placeholder="Choose a program to calculate costs..." />
               </SelectTrigger>
               <SelectContent>
@@ -96,13 +95,13 @@ export default function BudgetCalculator(): React.ReactElement {
       )}
 
       {selectedProgramId && !budgetLoading && !budget && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <AlertCircle className="mb-4 h-12 w-12 text-slate-300" />
-            <h2 className="text-lg font-semibold text-[#0F172A]">
+            <AlertCircle className="mb-4 h-12 w-12 text-muted-foreground/40" />
+            <h2 className="text-lg font-semibold text-foreground">
               No budget data available
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               Budget information is not available for this program yet.
             </p>
           </CardContent>
@@ -113,13 +112,13 @@ export default function BudgetCalculator(): React.ReactElement {
         <>
           {/* Program summary */}
           {selectedProgram && (
-            <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100">
-                  <BookOpen className="h-5 w-5 text-indigo-600" />
+                  <BookOpen className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#0F172A]">
+                  <h3 className="font-semibold text-foreground">
                     {selectedProgram.name}
                   </h3>
                   {(() => {
@@ -128,7 +127,7 @@ export default function BudgetCalculator(): React.ReactElement {
                         ? selectedProgram.universityId
                         : null;
                     return uni ? (
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-muted-foreground">
                         {uni.name} · {uni.country}
                       </p>
                     ) : null;
@@ -137,12 +136,12 @@ export default function BudgetCalculator(): React.ReactElement {
               </div>
               <Badge
                 variant="secondary"
-                className="bg-slate-100 text-slate-700 rounded-full"
+                className="bg-muted text-foreground rounded-full"
               >
                 {selectedProgram.degreeLevel}
               </Badge>
-              <span className="mx-2 text-slate-300">·</span>
-              <span className="text-sm text-slate-500">
+              <span className="mx-2 text-muted-foreground/40">·</span>
+              <span className="text-sm text-muted-foreground">
                 {formatCurrency(
                   selectedProgram.tuitionFee,
                   selectedProgram.tuitionCurrency,
@@ -154,66 +153,66 @@ export default function BudgetCalculator(): React.ReactElement {
 
           {/* Breakdown Cards */}
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-blue-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-blue-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Tuition</p>
+                <p className="text-sm font-medium text-muted-foreground">Tuition</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20">
                   <BookOpen className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[#0F172A]">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(budget.tuition, budget.currency)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {selectedProgram?.tuitionPeriod?.toLowerCase() ?? "per year"}
               </p>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Living Costs</p>
+                <p className="text-sm font-medium text-muted-foreground">Living Costs</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
                   <Wallet className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[#0F172A]">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(budget.livingCost, budget.currency)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">Monthly × duration</p>
+              <p className="text-xs text-muted-foreground mt-1">Monthly × duration</p>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Visa / Blocked Account</p>
+                <p className="text-sm font-medium text-muted-foreground">Visa / Blocked Account</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
                   <DollarSign className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[#0F172A]">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(budget.visaFees, budget.currency)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">Visa application & blocked account</p>
+              <p className="text-xs text-muted-foreground mt-1">Visa application & blocked account</p>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Insurance</p>
+                <p className="text-sm font-medium text-muted-foreground">Insurance</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-[#0F172A]">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(budget.insurance, budget.currency)}
               </p>
-              <p className="text-xs text-slate-400 mt-1">Health insurance estimate</p>
+              <p className="text-xs text-muted-foreground mt-1">Health insurance estimate</p>
             </div>
           </div>
 
           {/* Total */}
-          <div className="rounded-2xl bg-gradient-to-br from-[#0F172A] via-slate-900 to-slate-800 p-8 text-white shadow-lg">
+          <div className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-8 text-white shadow-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-300">Estimated Total Cost</p>
+                <p className="text-sm font-medium text-muted-foreground/40">Estimated Total Cost</p>
                 <p className="text-4xl font-bold mt-2">
                   {formatCurrency(budget.total, budget.currency)}
                 </p>
@@ -226,29 +225,29 @@ export default function BudgetCalculator(): React.ReactElement {
 
           {/* Detailed Breakdown */}
           {budget.breakdown && budget.breakdown.length > 0 && (
-            <Card className="border-slate-100 shadow-sm">
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg text-[#0F172A]">
-                  <Calculator className="h-5 w-5 text-[#0EA5E9]" />
+                <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+                  <Calculator className="h-5 w-5 text-primary" />
                   Cost Breakdown
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-border">
                   {budget.breakdown.map((item, i) => (
                     <div
                       key={i}
                       className="flex items-center justify-between py-3 text-sm"
                     >
-                      <span className="text-slate-600">{item.label}</span>
-                      <span className="font-medium text-[#0F172A]">
+                      <span className="text-foreground/70">{item.label}</span>
+                      <span className="font-medium text-foreground">
                         {formatCurrency(item.amount, budget.currency)}
                       </span>
                     </div>
                   ))}
                   <div className="flex items-center justify-between py-3 text-sm font-bold">
-                    <span className="text-[#0F172A]">Total</span>
-                    <span className="text-[#0F172A]">
+                    <span className="text-foreground">Total</span>
+                    <span className="text-foreground">
                       {formatCurrency(
                         budget.breakdown.reduce((sum, b) => sum + b.amount, 0),
                         budget.currency,
@@ -263,14 +262,14 @@ export default function BudgetCalculator(): React.ReactElement {
       )}
 
       {!selectedProgramId && !programsLoading && (
-        <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
+        <div className="rounded-2xl bg-card p-12 shadow-sm border border-border text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 mx-auto mb-4">
             <Calculator className="h-10 w-10 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-semibold text-[#0F172A] mb-2">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             Select a program to begin
           </h2>
-          <p className="text-slate-500">
+          <p className="text-muted-foreground">
             Choose a program from the dropdown above to see a detailed cost
             breakdown including tuition, living costs, visa fees, and insurance.
           </p>

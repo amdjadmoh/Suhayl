@@ -114,7 +114,7 @@ export default function AddEditCountry(): React.ReactElement {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="rounded-xl border border-slate-100 bg-white p-6"><Skeleton className="h-96 w-full" /></div>
+        <div className="rounded-xl border border-border bg-card p-6"><Skeleton className="h-96 w-full" /></div>
       </div>
     )
   }
@@ -134,98 +134,98 @@ export default function AddEditCountry(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" onClick={() => navigate(-1)}>
+        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {isEdit ? "Edit Country" : "Add Country"}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">Basic Info</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">Basic Info</h3>
           </div>
           <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name" className="text-sm font-medium text-slate-700">Country Name <span className="text-red-500">*</span></Label>
-              <Input id="name" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("name", { required: "Name is required" })} placeholder="e.g. Germany" />
+              <Label htmlFor="name" className="text-sm font-medium text-foreground">Country Name <span className="text-red-500">*</span></Label>
+              <Input id="name" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("name", { required: "Name is required" })} placeholder="e.g. Germany" />
               {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency" className="text-sm font-medium text-slate-700">Currency</Label>
-              <Input id="currency" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("currency")} placeholder="EUR" />
+              <Label htmlFor="currency" className="text-sm font-medium text-foreground">Currency</Label>
+              <Input id="currency" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("currency")} placeholder="EUR" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="livingCostEstimate" className="text-sm font-medium text-slate-700">Living Cost/Month</Label>
-              <Input id="livingCostEstimate" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("livingCostEstimate", { setValueAs: (v) => Number(v) })} placeholder="900" />
+              <Label htmlFor="livingCostEstimate" className="text-sm font-medium text-foreground">Living Cost/Month</Label>
+              <Input id="livingCostEstimate" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("livingCostEstimate", { setValueAs: (v) => Number(v) })} placeholder="900" />
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">Visa Info</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">Visa Info</h3>
           </div>
           <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="visaBankAccountAmount" className="text-sm font-medium text-slate-700">Bank Account Required</Label>
-              <Input id="visaBankAccountAmount" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("visaBankAccountAmount", { setValueAs: (v) => Number(v) })} placeholder="11208" />
+              <Label htmlFor="visaBankAccountAmount" className="text-sm font-medium text-foreground">Bank Account Required</Label>
+              <Input id="visaBankAccountAmount" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("visaBankAccountAmount", { setValueAs: (v) => Number(v) })} placeholder="11208" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="visaBankAccountLocked" className="text-sm font-medium text-slate-700">Blocked Account</Label>
+              <Label htmlFor="visaBankAccountLocked" className="text-sm font-medium text-foreground">Blocked Account</Label>
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="visaBankAccountLocked" checked={visaBankAccountLocked}
                   onCheckedChange={(checked) => setValue("visaBankAccountLocked", checked === true)} />
-                <Label htmlFor="visaBankAccountLocked" className="text-sm font-medium text-slate-700">{visaBankAccountLocked ? "Locked (Blocked Account)" : "Regular Account"}</Label>
+                <Label htmlFor="visaBankAccountLocked" className="text-sm font-medium text-foreground">{visaBankAccountLocked ? "Locked (Blocked Account)" : "Regular Account"}</Label>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">Visa Details</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">Visa Details</h3>
           </div>
           <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="visaType" className="text-sm font-medium text-slate-700">Visa Type</Label>
-              <Input id="visaType" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("visaType")} placeholder="e.g. National Visa D (student visa)" />
+              <Label htmlFor="visaType" className="text-sm font-medium text-foreground">Visa Type</Label>
+              <Input id="visaType" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("visaType")} placeholder="e.g. National Visa D (student visa)" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="proofOfFundsMonthly" className="text-sm font-medium text-slate-700">Proof of Funds/Month (€)</Label>
-              <Input id="proofOfFundsMonthly" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("proofOfFundsMonthly", { setValueAs: (v) => Number(v) })} placeholder="e.g. 934" />
+              <Label htmlFor="proofOfFundsMonthly" className="text-sm font-medium text-foreground">Proof of Funds/Month (€)</Label>
+              <Input id="proofOfFundsMonthly" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("proofOfFundsMonthly", { setValueAs: (v) => Number(v) })} placeholder="e.g. 934" />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="whereToApply" className="text-sm font-medium text-slate-700">Where to Apply</Label>
-              <Input id="whereToApply" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("whereToApply")} placeholder="e.g. Apply at German embassy" />
+              <Label htmlFor="whereToApply" className="text-sm font-medium text-foreground">Where to Apply</Label>
+              <Input id="whereToApply" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("whereToApply")} placeholder="e.g. Apply at German embassy" />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="processingTime" className="text-sm font-medium text-slate-700">Processing Time</Label>
-              <Input id="processingTime" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("processingTime")} placeholder="e.g. 4–8 weeks" />
+              <Label htmlFor="processingTime" className="text-sm font-medium text-foreground">Processing Time</Label>
+              <Input id="processingTime" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("processingTime")} placeholder="e.g. 4–8 weeks" />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="workPermit" className="text-sm font-medium text-slate-700">Work Permit</Label>
-              <Input id="workPermit" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("workPermit")} placeholder="e.g. 20 hours/week" />
+              <Label htmlFor="workPermit" className="text-sm font-medium text-foreground">Work Permit</Label>
+              <Input id="workPermit" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("workPermit")} placeholder="e.g. 20 hours/week" />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="postGraduationVisa" className="text-sm font-medium text-slate-700">Post-Graduation Visa</Label>
-              <Input id="postGraduationVisa" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("postGraduationVisa")} placeholder="e.g. 18-month job seeker visa" />
+              <Label htmlFor="postGraduationVisa" className="text-sm font-medium text-foreground">Post-Graduation Visa</Label>
+              <Input id="postGraduationVisa" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("postGraduationVisa")} placeholder="e.g. 18-month job seeker visa" />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label className="text-sm font-medium text-slate-700">Required Visa Documents</Label>
+              <Label className="text-sm font-medium text-foreground">Required Visa Documents</Label>
               <div className="flex gap-2">
                 <Input value={visaDocInput} onChange={(e) => setVisaDocInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addVisaDocument(); } }}
-                  className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20"
+                  className="rounded-lg border-border focus:border-primary focus:ring-primary/20"
                   placeholder="Add a document..." />
-                <Button type="button" variant="outline" className="border-slate-200 hover:bg-slate-50 rounded-xl" onClick={addVisaDocument}>Add</Button>
+                <Button type="button" variant="outline" className="border-border hover:bg-muted rounded-xl" onClick={addVisaDocument}>Add</Button>
               </div>
               {requiredDocuments.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {requiredDocuments.map((doc, i) => (
-                    <span key={i} className="bg-slate-100 text-slate-700 rounded-full px-3 py-1 text-sm inline-flex items-center gap-1">
+                    <span key={i} className="bg-muted text-foreground rounded-full px-3 py-1 text-sm inline-flex items-center gap-1">
                       {doc}
                       <button type="button" onClick={() => removeVisaDocument(i)} className="ml-1 rounded-full hover:text-red-500">
                         <X className="h-3 w-3" />
@@ -236,7 +236,7 @@ export default function AddEditCountry(): React.ReactElement {
               )}
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label className="text-sm font-medium text-slate-700">Info Reliability</Label>
+              <Label className="text-sm font-medium text-foreground">Info Reliability</Label>
               <Select value={watch("verificationStatus") ?? "ai"} onValueChange={(v) => setValue("verificationStatus", v as CountryFormData["verificationStatus"])}>
                 <SelectTrigger className="rounded-lg">
                   <SelectValue />
@@ -247,23 +247,23 @@ export default function AddEditCountry(): React.ReactElement {
                   <SelectItem value="none">⚠ Not Verified — Use at your own risk</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-slate-400">Controls how reliability warnings appear in the application checklist</p>
+              <p className="text-xs text-muted-foreground">Controls how reliability warnings appear in the application checklist</p>
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="additionalVisaNotes" className="text-sm font-medium text-slate-700">Additional Visa Notes</Label>
-              <Textarea id="additionalVisaNotes" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("additionalVisaNotes")} rows={3} placeholder="e.g. Health insurance required, TB test, etc." />
+              <Label htmlFor="additionalVisaNotes" className="text-sm font-medium text-foreground">Additional Visa Notes</Label>
+              <Textarea id="additionalVisaNotes" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("additionalVisaNotes")} rows={3} placeholder="e.g. Health insurance required, TB test, etc." />
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">Pros & Cons</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">Pros & Cons</h3>
           </div>
           <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="pros" className="text-sm font-medium text-slate-700">Pros (one per line)</Label>
-              <Textarea id="pros" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" rows={5}
+              <Label htmlFor="pros" className="text-sm font-medium text-foreground">Pros (one per line)</Label>
+              <Textarea id="pros" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" rows={5}
                 {...register("pros", {
                   setValueAs: (v: string | string[]) =>
                     Array.isArray(v) ? v : v ? v.split("\n").filter(Boolean) : [],
@@ -274,8 +274,8 @@ export default function AddEditCountry(): React.ReactElement {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cons" className="text-sm font-medium text-slate-700">Cons (one per line)</Label>
-              <Textarea id="cons" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" rows={5}
+              <Label htmlFor="cons" className="text-sm font-medium text-foreground">Cons (one per line)</Label>
+              <Textarea id="cons" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" rows={5}
                 {...register("cons", {
                   setValueAs: (v: string | string[]) =>
                     Array.isArray(v) ? v : v ? v.split("\n").filter(Boolean) : [],
@@ -288,18 +288,18 @@ export default function AddEditCountry(): React.ReactElement {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">Notes</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">Notes</h3>
           </div>
           <div className="p-6">
-            <Textarea id="notes" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("notes")} placeholder="Additional notes..." rows={3} />
+            <Textarea id="notes" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("notes")} placeholder="Additional notes..." rows={3} />
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="outline" className="border-slate-200 hover:bg-slate-50 rounded-xl" onClick={() => navigate("/countries")}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl">
+          <Button type="button" variant="outline" className="border-border hover:bg-muted rounded-xl" onClick={() => navigate("/countries")}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="bg-foreground text-background hover:bg-foreground/90 rounded-xl">
             {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : <><Save className="mr-2 h-4 w-4" />{isEdit ? "Update" : "Save"} Country</>}
           </Button>
         </div>

@@ -88,10 +88,10 @@ export default function StatementEditor(): React.ReactElement {
 
   const wordColor =
     wordPercent > 100
-      ? "text-red-600"
+      ? "text-red-600 dark:text-red-400"
       : wordPercent > 90
-      ? "text-amber-600"
-      : "text-emerald-600";
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-emerald-600 dark:text-emerald-400";
 
   if (isLoading) {
     return (
@@ -106,10 +106,10 @@ export default function StatementEditor(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Application not found</h2>
+        <h2 className="text-lg font-semibold text-foreground">Application not found</h2>
         <button
           onClick={() => navigate("/applications")}
-          className="mt-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors"
+          className="mt-4 inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
         >
           Back
         </button>
@@ -124,32 +124,32 @@ export default function StatementEditor(): React.ReactElement {
         <div className="flex items-center gap-3">
           <Link
             to={`/applications/${id}`}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Statement of Purpose
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {prog?.name ?? "Application"} · {application.studentName}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {/* Save status indicator */}
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {saveStatus === "saving" && (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0EA5E9]" />
-                <span className="text-[#0EA5E9]">Saving...</span>
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                <span className="text-primary">Saving...</span>
               </>
             )}
             {saveStatus === "saved" && (
               <>
                 <Save className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="text-emerald-600">All changes saved</span>
+                <span className="text-emerald-600 dark:text-emerald-400">All changes saved</span>
               </>
             )}
           </div>
@@ -157,7 +157,7 @@ export default function StatementEditor(): React.ReactElement {
             variant="outline"
             size="sm"
             asChild
-            className="rounded-lg border-slate-200"
+            className="rounded-lg border-border"
           >
             <Link to={`/applications/${id}`}>Back to Application</Link>
           </Button>
@@ -165,11 +165,11 @@ export default function StatementEditor(): React.ReactElement {
       </div>
 
       {/* Word count bar */}
-      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-slate-400" />
-            <span className="text-sm font-medium text-[#0F172A]">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               Word Count
             </span>
           </div>
@@ -177,7 +177,7 @@ export default function StatementEditor(): React.ReactElement {
             {wordCount} / {wordLimit} words
           </span>
         </div>
-        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-300 ${
               wordPercent > 100
@@ -189,19 +189,19 @@ export default function StatementEditor(): React.ReactElement {
             style={{ width: `${Math.min(wordPercent, 100)}%` }}
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           {charCount} character{charCount !== 1 ? "s" : ""}
         </p>
       </div>
 
       {/* Editor */}
-      <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-            <FileText className="h-5 w-5 text-slate-400" />
+      <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <FileText className="h-5 w-5 text-muted-foreground" />
             Personal Statement
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Write your statement of purpose below. It auto-saves as you type.
           </p>
         </div>
@@ -210,7 +210,7 @@ export default function StatementEditor(): React.ReactElement {
             value={text}
             onChange={(e) => handleChange(e.target.value)}
             placeholder="Start writing your statement of purpose..."
-            className="w-full min-h-[400px] rounded-xl border border-slate-200 bg-white p-4 text-sm text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]/20 focus:border-[#0EA5E9] resize-y transition-colors"
+            className="w-full min-h-[400px] rounded-xl border border-border bg-card p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y transition-colors"
             spellCheck
           />
         </div>

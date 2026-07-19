@@ -55,14 +55,14 @@ export default function AgencyDashboard(): React.ReactElement {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">Agency Dashboard</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Agency Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
             Overview of your students and applications
           </p>
         </div>
         <Button
           variant="outline"
-          className="rounded-xl border-slate-100"
+          className="rounded-xl border-border"
           onClick={exportApplicationsCsv}
         >
           <Download className="mr-2 h-4 w-4" /> Export CSV
@@ -78,53 +78,53 @@ export default function AgencyDashboard(): React.ReactElement {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-100 bg-white p-6">
+          <div className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-500">Total Students</p>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0EA5E9]/10">
-                <Users className="h-5 w-5 text-[#0EA5E9]" />
+              <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <Users className="h-5 w-5 text-primary" />
               </div>
             </div>
-            <p className="mt-2 text-3xl font-bold text-[#0F172A]">{totalStudents}</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">{totalStudents}</p>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-white p-6">
+          <div className="rounded-xl border border-border bg-card p-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-500">Total Applications</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Applications</p>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
                 <FileText className="h-5 w-5 text-violet-500" />
               </div>
             </div>
-            <p className="mt-2 text-3xl font-bold text-[#0F172A]">{totalApplications}</p>
+            <p className="mt-2 text-3xl font-bold text-foreground">{totalApplications}</p>
           </div>
         </div>
       )}
 
       {/* Quick actions */}
-      <div className="rounded-xl border border-slate-100 bg-white">
-        <div className="border-b border-slate-100 px-6 py-4">
-          <h3 className="text-base font-semibold text-[#0F172A]">Quick Actions</h3>
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-6 py-4">
+          <h3 className="text-base font-semibold text-foreground">Quick Actions</h3>
         </div>
         <div className="p-6">
           <div className="grid gap-3 sm:grid-cols-3">
-            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-slate-100 p-6 hover:border-slate-200 hover:shadow-md transition-all" asChild>
+            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-border p-6 hover:border-border hover:shadow-md transition-all" asChild>
               <Link to="/agency/students">
-                <Users className="h-6 w-6 text-[#0EA5E9]" />
+                <Users className="h-6 w-6 text-primary" />
                 <span className="font-medium">Manage Students</span>
-                <span className="text-xs text-slate-500">View, add, edit students</span>
+                <span className="text-xs text-muted-foreground">View, add, edit students</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-slate-100 p-6 hover:border-slate-200 hover:shadow-md transition-all" asChild>
+            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-border p-6 hover:border-border hover:shadow-md transition-all" asChild>
               <Link to="/agency/students">
-                <UserPlus className="h-6 w-6 text-[#0EA5E9]" />
+                <UserPlus className="h-6 w-6 text-primary" />
                 <span className="font-medium">Add Student</span>
-                <span className="text-xs text-slate-500">Create a new student record</span>
+                <span className="text-xs text-muted-foreground">Create a new student record</span>
               </Link>
             </Button>
-            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-slate-100 p-6 hover:border-slate-200 hover:shadow-md transition-all" asChild>
+            <Button variant="outline" className="h-auto flex-col gap-2 rounded-xl border-border p-6 hover:border-border hover:shadow-md transition-all" asChild>
               <Link to="/universities/new">
-                <PlusCircle className="h-6 w-6 text-[#0EA5E9]" />
+                <PlusCircle className="h-6 w-6 text-primary" />
                 <span className="font-medium">Add Application</span>
-                <span className="text-xs text-slate-500">New university application</span>
+                <span className="text-xs text-muted-foreground">New university application</span>
               </Link>
             </Button>
           </div>
@@ -133,9 +133,9 @@ export default function AgencyDashboard(): React.ReactElement {
 
       {/* Recent applications */}
       {!isLoading && applications && applications.length > 0 && (
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">Recent Applications</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">Recent Applications</h3>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/applications">
                 View All <ArrowRight className="ml-1 h-4 w-4" />
@@ -151,11 +151,11 @@ export default function AgencyDashboard(): React.ReactElement {
                   <Link
                     key={a._id}
                     to={`/applications/${a._id}`}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 p-3 transition-all hover:border-slate-200 hover:bg-slate-50/50"
+                    className="flex items-center justify-between rounded-lg border border-border p-3 transition-all hover:border-border hover:bg-muted/50"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-[#0F172A]">{progName}</p>
-                      <p className="truncate text-sm text-slate-500">
+                      <p className="truncate font-medium text-foreground">{progName}</p>
+                      <p className="truncate text-sm text-muted-foreground">
                         {a.studentName}{uniName ? ` · ${uniName}` : ""}
                       </p>
                     </div>
@@ -169,10 +169,10 @@ export default function AgencyDashboard(): React.ReactElement {
 
       {/* Empty state */}
       {!isLoading && applications?.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-slate-100 bg-white py-16">
-          <GraduationCap className="mb-4 h-16 w-16 text-slate-300" />
-          <h2 className="text-lg font-semibold text-[#0F172A]">No applications yet</h2>
-          <p className="mb-4 text-sm text-slate-500">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16">
+          <GraduationCap className="mb-4 h-16 w-16 text-muted-foreground/40" />
+          <h2 className="text-lg font-semibold text-foreground">No applications yet</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
             Start by adding a student and then a university application
           </p>
           <Button asChild>

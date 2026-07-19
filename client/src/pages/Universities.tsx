@@ -90,7 +90,7 @@ function UniversityCard({
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-xl hover:border-[#0EA5E9]/30 transition-all duration-300">
+    <div className="group relative overflow-hidden rounded-2xl bg-card shadow-sm border border-border hover:shadow-xl hover:border-primary/30 transition-all duration-300">
       {/* Gradient accent */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -98,10 +98,10 @@ function UniversityCard({
       {isLoggedIn && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite("university", university._id, isFav); }}
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted transition-colors"
           title={isFav ? "Remove from saved" : "Save"}
         >
-          <Star className={`h-5 w-5 ${isFav ? "fill-amber-400 text-amber-400" : "text-slate-300 hover:text-amber-400"}`} />
+          <Star className={`h-5 w-5 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"}`} />
         </button>
       )}
 
@@ -113,10 +113,10 @@ function UniversityCard({
             </div>
             <div className="flex items-center gap-1">
               {university.isOfficial === false && (
-                <Badge className="text-[10px] bg-purple-100 text-purple-700 border-purple-200 rounded-full px-2 py-0.5">Custom</Badge>
+                <Badge className="text-[10px] bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 rounded-full px-2 py-0.5">Custom</Badge>
               )}
               {university.ranking && (
-                <div className="flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                <div className="flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
                   <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
                   #{university.ranking}
                 </div>
@@ -124,18 +124,18 @@ function UniversityCard({
             </div>
           </div>
 
-          <h3 className="text-lg font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors mb-2">
+          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
             {university.name}
           </h3>
 
-          <div className="flex items-center gap-2 text-sm text-slate-500">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
             {university.city}, {university.country}
           </div>
         </Link>
 
         {isAdmin && (
-          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-2">
+          <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
             {showOfficialToggle && (
               <Button
                 variant="outline"
@@ -191,7 +191,7 @@ function UniversityCard({
 
 function UniversityCardSkeleton(): React.ReactElement {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+    <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
       <div className="flex items-start justify-between mb-4">
         <Skeleton className="h-14 w-14 rounded-2xl" />
         <Skeleton className="h-6 w-16 rounded-full" />
@@ -244,14 +244,14 @@ export default function Universities(): React.ReactElement {
       if (value) params.set(key, value);
     }
     setSearchParams(params);
-    setSearchInput(filters.search ?? "");
+    setSearchInput(filters["search"] ?? "");
   }
 
   function getCurrentFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    if (search) filters.search = search;
-    if (country) filters.country = country;
-    if (customOnly) filters.customOnly = customOnly;
+    if (search) filters["search"] = search;
+    if (country) filters["country"] = country;
+    if (customOnly) filters["customOnly"] = customOnly;
     return filters;
   }
 
@@ -320,8 +320,8 @@ export default function Universities(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load universities</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-foreground">Failed to load universities</h2>
+        <p className="text-sm text-muted-foreground">
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       </div>
@@ -342,7 +342,7 @@ export default function Universities(): React.ReactElement {
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-violet-400 blur-3xl" />
         </div>
         <div className="relative flex items-center justify-between">
@@ -372,13 +372,13 @@ export default function Universities(): React.ReactElement {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search universities..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-            className="pl-11 rounded-xl border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20"
+            className="pl-11 rounded-xl border-border focus:border-primary focus:ring-primary/20"
           />
         </div>
 
@@ -386,7 +386,7 @@ export default function Universities(): React.ReactElement {
           value={country}
           onValueChange={(v) => updateFilter("country", v === "all" ? "" : v)}
         >
-          <SelectTrigger className="w-[180px] rounded-xl border-slate-200">
+          <SelectTrigger className="w-[180px] rounded-xl border-border">
             <SelectValue placeholder="Country" />
           </SelectTrigger>
           <SelectContent>
@@ -400,25 +400,25 @@ export default function Universities(): React.ReactElement {
         </Select>
 
         {isLoggedIn && (
-          <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-slate-200 bg-white">
+          <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-border bg-card">
             <Checkbox
               id="customOnly"
               checked={customOnly === "true"}
               onCheckedChange={(checked) => updateFilter("customOnly", checked ? "true" : "")}
             />
-            <Label htmlFor="customOnly" className="text-sm text-slate-600 whitespace-nowrap cursor-pointer">
+            <Label htmlFor="customOnly" className="text-sm text-foreground/70 whitespace-nowrap cursor-pointer">
               {isAdmin ? "All Custom Programs" : "My Custom Only"}
             </Label>
           </div>
         )}
 
-        <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-slate-200 bg-white">
+        <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-border bg-card">
           <Checkbox
             id="top100"
             checked={top100}
             onCheckedChange={(checked) => setTop100(checked === true)}
           />
-          <Label htmlFor="top100" className="text-sm text-slate-600 whitespace-nowrap cursor-pointer">
+          <Label htmlFor="top100" className="text-sm text-foreground/70 whitespace-nowrap cursor-pointer">
             Top 100 globally
           </Label>
         </div>
@@ -434,7 +434,7 @@ export default function Universities(): React.ReactElement {
             {/* Save Search */}
             <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl border-slate-200">
+                <Button variant="outline" size="sm" className="rounded-xl border-border">
                   <Save className="mr-1.5 h-4 w-4" /> Save Search
                 </Button>
               </DialogTrigger>
@@ -450,7 +450,7 @@ export default function Universities(): React.ReactElement {
                   value={saveSearchName}
                   onChange={(e) => setSaveSearchName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSaveSearch(); }}
-                  className="rounded-lg border-slate-200"
+                  className="rounded-lg border-border"
                 />
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
@@ -464,11 +464,11 @@ export default function Universities(): React.ReactElement {
             {/* Saved Searches Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded-xl border border-slate-200">
+                <Button variant="ghost" size="sm" className="rounded-xl border border-border">
                   <Bookmark className="mr-1.5 h-4 w-4" />
                   Saved Searches
                   {savedSearches.length > 0 && (
-                    <span className="ml-1 text-xs text-slate-400">({savedSearches.length})</span>
+                    <span className="ml-1 text-xs text-muted-foreground">({savedSearches.length})</span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -476,19 +476,19 @@ export default function Universities(): React.ReactElement {
                 <DropdownMenuLabel>Saved Searches</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {savedSearches.length === 0 ? (
-                  <DropdownMenuItem disabled className="text-slate-400">No saved searches</DropdownMenuItem>
+                  <DropdownMenuItem disabled className="text-muted-foreground">No saved searches</DropdownMenuItem>
                 ) : (
                   savedSearches.map((s) => (
                     <div key={s._id} className="flex items-center justify-between px-2 py-1 group">
                       <button
-                        className="flex-1 text-left text-sm py-1 hover:text-[#0EA5E9] transition-colors"
+                        className="flex-1 text-left text-sm py-1 hover:text-primary transition-colors"
                         onClick={() => handleApplySavedSearch(s.filters)}
                       >
                         {s.name}
                       </button>
                       <button
                         onClick={() => handleDeleteSavedSearch(s._id)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all p-1"
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all p-1"
                         title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -510,18 +510,18 @@ export default function Universities(): React.ReactElement {
           ))}
         </div>
       ) : filteredUniversities.length === 0 ? (
-        <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
+        <div className="rounded-2xl bg-card p-12 shadow-sm border border-border text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 mx-auto mb-4">
             <GraduationCap className="h-10 w-10 text-violet-500" />
           </div>
-          <h2 className="text-xl font-semibold text-[#0F172A] mb-2">No universities found</h2>
-          <p className="text-slate-500">
+          <h2 className="text-xl font-semibold text-foreground mb-2">No universities found</h2>
+          <p className="text-muted-foreground">
             {hasFilters ? "Try adjusting your filters" : "No universities in the catalog yet"}
           </p>
         </div>
       ) : (
         <>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             {filteredUniversities.length} universit{filteredUniversities.length === 1 ? "y" : "ies"} found
           </p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

@@ -130,8 +130,8 @@ export default function UsersPage(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load users</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-foreground">Failed to load users</h2>
+        <p className="text-sm text-muted-foreground">
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       </div>
@@ -148,9 +148,9 @@ export default function UsersPage(): React.ReactElement {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "admin": return "bg-red-50 text-red-700 border-red-200";
-      case "agency": return "bg-blue-50 text-blue-700 border-blue-200";
-      default: return "bg-slate-50 text-slate-700 border-slate-200";
+      case "admin": return "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30";
+      case "agency": return "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30";
+      default: return "bg-muted text-foreground border-border";
     }
   };
 
@@ -159,7 +159,7 @@ export default function UsersPage(): React.ReactElement {
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-600 via-pink-600 to-red-700 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-rose-400 blur-3xl" />
         </div>
         <div className="relative flex items-center justify-between">
@@ -182,14 +182,14 @@ export default function UsersPage(): React.ReactElement {
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="u-name" className="text-sm font-medium text-[#0F172A]">
+                  <Label htmlFor="u-name" className="text-sm font-medium text-foreground">
                     Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="u-name"
                     {...register("name", { required: "Name is required" })}
                     placeholder="John Doe"
-                    className="rounded-xl border-slate-200"
+                    className="rounded-xl border-border"
                   />
                   {errors.name && (
                     <p className="text-sm text-red-500">
@@ -199,7 +199,7 @@ export default function UsersPage(): React.ReactElement {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="u-email" className="text-sm font-medium text-[#0F172A]">
+                  <Label htmlFor="u-email" className="text-sm font-medium text-foreground">
                     Email <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -207,7 +207,7 @@ export default function UsersPage(): React.ReactElement {
                     type="email"
                     {...register("email", { required: "Email is required" })}
                     placeholder="john@example.com"
-                    className="rounded-xl border-slate-200"
+                    className="rounded-xl border-border"
                   />
                   {errors.email && (
                     <p className="text-sm text-red-500">
@@ -218,7 +218,7 @@ export default function UsersPage(): React.ReactElement {
 
                 {!editingUser && (
                   <div className="space-y-2">
-                    <Label htmlFor="u-password" className="text-sm font-medium text-[#0F172A]">
+                    <Label htmlFor="u-password" className="text-sm font-medium text-foreground">
                       Password <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -228,7 +228,7 @@ export default function UsersPage(): React.ReactElement {
                         required: !editingUser ? "Password is required" : false,
                       })}
                       placeholder="Enter password"
-                      className="rounded-xl border-slate-200"
+                      className="rounded-xl border-border"
                     />
                     {errors.password && (
                       <p className="text-sm text-red-500">
@@ -239,14 +239,14 @@ export default function UsersPage(): React.ReactElement {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="u-role" className="text-sm font-medium text-[#0F172A]">
+                  <Label htmlFor="u-role" className="text-sm font-medium text-foreground">
                     Role <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={watch("role")}
                     onValueChange={(v: string) => setValue("role", v)}
                   >
-                    <SelectTrigger className="rounded-xl border-slate-200">
+                    <SelectTrigger className="rounded-xl border-border">
                       <SelectValue placeholder="Select a role..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -287,7 +287,7 @@ export default function UsersPage(): React.ReactElement {
       </div>
 
       {/* Users List */}
-      <div className="rounded-2xl bg-white shadow-sm border border-slate-100 overflow-hidden">
+      <div className="rounded-2xl bg-card shadow-sm border border-border overflow-hidden">
         {isLoading ? (
           <div className="p-6">
             <div className="space-y-3">
@@ -298,28 +298,28 @@ export default function UsersPage(): React.ReactElement {
           </div>
         ) : users && users.length > 0 ? (
           <>
-            <div className="border-b border-slate-100 px-6 py-4">
-              <h3 className="text-lg font-semibold text-[#0F172A]">
+            <div className="border-b border-border px-6 py-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 {users.length} user{users.length !== 1 ? "s" : ""}
               </h3>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {users.map((user) => (
                 <div
                   key={user._id}
-                  className="flex items-center justify-between px-6 py-5 hover:bg-slate-50/50 transition-colors"
+                  className="flex items-center justify-between px-6 py-5 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex-shrink-0">
-                      <span className="text-lg font-bold text-[#0F172A]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-muted to-muted flex-shrink-0">
+                      <span className="text-lg font-bold text-foreground">
                         {user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <Link to={`/users/${user._id}`} className="font-semibold text-[#0F172A] truncate hover:text-[#0EA5E9] transition-colors">
+                      <Link to={`/users/${user._id}`} className="font-semibold text-foreground truncate hover:text-primary transition-colors">
                         {user.name}
                       </Link>
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Mail className="h-3.5 w-3.5" />
                         {user.email}
                       </div>
@@ -337,7 +337,7 @@ export default function UsersPage(): React.ReactElement {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 hover:bg-slate-100 rounded-lg"
+                      className="h-9 w-9 hover:bg-muted rounded-lg"
                       onClick={() => openEditDialog(user)}
                     >
                       <Pencil className="h-4 w-4" />
@@ -373,7 +373,7 @@ export default function UsersPage(): React.ReactElement {
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 mb-4">
               <UsersIcon className="h-10 w-10 text-rose-500" />
             </div>
-            <h2 className="text-xl font-semibold text-[#0F172A] mb-2">No users found</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">No users found</h2>
           </div>
         )}
       </div>

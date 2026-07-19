@@ -46,6 +46,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -63,9 +64,9 @@ function formatDate(dateStr?: string): string {
 }
 
 const verificationStyles: Record<string, string> = {
-  manual: "bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full",
-  ai: "bg-amber-100 text-amber-700 border-amber-200 rounded-full",
-  none: "bg-red-100 text-red-700 border-red-200 rounded-full",
+  manual: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 rounded-full",
+  ai: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 rounded-full",
+  none: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30 rounded-full",
 };
 const verificationLabels: Record<string, string> = {
   manual: "✓ Verified",
@@ -114,7 +115,7 @@ function ProgramCard({
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-xl hover:border-[#0EA5E9]/30 transition-all duration-300">
+    <div className="group relative overflow-hidden rounded-2xl bg-card shadow-sm border border-border hover:shadow-xl hover:border-primary/30 transition-all duration-300">
       {/* Gradient accent */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -122,29 +123,29 @@ function ProgramCard({
       {isLoggedIn && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite("program", program._id, isFav); }}
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted transition-colors"
           title={isFav ? "Remove from saved" : "Save"}
         >
-          <Star className={`h-5 w-5 ${isFav ? "fill-amber-400 text-amber-400" : "text-slate-300 hover:text-amber-400"}`} />
+          <Star className={`h-5 w-5 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"}`} />
         </button>
       )}
 
       <Link to={`/programs/${program._id}`} className="block p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100">
-            <BookOpen className="h-6 w-6 text-indigo-600" />
+            <BookOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           {program.isOfficial === false && (
-            <Badge className="bg-purple-50 text-purple-700 border-purple-200 rounded-full">Custom</Badge>
+            <Badge className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 rounded-full">Custom</Badge>
           )}
           {program.scholarshipAvailable && (
-            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-full">
+            <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 rounded-full">
               Scholarship
             </Badge>
           )}
         </div>
 
-        <h3 className="text-lg font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors mb-2">
+        <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
           {program.name}
           <Badge className={`ml-2 text-[10px] px-1.5 py-0 ${verificationStyles[program.verificationStatus || "ai"]}`}>
             {verificationLabels[program.verificationStatus || "ai"]}
@@ -152,39 +153,39 @@ function ProgramCard({
         </h3>
 
         {uni && (
-          <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
             <MapPin className="h-4 w-4" />
             {uni.name}{uni.country ? ` · ${uni.country}` : ""}
           </div>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
-          <Badge variant="secondary" className="bg-slate-100 text-slate-700 rounded-full">{program.degreeLevel}</Badge>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+          <Badge variant="secondary" className="bg-muted text-foreground rounded-full">{program.degreeLevel}</Badge>
           <span>·</span>
           <span>{program.languageOfInstruction}</span>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-between pt-4 border-t border-border">
           <div>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-slate-400" />
-              <span className="text-lg font-bold text-[#0F172A]">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="text-lg font-bold text-foreground">
                 {formatCurrency(program.tuitionFee, program.tuitionCurrency, program.tuitionPeriod)}
               </span>
             </div>
             {estimatedTotal && (
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Est. total: {estimatedTotal}
               </p>
             )}
             {!estimatedTotal && (
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Est. total: tuition + living costs vary
               </p>
             )}
           </div>
           {program.applicationDeadline && (
-            <div className="flex items-center gap-1 text-xs text-slate-500">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="h-3 w-3" />
               {formatDate(program.applicationDeadline)}
             </div>
@@ -198,8 +199,8 @@ function ProgramCard({
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); inCompare ? removeFromCompare(program._id) : addToCompare(program._id); }}
             className={`inline-flex items-center gap-1.5 w-full justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               inCompare
-                ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                : "border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-[#0F172A]"
+                ? "border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100"
+                : "border border-border bg-muted text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             {inCompare ? <Check className="h-3.5 w-3.5" /> : <GitCompare className="h-3.5 w-3.5" />}
@@ -221,7 +222,7 @@ function ProgramCard({
               }
             }}
             disabled={toggleProgOfficial.isPending}
-            className="inline-flex items-center gap-1.5 w-full justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-[#0F172A]"
+            className="inline-flex items-center gap-1.5 w-full justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border border-border bg-muted text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             {toggleProgOfficial.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -290,22 +291,22 @@ export default function Programs(): React.ReactElement {
       if (value) params.set(key, value);
     }
     setSearchParams(params);
-    setSearchInput(filters.search ?? "");
-    setCityInput(filters.city ?? "");
+    setSearchInput(filters["search"] ?? "");
+    setCityInput(filters["city"] ?? "");
   }
 
   function getCurrentFilters(): Record<string, string> {
     const filters: Record<string, string> = {};
-    if (search) filters.search = search;
-    if (degreeLevel) filters.degreeLevel = degreeLevel;
-    if (country) filters.country = country;
-    if (field) filters.field = field;
-    if (city) filters.city = city;
-    if (maxTuition) filters.maxTuition = maxTuition;
-    if (minGpa) filters.minGpa = minGpa;
-    if (maxIelts) filters.maxIelts = maxIelts;
-    if (scholarshipOnly) filters.scholarshipOnly = scholarshipOnly;
-    if (customOnly) filters.customOnly = customOnly;
+    if (search) filters["search"] = search;
+    if (degreeLevel) filters["degreeLevel"] = degreeLevel;
+    if (country) filters["country"] = country;
+    if (field) filters["field"] = field;
+    if (city) filters["city"] = city;
+    if (maxTuition) filters["maxTuition"] = maxTuition;
+    if (minGpa) filters["minGpa"] = minGpa;
+    if (maxIelts) filters["maxIelts"] = maxIelts;
+    if (scholarshipOnly) filters["scholarshipOnly"] = scholarshipOnly;
+    if (customOnly) filters["customOnly"] = customOnly;
     return filters;
   }
 
@@ -367,8 +368,8 @@ export default function Programs(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load programs</h2>
-        <p className="text-sm text-slate-500">{error instanceof Error ? error.message : "Unknown error"}</p>
+        <h2 className="text-lg font-semibold text-foreground">Failed to load programs</h2>
+        <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : "Unknown error"}</p>
       </div>
     );
   }
@@ -380,7 +381,7 @@ export default function Programs(): React.ReactElement {
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-700 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-indigo-400 blur-3xl" />
         </div>
         <div className="relative flex flex-wrap items-center justify-between gap-4">
@@ -397,22 +398,22 @@ export default function Programs(): React.ReactElement {
       </div>
 
       {/* Filters */}
-      <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">Search</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Search</Label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Program name..." value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") updateFilter("search", searchInput); }}
-                className="pl-9 rounded-lg border-slate-200" />
+                className="pl-9 rounded-lg border-border" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">Country</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Country</Label>
             <Select value={country} onValueChange={(v) => updateFilter("country", v === "all" ? "" : v)}>
-              <SelectTrigger className="rounded-lg border-slate-200"><SelectValue placeholder="All Countries" /></SelectTrigger>
+              <SelectTrigger className="rounded-lg border-border"><SelectValue placeholder="All Countries" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Countries</SelectItem>
                 {countries?.map((c) => (
@@ -424,16 +425,16 @@ export default function Programs(): React.ReactElement {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">City</Label>
+            <Label className="text-xs font-medium text-muted-foreground">City</Label>
             <Input placeholder="City name..." value={cityInput}
               onChange={(e) => setCityInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") updateFilter("city", cityInput); }}
-              className="rounded-lg border-slate-200" />
+              className="rounded-lg border-border" />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">Degree Level</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Degree Level</Label>
             <Select value={degreeLevel} onValueChange={(v) => updateFilter("degreeLevel", v === "all" ? "" : v)}>
-              <SelectTrigger className="rounded-lg border-slate-200"><SelectValue placeholder="All Degrees" /></SelectTrigger>
+              <SelectTrigger className="rounded-lg border-border"><SelectValue placeholder="All Degrees" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Degrees</SelectItem>
                 {DEGREE_LEVELS.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
@@ -441,49 +442,49 @@ export default function Programs(): React.ReactElement {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">Max Tuition (€/year)</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Max Tuition (€/year)</Label>
             <Input type="number" placeholder="e.g. 50000" value={maxTuition}
               onChange={(e) => updateFilter("maxTuition", e.target.value)}
-              className="rounded-lg border-slate-200" />
+              className="rounded-lg border-border" />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">Your GPA</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Your GPA</Label>
             <Input type="number" step="0.1" min="0" max="4" placeholder="e.g. 3.5" value={minGpa}
               onChange={(e) => updateFilter("minGpa", e.target.value)}
-              className="rounded-lg border-slate-200" />
+              className="rounded-lg border-border" />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-slate-500">Your IELTS Score</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Your IELTS Score</Label>
             <Input type="number" step="0.5" min="0" max="9" placeholder="e.g. 6.5" value={maxIelts}
               onChange={(e) => updateFilter("maxIelts", e.target.value)}
-              className="rounded-lg border-slate-200" />
+              className="rounded-lg border-border" />
           </div>
           <div className="space-y-2 flex flex-col justify-end">
-            <Label className="text-xs font-medium text-slate-500">Scholarship Only</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Scholarship Only</Label>
             <div className="flex items-center gap-2 h-10">
               <Checkbox id="scholarshipOnly" checked={scholarshipOnly === "true"}
                 onCheckedChange={(checked) => updateFilter("scholarshipOnly", checked ? "true" : "")} />
-              <Label htmlFor="scholarshipOnly" className="text-sm text-slate-600">Show only scholarships</Label>
+              <Label htmlFor="scholarshipOnly" className="text-sm text-foreground/70">Show only scholarships</Label>
             </div>
           </div>
           {!!user && (
             <div className="space-y-2 flex flex-col justify-end">
-              <Label className="text-xs font-medium text-slate-500">{isAdmin ? "All Custom" : "My Custom"}</Label>
+              <Label className="text-xs font-medium text-muted-foreground">{isAdmin ? "All Custom" : "My Custom"}</Label>
               <div className="flex items-center gap-2 h-10">
                 <Checkbox id="customOnly" checked={customOnly === "true"}
                   onCheckedChange={(checked) => updateFilter("customOnly", checked ? "true" : "")} />
-                <Label htmlFor="customOnly" className="text-sm text-slate-600">{isAdmin ? "All Custom" : "My Custom"}</Label>
+                <Label htmlFor="customOnly" className="text-sm text-foreground/70">{isAdmin ? "All Custom" : "My Custom"}</Label>
               </div>
             </div>
           )}
         </div>
-        <div className="mt-4 flex items-center gap-3 pt-4 border-t border-slate-100">
+        <div className="mt-4 flex items-center gap-3 pt-4 border-t border-border">
           <Button onClick={() => { updateFilter("search", searchInput); updateFilter("city", cityInput); }}
-            className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-lg">
+            className="bg-foreground text-background hover:bg-foreground/90 rounded-lg">
             Apply Filters
           </Button>
           {hasFilters && (
-            <Button variant="outline" onClick={clearFilters} className="rounded-lg border-slate-200">
+            <Button variant="outline" onClick={clearFilters} className="rounded-lg border-border">
               <X className="mr-1.5 h-4 w-4" /> Clear Filters
             </Button>
           )}
@@ -493,7 +494,7 @@ export default function Programs(): React.ReactElement {
               {/* Save Search */}
               <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-lg border-slate-200 ml-auto">
+                  <Button variant="outline" size="sm" className="rounded-lg border-border ml-auto">
                     <Save className="mr-1.5 h-4 w-4" /> Save Search
                   </Button>
                 </DialogTrigger>
@@ -509,7 +510,7 @@ export default function Programs(): React.ReactElement {
                     value={saveSearchName}
                     onChange={(e) => setSaveSearchName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleSaveSearch(); }}
-                    className="rounded-lg border-slate-200"
+                    className="rounded-lg border-border"
                   />
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
@@ -523,11 +524,11 @@ export default function Programs(): React.ReactElement {
               {/* Saved Searches Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-lg border border-slate-200">
+                  <Button variant="ghost" size="sm" className="rounded-lg border border-border">
                     <Bookmark className="mr-1.5 h-4 w-4" />
                     Saved Searches
                     {savedSearches.length > 0 && (
-                      <span className="ml-1 text-xs text-slate-400">({savedSearches.length})</span>
+                      <span className="ml-1 text-xs text-muted-foreground">({savedSearches.length})</span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
@@ -535,19 +536,19 @@ export default function Programs(): React.ReactElement {
                   <DropdownMenuLabel>Saved Searches</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {savedSearches.length === 0 ? (
-                    <DropdownMenuItem disabled className="text-slate-400">No saved searches</DropdownMenuItem>
+                    <DropdownMenuItem disabled className="text-muted-foreground">No saved searches</DropdownMenuItem>
                   ) : (
                     savedSearches.map((s) => (
                       <div key={s._id} className="flex items-center justify-between px-2 py-1 group">
                         <button
-                          className="flex-1 text-left text-sm py-1 hover:text-[#0EA5E9] transition-colors"
+                          className="flex-1 text-left text-sm py-1 hover:text-primary transition-colors"
                           onClick={() => handleApplySavedSearch(s.filters)}
                         >
                           {s.name}
                         </button>
                         <button
                           onClick={() => handleDeleteSavedSearch(s._id)}
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all p-1"
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all p-1"
                           title="Delete"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -568,16 +569,16 @@ export default function Programs(): React.ReactElement {
           {Array.from({ length: 6 }).map((_, i) => (<Skeleton key={i} className="h-56 rounded-2xl" />))}
         </div>
       ) : programs.length === 0 ? (
-        <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
+        <div className="rounded-2xl bg-card p-12 shadow-sm border border-border text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-100 mx-auto mb-4">
             <BookOpen className="h-10 w-10 text-indigo-500" />
           </div>
-          <h2 className="text-xl font-semibold text-[#0F172A] mb-2">No programs found</h2>
-          <p className="text-slate-500">{hasFilters ? "Try adjusting your filters" : "No programs in the catalog yet"}</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">No programs found</h2>
+          <p className="text-muted-foreground">{hasFilters ? "Try adjusting your filters" : "No programs in the catalog yet"}</p>
         </div>
       ) : (
         <>
-          <p className="text-sm text-slate-500">{data?.total ?? programs.length} program{programs.length === 1 ? "" : "s"} found</p>
+          <p className="text-sm text-muted-foreground">{data?.total ?? programs.length} program{programs.length === 1 ? "" : "s"} found</p>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {programs.map((p) => (
               <ProgramCard key={p._id} program={p} countries={countries} cities={cities}

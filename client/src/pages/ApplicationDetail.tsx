@@ -33,21 +33,21 @@ function CheckItem({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="flex items-center gap-3 text-sm w-full text-left hover:bg-slate-50 rounded-lg px-2 py-1.5 -mx-2 transition-colors disabled:opacity-60"
+      className="flex items-center gap-3 text-sm w-full text-left hover:bg-muted rounded-lg px-2 py-1.5 -mx-2 transition-colors disabled:opacity-60"
     >
       {loading ? (
-        <Loader2 className="h-5 w-5 text-slate-400 animate-spin shrink-0" />
+        <Loader2 className="h-5 w-5 text-muted-foreground animate-spin shrink-0" />
       ) : done ? (
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-          <Check className="h-3 w-3 text-emerald-600" />
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 shrink-0">
+          <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
         </div>
       ) : (
-        <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-200 shrink-0 hover:border-[#0EA5E9] transition-colors" />
+        <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-border shrink-0 hover:border-primary transition-colors" />
       )}
-      <span className={done ? "text-[#0F172A] font-medium" : "text-slate-400"}>
+      <span className={done ? "text-foreground font-medium" : "text-muted-foreground"}>
         {label}
       </span>
-      {detail && <span className="text-xs text-slate-400 ml-auto">{detail}</span>}
+      {detail && <span className="text-xs text-muted-foreground ml-auto">{detail}</span>}
     </button>
   );
 }
@@ -176,7 +176,7 @@ export default function ApplicationDetail(): React.ReactElement {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
-        <div className="rounded-xl border border-slate-100 bg-white p-6">
+        <div className="rounded-xl border border-border bg-card p-6">
           <Skeleton className="h-64 w-full" />
         </div>
       </div>
@@ -187,8 +187,8 @@ export default function ApplicationDetail(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Application not found</h2>
-        <button onClick={() => navigate("/applications")} className="mt-4 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Back</button>
+        <h2 className="text-lg font-semibold text-foreground">Application not found</h2>
+        <button onClick={() => navigate("/applications")} className="mt-4 inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Back</button>
       </div>
     );
   }
@@ -231,19 +231,19 @@ export default function ApplicationDetail(): React.ReactElement {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/applications")} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <button onClick={() => navigate("/applications")} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{prog?.name ?? "Application"}</h1>
-            <p className="text-sm text-slate-500">for {a.studentName}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{prog?.name ?? "Application"}</h1>
+            <p className="text-sm text-muted-foreground">for {a.studentName}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>{a.applicationStatus}</Badge>
           <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <DialogTrigger asChild>
-              <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /> Delete</button>
+              <button className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /> Delete</button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -282,11 +282,11 @@ export default function ApplicationDetail(): React.ReactElement {
             </DialogDescription>
           </DialogHeader>
           {missingItems.length > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 max-h-64 overflow-y-auto">
+            <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 max-h-64 overflow-y-auto">
               <p className="text-sm font-semibold text-amber-800 mb-2">Missing items:</p>
               <ul className="space-y-1.5">
                 {missingItems.map((item, i) => (
-                  <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
+                  <li key={i} className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                     <span>{item}</span>
                   </li>
@@ -299,7 +299,7 @@ export default function ApplicationDetail(): React.ReactElement {
             <Button
               onClick={() => { setSubmitDialogOpen(false); submitApplication(); }}
               disabled={updating === "submit"}
-              className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {updating === "submit" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit Application"}
             </Button>
@@ -309,65 +309,65 @@ export default function ApplicationDetail(): React.ReactElement {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Program + University Info */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <GraduationCap className="h-5 w-5 text-slate-400" /> Program
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <GraduationCap className="h-5 w-5 text-muted-foreground" /> Program
             </h3>
           </div>
           <div className="p-6">
             {prog && (
               <div className="space-y-3">
-                <p className="font-semibold text-[#0F172A]">
-                  <Link to={`/programs/${prog._id}`} className="hover:text-[#0EA5E9]">{prog.name}</Link>
+                <p className="font-semibold text-foreground">
+                  <Link to={`/programs/${prog._id}`} className="hover:text-primary">{prog.name}</Link>
                 </p>
-                <p className="text-sm text-slate-500">{prog.degreeLevel} · {prog.languageOfInstruction}</p>
-                {prog.tuitionFee && <p className="text-sm text-slate-500">€{prog.tuitionFee.toLocaleString()}/{prog.tuitionPeriod?.toLowerCase()}</p>}
+                <p className="text-sm text-muted-foreground">{prog.degreeLevel} · {prog.languageOfInstruction}</p>
+                {prog.tuitionFee && <p className="text-sm text-muted-foreground">€{prog.tuitionFee.toLocaleString()}/{prog.tuitionPeriod?.toLowerCase()}</p>}
               </div>
             )}
-            <div className="border-t border-slate-100 my-3" />
+            <div className="border-t border-border my-3" />
             {uni && (
               <div className="space-y-2">
                 <p className="text-sm">
-                  <Link to={`/universities/${uni._id}`} className="text-[#0EA5E9] hover:underline font-medium">{uni.name}</Link>
+                  <Link to={`/universities/${uni._id}`} className="text-primary hover:underline font-medium">{uni.name}</Link>
                 </p>
-                <p className="text-sm text-slate-500">{uni.city}, {uni.country}</p>
+                <p className="text-sm text-muted-foreground">{uni.city}, {uni.country}</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Application Info */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <ClipboardList className="h-5 w-5 text-slate-400" /> Details
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <ClipboardList className="h-5 w-5 text-muted-foreground" /> Details
             </h3>
           </div>
           <div className="p-6 space-y-3">
             <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-slate-400" />
-              <span className="font-medium text-[#0F172A]">{a.studentName}</span>
-              <span className="text-slate-400">·</span>
-              <Mail className="h-4 w-4 text-slate-400" />
-              <span className="text-[#0F172A]">{a.studentEmail}</span>
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-foreground">{a.studentName}</span>
+              <span className="text-muted-foreground">·</span>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground">{a.studentEmail}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <span className="text-slate-500">Status:</span>
+              <span className="text-muted-foreground">Status:</span>
               <Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>{a.applicationStatus}</Badge>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <span className="text-slate-500">Deadline:</span>
-              <span className="font-medium text-[#0F172A]">{formatDate(a.applicationDeadline)}</span>
+              <span className="text-muted-foreground">Deadline:</span>
+              <span className="font-medium text-foreground">{formatDate(a.applicationDeadline)}</span>
             </div>
             {a.notes && (
-              <div className="border-t border-slate-100 pt-3">
-                <p className="text-sm text-slate-500 whitespace-pre-wrap">{a.notes}</p>
+              <div className="border-t border-border pt-3">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
               </div>
             )}
             {/* Edit link — small pencil at bottom */}
-            <div className="border-t border-slate-100 pt-3">
-              <Link to={`/applications/${a._id}/edit`} className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-[#0EA5E9] transition-colors">
+            <div className="border-t border-border pt-3">
+              <Link to={`/applications/${a._id}/edit`} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
                 <Pencil className="h-3 w-3" /> Edit status, deadline & notes
               </Link>
             </div>
@@ -378,10 +378,10 @@ export default function ApplicationDetail(): React.ReactElement {
       {/* Timeline + Checklist */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Timeline */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <ClipboardList className="h-5 w-5 text-slate-400" /> Timeline
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <ClipboardList className="h-5 w-5 text-muted-foreground" /> Timeline
             </h3>
           </div>
           <div className="p-6">
@@ -396,17 +396,17 @@ export default function ApplicationDetail(): React.ReactElement {
               ];
               return (
                 <div className="relative pl-8">
-                  <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-200" />
+                  <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-muted" />
                   {steps.map((step, i) => (
                     <div key={i} className="relative pb-6 last:pb-0">
                       <div className={`absolute -left-[17px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                        step.done ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-slate-300 text-slate-400"
+                        step.done ? "bg-emerald-500 border-emerald-500 text-white" : "bg-card border-border text-muted-foreground"
                       }`}>
-                        {step.done ? <Check className="h-3 w-3" /> : <div className="h-2 w-2 rounded-full bg-slate-300" />}
+                        {step.done ? <Check className="h-3 w-3" /> : <div className="h-2 w-2 rounded-full bg-muted" />}
                       </div>
                       <div className="ml-2">
-                        <p className={`text-sm font-medium ${step.done ? "text-[#0F172A]" : "text-slate-400"}`}>{step.label}</p>
-                        <p className="text-xs text-slate-400">{step.done && step.date ? formatDate(step.date) : step.done ? "✓" : "Pending"}</p>
+                        <p className={`text-sm font-medium ${step.done ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p>
+                        <p className="text-xs text-muted-foreground">{step.done && step.date ? formatDate(step.date) : step.done ? "✓" : "Pending"}</p>
                       </div>
                     </div>
                   ))}
@@ -417,20 +417,20 @@ export default function ApplicationDetail(): React.ReactElement {
         </div>
 
         {/* Checklist — interactive */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <ClipboardList className="h-5 w-5 text-slate-400" /> Checklist
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <ClipboardList className="h-5 w-5 text-muted-foreground" /> Checklist
             </h3>
           </div>
           <div className="p-6 space-y-4">
             {prog && (
               <div className={`rounded-lg p-3 text-sm border ${
                 prog.verificationStatus === "manual"
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800"
                   : prog.verificationStatus === "ai"
-                  ? "bg-amber-50 border-amber-200 text-amber-800"
-                  : "bg-red-50 border-red-200 text-red-800"
+                  ? "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-800"
+                  : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-800"
               }`}>
                 <p className="font-semibold">
                   {prog.verificationStatus === "manual"
@@ -452,7 +452,7 @@ export default function ApplicationDetail(): React.ReactElement {
             <>
             {/* Test Scores */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Tests</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Tests</p>
               <div className="space-y-1">
                 {p.testScores.map((ts, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -467,7 +467,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       }}
                     />
                     {ts.taken && (
-                      <Input type="number" step="0.5" className="w-20 h-8 text-sm rounded-lg border-slate-200" placeholder="Score"
+                      <Input type="number" step="0.5" className="w-20 h-8 text-sm rounded-lg border-border" placeholder="Score"
                         value={ts.score ?? ""}
                         onChange={(e) => {
                           const newScores = [...p.testScores];
@@ -481,11 +481,11 @@ export default function ApplicationDetail(): React.ReactElement {
               </div>
             </div>
 
-            <div className="border-t border-slate-100" />
+            <div className="border-t border-border" />
 
             {/* Documents */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Documents</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Documents</p>
               <div className="space-y-1">
                 {/* Required Documents checklist */}
                 {prog?.requiredDocuments.map((doc, i) => {
@@ -509,20 +509,20 @@ export default function ApplicationDetail(): React.ReactElement {
                 {/* Extra Documents — items in documentsObtained that are NOT in requiredDocuments */}
                 {p.documentsObtained.filter((d) => !prog?.requiredDocuments.includes(d)).length > 0 && (
                   <>
-                    <div className="border-t border-slate-100 my-2" />
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Extra Documents</p>
+                    <div className="border-t border-border my-2" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Extra Documents</p>
                     {p.documentsObtained
                       .filter((d) => !prog?.requiredDocuments.includes(d))
                       .map((doc, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm px-2 py-1.5 group">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-                            <Check className="h-3 w-3 text-emerald-600" />
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                          <span className="text-[#0F172A] font-medium flex-1">{doc}</span>
+                          <span className="text-foreground font-medium flex-1">{doc}</span>
                           <button
                             onClick={() => removeDocument(doc)}
                             disabled={updating === "documentsObtained"}
-                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity disabled:opacity-40"
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity disabled:opacity-40"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -538,22 +538,22 @@ export default function ApplicationDetail(): React.ReactElement {
                     value={docInput}
                     onChange={(e) => setDocInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDocument(); } }}
-                    className="h-8 text-sm rounded-lg border-slate-200 flex-1"
+                    className="h-8 text-sm rounded-lg border-border flex-1"
                     placeholder="Add a document..."
                   />
-                  <Button type="button" size="sm" variant="outline" className="h-8 border-slate-200 rounded-lg" onClick={addDocument} disabled={!docInput.trim() || updating === "documentsObtained"}>
+                  <Button type="button" size="sm" variant="outline" className="h-8 border-border rounded-lg" onClick={addDocument} disabled={!docInput.trim() || updating === "documentsObtained"}>
                     Add
                   </Button>
                 </div>
               )}
             </div>
 
-            <div className="border-t border-slate-100" />
+            <div className="border-t border-border" />
 
             {/* SOP & Recommendations */}
             {(prog?.requiresSOP || (prog?.recommendationLetters ?? 0) > 0) && (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Writing</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Writing</p>
                 <div className="space-y-1">
                   {prog?.requiresSOP && (
                     <div className="flex items-center justify-between">
@@ -566,7 +566,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       />
                       <Link
                         to={`/applications/${a._id}/statement`}
-                        className="text-xs text-[#0EA5E9] hover:underline shrink-0 ml-2"
+                        className="text-xs text-primary hover:underline shrink-0 ml-2"
                       >
                         Edit Statement
                       </Link>
@@ -583,7 +583,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       />
                       <Link
                         to={`/applications/${a._id}/recommenders`}
-                        className="text-xs text-[#0EA5E9] hover:underline shrink-0 ml-2"
+                        className="text-xs text-primary hover:underline shrink-0 ml-2"
                       >
                         Manage Recommenders
                       </Link>
@@ -593,11 +593,11 @@ export default function ApplicationDetail(): React.ReactElement {
               </div>
             )}
 
-            <div className="border-t border-slate-100" />
+            <div className="border-t border-border" />
 
             {/* Submission */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Submission</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Submission</p>
               <div className="space-y-1">
                 <CheckItem
                   done={p.applicationFeePaid}
@@ -615,10 +615,10 @@ export default function ApplicationDetail(): React.ReactElement {
                 {country && (
                   <div className={`rounded-lg p-3 text-sm border ${
                     country.verificationStatus === "manual"
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800"
                       : country.verificationStatus === "ai"
-                      ? "bg-amber-50 border-amber-200 text-amber-800"
-                      : "bg-red-50 border-red-200 text-red-800"
+                      ? "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-800"
+                      : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-800"
                   }`}>
                     <p className="font-semibold">
                       {country.verificationStatus === "manual"
@@ -636,10 +636,10 @@ export default function ApplicationDetail(): React.ReactElement {
                     </p>
                   </div>
                 )}
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 {/* Visa Documents Checklist */}
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Visa Documents</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Visa Documents</p>
                   <div className="space-y-1">
                     {country?.requiredDocuments?.length ? (
                       country.requiredDocuments.map((doc, i) => {
@@ -660,14 +660,14 @@ export default function ApplicationDetail(): React.ReactElement {
                         );
                       })
                     ) : (
-                      <p className="text-sm text-slate-400">No visa documents configured for {uni?.country}</p>
+                      <p className="text-sm text-muted-foreground">No visa documents configured for {uni?.country}</p>
                     )}
                     {/* Extra visa docs — pending & obtained not in country requiredDocuments */}
                     {(p.visaDocumentsPending?.filter((d) => !country?.requiredDocuments?.includes(d)).length > 0 ||
                       p.visaDocumentsObtained?.filter((d) => !country?.requiredDocuments?.includes(d)).length > 0) && (
                       <>
-                        <div className="border-t border-slate-100 my-2" />
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Extra Documents</p>
+                        <div className="border-t border-border my-2" />
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Extra Documents</p>
                         {/* Pending — not yet obtained */}
                         {p.visaDocumentsPending
                           ?.filter((d) => !country?.requiredDocuments?.includes(d))
@@ -689,10 +689,10 @@ export default function ApplicationDetail(): React.ReactElement {
                           ?.filter((d) => !country?.requiredDocuments?.includes(d))
                           .map((doc, i) => (
                             <div key={`obtained-${i}`} className="flex items-center gap-2 text-sm px-2 py-1.5 group">
-                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-                                <Check className="h-3 w-3 text-emerald-600" />
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 shrink-0">
+                                <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                               </div>
-                              <span className="text-[#0F172A] font-medium flex-1">{doc}</span>
+                              <span className="text-foreground font-medium flex-1">{doc}</span>
                               <button
                                 onClick={() => {
                                   const docs = (p.visaDocumentsObtained || []).filter((d) => d !== doc);
@@ -700,7 +700,7 @@ export default function ApplicationDetail(): React.ReactElement {
                                   toggleProgress({ visaDocumentsObtained: docs, visaDocumentsPending: pending });
                                 }}
                                 disabled={updating === "visaDocumentsObtained"}
-                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity disabled:opacity-40"
+                                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity disabled:opacity-40"
                               >
                                 <X className="h-3.5 w-3.5" />
                               </button>
@@ -716,21 +716,21 @@ export default function ApplicationDetail(): React.ReactElement {
                         value={docInput}
                         onChange={(e) => setDocInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addVisaDocument(); } }}
-                        className="h-8 text-sm rounded-lg border-slate-200 flex-1"
+                        className="h-8 text-sm rounded-lg border-border flex-1"
                         placeholder="Add extra visa document..."
                       />
-                      <Button type="button" size="sm" variant="outline" className="h-8 border-slate-200 rounded-lg" onClick={addVisaDocument} disabled={!docInput.trim() || updating === "visaDocumentsObtained"}>
+                      <Button type="button" size="sm" variant="outline" className="h-8 border-border rounded-lg" onClick={addVisaDocument} disabled={!docInput.trim() || updating === "visaDocumentsObtained"}>
                         Add
                       </Button>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
 
                 {/* Visa & Interview */}
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Visa & Interview</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Visa & Interview</p>
                   <div className="space-y-1">
                     <CheckItem done={p.visaApplied} label="Visa Applied" loading={updating === "visaApplied"} onClick={() => toggleProgress({ visaApplied: !p.visaApplied })} />
                     {p.visaApplied && (
@@ -744,11 +744,11 @@ export default function ApplicationDetail(): React.ReactElement {
 
             {a.applicationStatus === "Preparing" && (
               <div className="pt-2">
-                <div className="border-t border-slate-100 pt-4">
+                <div className="border-t border-border pt-4">
                   <Button
                     onClick={() => setSubmitDialogOpen(true)}
                     disabled={updating === "submit"}
-                    className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white rounded-xl"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
                   >
                     {updating === "submit" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : <><Send className="mr-2 h-4 w-4" /> Submit Application</>}
                   </Button>
@@ -757,15 +757,15 @@ export default function ApplicationDetail(): React.ReactElement {
             )}
             {a.applicationStatus === "Applied" && (
               <div className="pt-2">
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="text-sm font-semibold text-[#0F172A] mb-1">Admission Decision</p>
-                  <p className="text-xs text-slate-400 mb-3">Record the result of your application</p>
+                <div className="border-t border-border pt-4">
+                  <p className="text-sm font-semibold text-foreground mb-1">Admission Decision</p>
+                  <p className="text-xs text-muted-foreground mb-3">Record the result of your application</p>
                   <div className="grid grid-cols-3 gap-3">
                     <Button
                       variant="outline"
                       onClick={() => updateStatus("Accepted")}
                       disabled={updating === "status"}
-                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
+                      className="border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
                     >
                       <Check className="mr-1.5 h-4 w-4" /> Accepted
                     </Button>
@@ -773,7 +773,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       variant="outline"
                       onClick={() => updateStatus("Waitlisted")}
                       disabled={updating === "status"}
-                      className="border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 rounded-xl"
+                      className="border-orange-200 dark:border-orange-500/30 text-orange-700 dark:text-orange-400 hover:bg-orange-50 hover:border-orange-300 rounded-xl"
                     >
                       ⏳ Waitlisted
                     </Button>
@@ -781,7 +781,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       variant="outline"
                       onClick={() => updateStatus("Rejected")}
                       disabled={updating === "status"}
-                      className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 rounded-xl"
+                      className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 hover:border-red-300 rounded-xl"
                     >
                       <X className="mr-1.5 h-4 w-4" /> Rejected
                     </Button>
@@ -791,15 +791,15 @@ export default function ApplicationDetail(): React.ReactElement {
             )}
             {a.applicationStatus === "Waitlisted" && (
               <div className="pt-2">
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="text-sm font-semibold text-[#0F172A] mb-1">Waitlist Outcome</p>
-                  <p className="text-xs text-slate-400 mb-3">Was your waitlist resolved?</p>
+                <div className="border-t border-border pt-4">
+                  <p className="text-sm font-semibold text-foreground mb-1">Waitlist Outcome</p>
+                  <p className="text-xs text-muted-foreground mb-3">Was your waitlist resolved?</p>
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       variant="outline"
                       onClick={() => updateStatus("Accepted")}
                       disabled={updating === "status"}
-                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
+                      className="border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
                     >
                       <Check className="mr-1.5 h-4 w-4" /> Accepted
                     </Button>
@@ -807,7 +807,7 @@ export default function ApplicationDetail(): React.ReactElement {
                       variant="outline"
                       onClick={() => updateStatus("Rejected")}
                       disabled={updating === "status"}
-                      className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 rounded-xl"
+                      className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 hover:border-red-300 rounded-xl"
                     >
                       <X className="mr-1.5 h-4 w-4" /> Rejected
                     </Button>
@@ -819,7 +819,7 @@ export default function ApplicationDetail(): React.ReactElement {
         </div>
       </div>
 
-      <p className="text-center text-xs text-slate-400">
+      <p className="text-center text-xs text-muted-foreground">
         Created {formatDate(a.createdAt)} · Updated {formatDate(a.updatedAt)}
       </p>
     </div>

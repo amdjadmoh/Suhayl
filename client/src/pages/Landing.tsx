@@ -23,26 +23,26 @@ export default function Landing(): React.ReactElement {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-sm p-1">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-card border border-border shadow-sm p-1">
               <img src="/logo.svg" alt="" className="h-full w-full" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-[#0F172A]">Suhayl</span>
+            <span className="text-xl font-bold tracking-tight text-foreground">Suhayl</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm text-slate-500 hover:text-[#0F172A] transition-colors">Features</a>
-            <a href="#how-it-works" className="text-sm text-slate-500 hover:text-[#0F172A] transition-colors">How it works</a>
-            <a href="#roles" className="text-sm text-slate-500 hover:text-[#0F172A] transition-colors">For agencies</a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How it works</a>
+            <a href="#roles" className="text-sm text-muted-foreground hover:text-foreground transition-colors">For agencies</a>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
               <Button
                 onClick={() => navigate("/dashboard")}
-                className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-sm rounded-lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm rounded-lg"
               >
                 <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
               </Button>
@@ -51,13 +51,13 @@ export default function Landing(): React.ReactElement {
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/login")}
-                  className="text-slate-600 hover:text-[#0F172A] text-sm"
+                  className="text-foreground/70 hover:text-foreground text-sm"
                 >
                   Sign in
                 </Button>
                 <Button
                   onClick={() => navigate("/register")}
-                  className="bg-[#0F172A] hover:bg-[#1E293B] text-white text-sm rounded-lg"
+                  className="bg-foreground text-background hover:bg-foreground/90 text-sm rounded-lg"
                 >
                   Get started
                 </Button>
@@ -69,33 +69,33 @@ export default function Landing(): React.ReactElement {
 
       {/* Hero */}
       <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F0F9FF] to-white" />
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-50 to-background dark:from-sky-950/40" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.08),transparent_70%)]" />
 
         <div className="relative mx-auto max-w-7xl px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left: Text */}
             <div>
-              <Badge className="mb-6 bg-[#0EA5E9]/10 text-[#0EA5E9] border-[#0EA5E9]/20 px-3 py-1 text-xs font-medium">
+              <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 px-3 py-1 text-xs font-medium">
                 <Sparkles className="mr-1.5 h-3 w-3" />
                 Study Abroad Platform
               </Badge>
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight text-[#0F172A] leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight text-foreground leading-[1.1]">
                 Your path to
                 <br />
                 studying abroad,{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-cyan-500">
                   simplified.
                 </span>
               </h1>
-              <p className="mt-6 text-lg text-slate-500 leading-relaxed max-w-lg">
+              <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-lg">
                 Discover universities, compare programs, and track every application — all in one beautifully organized platform.
               </p>
               <div className="mt-8 flex items-center gap-4">
                 <Button
                   size="lg"
                   onClick={() => navigate("/register")}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-7 h-12 text-base rounded-xl shadow-lg shadow-[#0EA5E9]/20"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-7 h-12 text-base rounded-xl shadow-lg shadow-primary/20"
                 >
                   Start for free
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -104,12 +104,12 @@ export default function Landing(): React.ReactElement {
                   size="lg"
                   variant="outline"
                   onClick={() => navigate("/login")}
-                  className="border-slate-200 text-slate-700 hover:bg-slate-50 h-12 px-7 text-base rounded-xl"
+                  className="border-border text-foreground hover:bg-muted h-12 px-7 text-base rounded-xl"
                 >
                   Sign in
                 </Button>
               </div>
-              <div className="mt-8 flex items-center gap-6 text-sm text-slate-400">
+              <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                   Free to use
@@ -125,15 +125,15 @@ export default function Landing(): React.ReactElement {
             <div className="relative hidden lg:block">
               <div className="relative">
                 {/* Main card */}
-                <div className="rounded-2xl bg-white border border-slate-200 shadow-2xl shadow-slate-200/50 p-6 space-y-4">
+                <div className="rounded-2xl bg-card border border-border shadow-2xl shadow-black/10 p-6 space-y-4">
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Applications</p>
-                      <p className="text-2xl font-bold text-[#0F172A] mt-0.5">12 Active</p>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Applications</p>
+                      <p className="text-2xl font-bold text-foreground mt-0.5">12 Active</p>
                     </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0EA5E9]/10">
-                      <TrendingUp className="h-5 w-5 text-[#0EA5E9]" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <TrendingUp className="h-5 w-5 text-primary" />
                     </div>
                   </div>
 
@@ -142,14 +142,14 @@ export default function Landing(): React.ReactElement {
                     {[
                       { name: "TU Munich — Computer Science", status: "Under Review", color: "bg-amber-400", pct: "60%" },
                       { name: "ETH Zurich — Data Science", status: "Accepted", color: "bg-emerald-400", pct: "100%" },
-                      { name: "TU Delft — Architecture", status: "Documents", color: "bg-[#0EA5E9]", pct: "40%" },
+                      { name: "TU Delft — Architecture", status: "Documents", color: "bg-primary", pct: "40%" },
                     ].map((app) => (
-                      <div key={app.name} className="rounded-xl bg-slate-50 p-3">
+                      <div key={app.name} className="rounded-xl bg-muted p-3">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm font-medium text-[#0F172A] truncate pr-4">{app.name}</p>
-                          <span className="text-xs text-slate-400 whitespace-nowrap">{app.status}</span>
+                          <p className="text-sm font-medium text-foreground truncate pr-4">{app.name}</p>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{app.status}</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-border overflow-hidden">
                           <div className={`h-full rounded-full ${app.color}`} style={{ width: app.pct }} />
                         </div>
                       </div>
@@ -158,24 +158,24 @@ export default function Landing(): React.ReactElement {
                 </div>
 
                 {/* Floating card: University */}
-                <div className="absolute -top-6 -right-6 rounded-xl bg-white border border-slate-200 shadow-lg p-3 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0F172A]">
-                    <GraduationCap className="h-5 w-5 text-[#0EA5E9]" />
+                <div className="absolute -top-6 -right-6 rounded-xl bg-card border border-border shadow-lg p-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900">
+                    <GraduationCap className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#0F172A]">20+ Universities</p>
-                    <p className="text-xs text-slate-400">Across Europe</p>
+                    <p className="text-sm font-semibold text-foreground">20+ Universities</p>
+                    <p className="text-xs text-muted-foreground">Across Europe</p>
                   </div>
                 </div>
 
                 {/* Floating card: Country */}
-                <div className="absolute -bottom-4 -left-6 rounded-xl bg-white border border-slate-200 shadow-lg p-3 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
+                <div className="absolute -bottom-4 -left-6 rounded-xl bg-card border border-border shadow-lg p-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
                     <Globe className="h-5 w-5 text-emerald-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#0F172A]">16 Countries</p>
-                    <p className="text-xs text-slate-400">Explore & compare</p>
+                    <p className="text-sm font-semibold text-foreground">16 Countries</p>
+                    <p className="text-xs text-muted-foreground">Explore & compare</p>
                   </div>
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function Landing(): React.ReactElement {
       </section>
 
       {/* Stats */}
-      <section className="border-y border-slate-100 bg-slate-50/50">
+      <section className="border-y border-border bg-muted/50">
         <div className="mx-auto max-w-7xl px-6 py-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
@@ -195,8 +195,8 @@ export default function Landing(): React.ReactElement {
               { value: "3", label: "User roles" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="text-3xl font-bold text-[#0F172A]">{stat.value}</p>
-                <p className="mt-1 text-sm text-slate-400">{stat.label}</p>
+                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -207,13 +207,13 @@ export default function Landing(): React.ReactElement {
       <section id="features" className="py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-slate-100 text-slate-600 border-slate-200 text-xs">Features</Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A]">
+            <Badge className="mb-4 bg-muted text-foreground/70 border-border text-xs">Features</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               Everything you need to
               <br />
               manage study abroad
             </h2>
-            <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
               From discovery to enrollment, Suhayl keeps everything organized in one place.
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function Landing(): React.ReactElement {
                 icon: Globe,
                 title: "Explore Countries",
                 desc: "Browse 16+ countries with detailed info on cities, universities, and living costs.",
-                color: "bg-[#0EA5E9]/10 text-[#0EA5E9]",
+                color: "bg-primary/10 text-primary",
               },
               {
                 icon: GraduationCap,
@@ -254,18 +254,18 @@ export default function Landing(): React.ReactElement {
                 icon: Users,
                 title: "Agency Tools",
                 desc: "Agencies can manage students, track their applications, and guide them end-to-end.",
-                color: "bg-[#0F172A]/10 text-[#0F172A]",
+                color: "bg-foreground/10 text-foreground",
               },
             ].map((f) => (
               <div
                 key={f.title}
-                className="group rounded-2xl border border-slate-100 bg-white p-6 hover:border-slate-200 hover:shadow-lg hover:shadow-slate-100 transition-all duration-300"
+                className="group rounded-2xl border border-border bg-card p-6 hover:border-border hover:shadow-lg hover:shadow-black/5 transition-all duration-300"
               >
                 <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${f.color}`}>
                   <f.icon className="h-5 w-5" />
                 </div>
-                <h3 className="text-base font-semibold text-[#0F172A]">{f.title}</h3>
-                <p className="mt-2 text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+                <h3 className="text-base font-semibold text-foreground">{f.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -276,11 +276,11 @@ export default function Landing(): React.ReactElement {
       <section id="how-it-works" className="py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-slate-100 text-slate-600 border-slate-200 text-xs">How it works</Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A]">
+            <Badge className="mb-4 bg-muted text-foreground/70 border-border text-xs">How it works</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               Three steps to get started
             </h2>
-            <p className="mt-4 text-lg text-slate-400 max-w-xl mx-auto">
+            <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
               Getting started takes less than a minute.
             </p>
           </div>
@@ -307,12 +307,12 @@ export default function Landing(): React.ReactElement {
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0EA5E9]/10">
-                  <item.icon className="h-7 w-7 text-[#0EA5E9]" />
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                  <item.icon className="h-7 w-7 text-primary" />
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-widest text-[#0EA5E9]">Step {item.step}</span>
-                <h3 className="mt-2 text-lg font-semibold text-[#0F172A]">{item.title}</h3>
-                <p className="mt-2 text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                <span className="text-xs font-semibold uppercase tracking-widest text-primary">Step {item.step}</span>
+                <h3 className="mt-2 text-lg font-semibold text-foreground">{item.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -323,8 +323,8 @@ export default function Landing(): React.ReactElement {
       <section id="roles" className="py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-slate-100 text-slate-600 border-slate-200 text-xs">Built for everyone</Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A]">
+            <Badge className="mb-4 bg-muted text-foreground/70 border-border text-xs">Built for everyone</Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               One platform, built for you
             </h2>
           </div>
@@ -335,8 +335,8 @@ export default function Landing(): React.ReactElement {
                 role: "Student",
                 desc: "Discover universities, browse programs, and track your applications from start to finish.",
                 features: ["Browse universities & programs", "Track application progress", "Compare programs side by side"],
-                color: "border-[#0EA5E9]/20 bg-[#0EA5E9]/5",
-                iconColor: "text-[#0EA5E9]",
+                color: "border-primary/20 bg-primary/5",
+                iconColor: "text-primary",
                 icon: GraduationCap,
               },
               {
@@ -350,11 +350,11 @@ export default function Landing(): React.ReactElement {
             ].map((r) => (
               <div key={r.role} className={`rounded-2xl border p-8 ${r.color}`}>
                 <r.icon className={`h-8 w-8 ${r.iconColor} mb-4`} />
-                <h3 className="text-xl font-bold text-[#0F172A]">{r.role}</h3>
-                <p className="mt-2 text-sm text-slate-500 leading-relaxed">{r.desc}</p>
+                <h3 className="text-xl font-bold text-foreground">{r.role}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{r.desc}</p>
                 <ul className="mt-6 space-y-3">
                   {r.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                    <li key={f} className="flex items-center gap-2 text-sm text-foreground/70">
                       <CheckCircle2 className={`h-4 w-4 ${r.iconColor} flex-shrink-0`} />
                       {f}
                     </li>
@@ -369,10 +369,10 @@ export default function Landing(): React.ReactElement {
       {/* CTA */}
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="relative rounded-3xl bg-gradient-to-br from-[#0F172A] via-slate-900 to-slate-800 p-12 sm:p-16 text-center overflow-hidden">
+          <div className="relative rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-12 sm:p-16 text-center overflow-hidden">
             <div className="absolute inset-0 opacity-20">
-              <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-[#0EA5E9] blur-3xl" />
-              <div className="absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-[#0EA5E9] blur-3xl" />
+              <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-primary blur-3xl" />
+              <div className="absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-primary blur-3xl" />
             </div>
             <div className="relative">
               <h2 className="text-3xl sm:text-4xl font-bold text-white">
@@ -385,7 +385,7 @@ export default function Landing(): React.ReactElement {
                 <Button
                   size="lg"
                   onClick={() => navigate("/register")}
-                  className="bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-8 h-12 text-base rounded-xl shadow-lg shadow-[#0EA5E9]/20"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12 text-base rounded-xl shadow-lg shadow-primary/20"
                 >
                   Get started free
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -397,15 +397,15 @@ export default function Landing(): React.ReactElement {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-100 py-10">
+      <footer className="border-t border-border py-10">
         <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200 p-1">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card border border-border p-1">
               <img src="/logo.svg" alt="" className="h-full w-full" />
             </div>
-            <span className="text-lg font-bold text-[#0F172A]">Suhayl</span>
+            <span className="text-lg font-bold text-foreground">Suhayl</span>
           </div>
-          <p className="text-sm text-slate-400">Your study abroad organizer.</p>
+          <p className="text-sm text-muted-foreground">Your study abroad organizer.</p>
         </div>
       </footer>
     </div>

@@ -39,14 +39,14 @@ function StatusBreakdown({
   const total = byStatus.reduce((sum, s) => sum + s.count, 0);
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+    <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
           <Award className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-[#0F172A]">Application Status</h3>
-          <p className="text-sm text-slate-500">Overview of all applications</p>
+          <h3 className="text-lg font-semibold text-foreground">Application Status</h3>
+          <p className="text-sm text-muted-foreground">Overview of all applications</p>
         </div>
       </div>
       <div className="space-y-4">
@@ -63,13 +63,13 @@ function StatusBreakdown({
                   >
                     {item.status}
                   </Badge>
-                  <span className="text-sm text-slate-500">{item.count}</span>
+                  <span className="text-sm text-muted-foreground">{item.count}</span>
                 </div>
-                <span className="text-sm font-medium text-[#0F172A]">{pct}%</span>
+                <span className="text-sm font-medium text-foreground">{pct}%</span>
               </div>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-500 transition-all duration-500"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -78,8 +78,8 @@ function StatusBreakdown({
         })}
         {byStatus.length === 0 && (
           <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">No applications yet</p>
+            <FileText className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">No applications yet</p>
           </div>
         )}
       </div>
@@ -109,20 +109,20 @@ function UpcomingDeadlines({
     );
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+    <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600">
           <CalendarClock className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-[#0F172A]">Upcoming Deadlines</h3>
-          <p className="text-sm text-slate-500">Next 90 days</p>
+          <h3 className="text-lg font-semibold text-foreground">Upcoming Deadlines</h3>
+          <p className="text-sm text-muted-foreground">Next 90 days</p>
         </div>
       </div>
       {upcoming.length === 0 ? (
         <div className="text-center py-8">
-          <CalendarClock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">No deadlines in the next 90 days</p>
+          <CalendarClock className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No deadlines in the next 90 days</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -135,11 +135,11 @@ function UpcomingDeadlines({
               <Link
                 key={a._id}
                 to={`/applications/${a._id}`}
-                className="flex items-center justify-between rounded-xl border border-slate-100 p-4 transition-all hover:border-[#0EA5E9]/30 hover:shadow-md group"
+                className="flex items-center justify-between rounded-xl border border-border p-4 transition-all hover:border-primary/30 hover:shadow-md group"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{uniName}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="truncate font-medium text-foreground group-hover:text-primary transition-colors">{uniName}</p>
+                  <p className="text-sm text-muted-foreground">
                     {a.studentName}
                   </p>
                 </div>
@@ -151,7 +151,7 @@ function UpcomingDeadlines({
                     className={`text-sm font-medium ${
                       isUrgent
                         ? "text-red-500"
-                        : "text-slate-500"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {days}d left
@@ -180,20 +180,20 @@ function RecentlyAdded({
     .slice(0, 5);
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+    <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
       <div className="flex items-center gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
           <Clock className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-[#0F172A]">Recently Added</h3>
-          <p className="text-sm text-slate-500">Latest applications</p>
+          <h3 className="text-lg font-semibold text-foreground">Recently Added</h3>
+          <p className="text-sm text-muted-foreground">Latest applications</p>
         </div>
       </div>
       {recent.length === 0 ? (
         <div className="text-center py-8">
-          <Clock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">No applications yet</p>
+          <Clock className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No applications yet</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -204,14 +204,14 @@ function RecentlyAdded({
               <Link
                 key={a._id}
                 to={`/applications/${a._id}`}
-                className="flex items-center gap-4 rounded-xl border border-slate-100 p-4 transition-all hover:border-[#0EA5E9]/30 hover:shadow-md group"
+                className="flex items-center gap-4 rounded-xl border border-border p-4 transition-all hover:border-primary/30 hover:shadow-md group"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9]/10 to-[#06B6D4]/10 flex-shrink-0">
-                  <GraduationCap className="h-6 w-6 text-[#0EA5E9]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-cyan-500/10 flex-shrink-0">
+                  <GraduationCap className="h-6 w-6 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{uniName}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="truncate font-medium text-foreground group-hover:text-primary transition-colors">{uniName}</p>
+                  <p className="text-xs text-muted-foreground">
                     {a.studentName}
                   </p>
                 </div>
@@ -232,7 +232,7 @@ function RecentlyAdded({
 
 function StatCardSkeleton(): React.ReactElement {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+    <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
       <div className="flex items-center justify-between mb-4">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-12 w-12 rounded-xl" />
@@ -278,10 +278,10 @@ function StudentDashboard(): React.ReactElement {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-slate-900 to-slate-800 p-8 text-white">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-[#0EA5E9] blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-[#06B6D4] blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-primary blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-cyan-500 blur-3xl" />
         </div>
         <div className="relative">
           <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.name}!</h1>
@@ -300,56 +300,56 @@ function StudentDashboard(): React.ReactElement {
           </>
         ) : (
           <>
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-[#0EA5E9]/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-primary/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Total Applications</p>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] shadow-lg shadow-[#0EA5E9]/20">
+                <p className="text-sm font-medium text-muted-foreground">Total Applications</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-500 shadow-lg shadow-primary/20">
                   <FileText className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-[#0F172A]">{applications.length}</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+              <p className="text-3xl font-bold text-foreground">{applications.length}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                 <span>{byStatus.length} status{byStatus.length !== 1 ? "es" : ""}</span>
               </div>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Countries Exploring</p>
+                <p className="text-sm font-medium text-muted-foreground">Countries Exploring</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
                   <Globe className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-[#0F172A]">{countries.size}</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <p className="text-3xl font-bold text-foreground">{countries.size}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                 <MapPin className="h-3 w-3" />
                 <span>{countries.size > 0 ? [...countries].slice(0, 2).join(", ") + (countries.size > 2 ? "…" : "") : "Add your first"}</span>
               </div>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Accepted</p>
+                <p className="text-sm font-medium text-muted-foreground">Accepted</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/20">
                   <CheckCircle2 className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-[#0F172A]">{acceptedCount + enrolledCount}</p>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+              <p className="text-3xl font-bold text-foreground">{acceptedCount + enrolledCount}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                 {enrolledCount > 0 && <><CheckCircle2 className="h-3 w-3" /> {enrolledCount} enrolled</>}
                 {acceptedCount > 0 && !enrolledCount && <><CheckCircle2 className="h-3 w-3" /> Offers in hand</>}
                 {acceptedCount === 0 && enrolledCount === 0 && <span>Keep applying</span>}
               </div>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
+            <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-amber-500/30 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-slate-500">Next Deadline</p>
+                <p className="text-sm font-medium text-muted-foreground">Next Deadline</p>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
                   <CalendarClock className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-3xl font-bold text-[#0F172A]">
+              <p className="text-3xl font-bold text-foreground">
                 {nextDeadlineDays !== null ? nextDeadlineDays : "—"}
               </p>
               <div className="mt-2 flex items-center gap-1 text-xs">
@@ -357,12 +357,12 @@ function StudentDashboard(): React.ReactElement {
                   nextDeadlineDays <= 7 ? (
                     <><AlertCircle className="h-3 w-3 text-red-500" /><span className="text-red-500">Urgent — {nextDeadlineDays} day{nextDeadlineDays !== 1 ? "s" : ""}</span></>
                   ) : nextDeadlineDays <= 30 ? (
-                    <span className="text-amber-600">{nextDeadlineDays} days away</span>
+                    <span className="text-amber-600 dark:text-amber-400">{nextDeadlineDays} days away</span>
                   ) : (
-                    <span className="text-slate-500">{nextDeadlineDays} days away</span>
+                    <span className="text-muted-foreground">{nextDeadlineDays} days away</span>
                   )
                 ) : (
-                  <span className="text-slate-400">No deadlines set</span>
+                  <span className="text-muted-foreground">No deadlines set</span>
                 )}
               </div>
             </div>
@@ -374,11 +374,11 @@ function StudentDashboard(): React.ReactElement {
       <div className="grid gap-6 lg:grid-cols-2">
         {isLoading ? (
           <>
-            <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+            <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
               <Skeleton className="h-6 w-40 mb-4" />
               <Skeleton className="h-40 w-full" />
             </div>
-            <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+            <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
               <Skeleton className="h-6 w-40 mb-4" />
               <Skeleton className="h-40 w-full" />
             </div>
@@ -393,7 +393,7 @@ function StudentDashboard(): React.ReactElement {
 
       {/* Recently Added */}
       {isLoading ? (
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+        <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
           <Skeleton className="h-6 w-40 mb-4" />
           <Skeleton className="h-32 w-full" />
         </div>
@@ -411,8 +411,8 @@ function AdminDashboard(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load platform stats</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-foreground">Failed to load platform stats</h2>
+        <p className="text-sm text-muted-foreground">
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       </div>
@@ -422,9 +422,9 @@ function AdminDashboard(): React.ReactElement {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-slate-900 to-slate-800 p-8 text-white">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-[#0EA5E9] blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-primary blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-violet-500 blur-3xl" />
         </div>
         <div className="relative">
@@ -442,93 +442,93 @@ function AdminDashboard(): React.ReactElement {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Total Users</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
                 <Users className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalUsers ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalUsers ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <TrendingUp className="h-3 w-3" />
               <span>Active accounts</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-violet-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-violet-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Universities</p>
+              <p className="text-sm font-medium text-muted-foreground">Universities</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalUniversities ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalUniversities ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-3 w-3" />
               <span>Registered</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-indigo-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Programs</p>
+              <p className="text-sm font-medium text-muted-foreground">Programs</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-indigo-500/20">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalPrograms ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalPrograms ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <BookOpen className="h-3 w-3" />
               <span>Available</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Countries</p>
+              <p className="text-sm font-medium text-muted-foreground">Countries</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
                 <Globe className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalCountries ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalCountries ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <Globe className="h-3 w-3" />
               <span>Worldwide</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-cyan-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-cyan-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Cities</p>
+              <p className="text-sm font-medium text-muted-foreground">Cities</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
                 <MapPin className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalCities ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalCities ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <MapPin className="h-3 w-3" />
               <span>Tracked</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-orange-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-orange-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Agencies</p>
+              <p className="text-sm font-medium text-muted-foreground">Agencies</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-600 shadow-lg shadow-orange-500/20">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalAgencies ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalAgencies ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <Building2 className="h-3 w-3" />
               <span>Active</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Students Managed</p>
+              <p className="text-sm font-medium text-muted-foreground">Students Managed</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
                 <Users className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{stats?.totalStudentsManaged ?? 0}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{stats?.totalStudentsManaged ?? 0}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <Users className="h-3 w-3" />
               <span>Under guidance</span>
             </div>
@@ -538,14 +538,14 @@ function AdminDashboard(): React.ReactElement {
 
       {/* Role Breakdown */}
       {!isLoading && stats && (
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+        <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-500">
               <Users className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-[#0F172A]">Users by Role</h3>
-              <p className="text-sm text-slate-500">Distribution across user types</p>
+              <h3 className="text-lg font-semibold text-foreground">Users by Role</h3>
+              <p className="text-sm text-muted-foreground">Distribution across user types</p>
             </div>
           </div>
           <div className="space-y-4">
@@ -555,14 +555,14 @@ function AdminDashboard(): React.ReactElement {
               return (
                 <div key={item.role} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium capitalize text-[#0F172A]">{item.role}</span>
-                    <span className="text-slate-500">
+                    <span className="font-medium capitalize text-foreground">{item.role}</span>
+                    <span className="text-muted-foreground">
                       {item.count} ({pct}%)
                     </span>
                   </div>
-                  <div className="h-3 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-3 rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-500 transition-all duration-500"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -571,8 +571,8 @@ function AdminDashboard(): React.ReactElement {
             })}
             {(!stats.byRole || stats.byRole.length === 0) && (
               <div className="text-center py-8">
-                <Users className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-500">No user data available</p>
+                <Users className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No user data available</p>
               </div>
             )}
           </div>
@@ -595,7 +595,7 @@ function AgencyOverview(): React.ReactElement {
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-pink-500 blur-3xl" />
         </div>
         <div className="relative">
@@ -611,28 +611,28 @@ function AgencyOverview(): React.ReactElement {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2">
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-rose-500/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Total Students</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Students</p>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
                 <Users className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{totalStudents}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{totalStudents}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <Users className="h-3 w-3" />
               <span>Under your guidance</span>
             </div>
           </div>
-          <div className="group rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:border-[#0EA5E9]/30 transition-all duration-300">
+          <div className="group rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-lg hover:border-primary/30 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-slate-500">Total Applications</p>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0EA5E9] to-[#06B6D4] shadow-lg shadow-[#0EA5E9]/20">
+              <p className="text-sm font-medium text-muted-foreground">Total Applications</p>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-500 shadow-lg shadow-primary/20">
                 <FileText className="h-6 w-6 text-white" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-[#0F172A]">{totalApplications}</p>
-            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600">
+            <p className="text-3xl font-bold text-foreground">{totalApplications}</p>
+            <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
               <FileText className="h-3 w-3" />
               <span>Being tracked</span>
             </div>
@@ -642,19 +642,19 @@ function AgencyOverview(): React.ReactElement {
 
       {/* Recent Applications */}
       {!isLoading && applications && applications.length > 0 && (
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+        <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600">
                 <Clock className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-[#0F172A]">Recent Applications</h3>
-                <p className="text-sm text-slate-500">Latest student applications</p>
+                <h3 className="text-lg font-semibold text-foreground">Recent Applications</h3>
+                <p className="text-sm text-muted-foreground">Latest student applications</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/applications" className="text-[#0EA5E9] hover:text-[#0284C7]">
+              <Link to="/applications" className="text-primary hover:text-primary/90">
                 View All <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
@@ -667,15 +667,15 @@ function AgencyOverview(): React.ReactElement {
                 <Link
                   key={a._id}
                   to={`/applications/${a._id}`}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 p-4 transition-all hover:border-[#0EA5E9]/30 hover:shadow-md group"
+                  className="flex items-center justify-between rounded-xl border border-border p-4 transition-all hover:border-primary/30 hover:shadow-md group"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{uniName}</p>
-                    <p className="truncate text-sm text-slate-500">
+                    <p className="truncate font-medium text-foreground group-hover:text-primary transition-colors">{uniName}</p>
+                    <p className="truncate text-sm text-muted-foreground">
                       {a.studentName}
                     </p>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-[#0EA5E9] transition-colors" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </Link>
               );
             })}
@@ -684,15 +684,15 @@ function AgencyOverview(): React.ReactElement {
       )}
 
       {!isLoading && applications?.length === 0 && (
-        <div className="rounded-2xl bg-white p-12 shadow-sm border border-slate-100 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0EA5E9]/10 to-[#06B6D4]/10 mx-auto mb-4">
-            <GraduationCap className="h-10 w-10 text-[#0EA5E9]" />
+        <div className="rounded-2xl bg-card p-12 shadow-sm border border-border text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-cyan-500/10 mx-auto mb-4">
+            <GraduationCap className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold text-[#0F172A] mb-2">No applications yet</h2>
-          <p className="text-slate-500 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-2">No applications yet</h2>
+          <p className="text-muted-foreground mb-6">
             Start by adding a student and a university application
           </p>
-          <Button asChild className="bg-gradient-to-r from-[#0EA5E9] to-[#06B6D4] hover:from-[#0284C7] hover:to-[#0891B2] text-white rounded-xl shadow-lg shadow-[#0EA5E9]/20">
+          <Button asChild className="bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-600 text-primary-foreground rounded-xl shadow-lg shadow-primary/20">
             <Link to="/agency/students">
               <UserPlus className="mr-2 h-4 w-4" />
               Add Student
