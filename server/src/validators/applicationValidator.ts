@@ -59,6 +59,7 @@ export const createApplicationSchema = z
 
 export const updateApplicationSchema = z
   .object({
+    programId: z.string().min(1).optional(),
     studentName: z.string().min(1).optional(),
     studentEmail: z.string().email().optional(),
     applicationStatus: applicationStatusEnum.optional(),

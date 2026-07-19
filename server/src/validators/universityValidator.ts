@@ -5,10 +5,10 @@ export const createUniversitySchema = z
     name: z.string().min(1, "name is required"),
     country: z.string().min(1, "country is required"),
     city: z.string().min(1, "city is required"),
-    ranking: z.number().optional(),
-    qsRank: z.number().int().positive().nullable().optional(),
-    theRank: z.number().int().positive().nullable().optional(),
-    arwuRank: z.number().int().positive().nullable().optional(),
+    ranking: z.coerce.number().optional(),
+    qsRank: z.coerce.number().int().positive().nullable().optional(),
+    theRank: z.coerce.number().int().positive().nullable().optional(),
+    arwuRank: z.coerce.number().int().positive().nullable().optional(),
     websiteUrl: z.string().optional(),
     notes: z.string().optional(),
   })
@@ -19,10 +19,10 @@ export const updateUniversitySchema = z
     name: z.string().min(1).optional(),
     country: z.string().min(1).optional(),
     city: z.string().min(1).optional(),
-    ranking: z.number().optional(),
-    qsRank: z.number().int().positive().nullable().optional(),
-    theRank: z.number().int().positive().nullable().optional(),
-    arwuRank: z.number().int().positive().nullable().optional(),
+    ranking: z.coerce.number().optional(),
+    qsRank: z.coerce.number().int().positive().nullable().optional(),
+    theRank: z.coerce.number().int().positive().nullable().optional(),
+    arwuRank: z.coerce.number().int().positive().nullable().optional(),
     websiteUrl: z.string().optional(),
     notes: z.string().optional(),
   })
@@ -30,9 +30,9 @@ export const updateUniversitySchema = z
 
 export const updateRankingsSchema = z
   .object({
-    qsRank: z.number().int().positive().nullable().optional(),
-    theRank: z.number().int().positive().nullable().optional(),
-    arwuRank: z.number().int().positive().nullable().optional(),
+    qsRank: z.coerce.number().int().positive().nullable().optional(),
+    theRank: z.coerce.number().int().positive().nullable().optional(),
+    arwuRank: z.coerce.number().int().positive().nullable().optional(),
   })
   .strict()
 
