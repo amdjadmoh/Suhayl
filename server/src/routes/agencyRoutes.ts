@@ -4,6 +4,8 @@ import {
   getUniversities,
   getApplications,
   exportApplicationsCsv,
+  importStudents,
+  upload,
 } from "../controllers/agencyController"
 import { authenticate, authorize } from "../middleware/auth"
 
@@ -19,6 +21,7 @@ agencyRouter.get(
 agencyRouter.use(authenticate)
 agencyRouter.use(authorize("agency"))
 
+agencyRouter.post("/students/import", upload.single("file"), importStudents)
 agencyRouter.get("/students", getMyStudents)
 agencyRouter.get("/universities", getUniversities)
 agencyRouter.get("/applications", getApplications)

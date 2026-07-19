@@ -13,20 +13,27 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   const degreeLevel = query["degreeLevel"]
   if (typeof degreeLevel === "string") filter["degreeLevel"] = degreeLevel
 
-  // Combine search + field into an $and if both present
+  // Search via $text index for fast ranked results
   const search = query["search"]
+  const hasTextSearch = typeof search === "string" && search.length > 0
+  if (hasTextSearch) {
+    filter["$text"] = { $search: search }
+  }
+
+  // Field filter — $regex fallback for name
   const field = query["field"]
-  const nameConditions: Record<string, unknown>[] = []
-  if (typeof search === "string" && search.length > 0) {
-    nameConditions.push({ name: { $regex: search, $options: "i" } })
-  }
   if (typeof field === "string" && field.length > 0) {
-    nameConditions.push({ name: { $regex: field, $options: "i" } })
-  }
-  if (nameConditions.length === 1) {
-    Object.assign(filter, nameConditions[0]!)
-  } else if (nameConditions.length > 1) {
-    filter["$and"] = nameConditions
+    const nameConditions: Record<string, unknown>[] = [{ name: { $regex: field, $options: "i" } }]
+    if (hasTextSearch) {
+      // Combine with $text via $and
+      if (!filter["$and"]) {
+        filter["$and"] = nameConditions
+      } else {
+        ;(filter["$and"] as Record<string, unknown>[]).push(...nameConditions)
+      }
+    } else {
+      Object.assign(filter, nameConditions[0]!)
+    }
   }
 
   // Country filter – resolve country name to universities whose country matches
@@ -125,12 +132,19 @@ export async function getAll(req: Request, res: Response): Promise<void> {
     }
   }
 
-  const [programs, total] = await Promise.all([
-    Program.find(filter)
-      .populate("universityId", "name country city ranking")
-      .sort({ name: 1 }),
-    Program.countDocuments(filter),
-  ])
+  const programs = await Program.find(
+    filter,
+    hasTextSearch ? ({ score: { $meta: "textScore" } } as Record<string, unknown>) : undefined
+  )
+    .populate("universityId", "name country city ranking")
+    .sort(
+      hasTextSearch
+        ? ({ score: { $meta: "textScore" } } as unknown as Record<string, 1 | -1>)
+        : ({ name: 1 } as Record<string, 1 | -1>)
+    )
+
+  const total = await Program.countDocuments(filter)
+
   res.json({ programs, total })
 }
 
@@ -198,7 +212,7 @@ export async function getMatches(req: Request, res: Response): Promise<void> {
     .sort({ name: 1 })
     .limit(20)
 
-  // Compute match score (0-100) for each program
+  // Compute match score (0-100) and admit chance for each program
   const matches = programs.map((p: any) => {
     let score = 50 // base
     const uni = p.universityId
@@ -222,9 +236,48 @@ export async function getMatches(req: Request, res: Response): Promise<void> {
     // Higher ranking bonus
     if (uni?.ranking && uni.ranking <= 100) score += 5
 
+    // ── Admit chance calculation ──────────────────────────────────────
+    const DEFAULT_MIN_GPA = 3.0
+    const DEFAULT_MIN_IELTS = 6.5
+
+    const minGpa = gpaReq?.minimumScore ?? DEFAULT_MIN_GPA
+    const minIelts = ieltsReq?.minimumScore ?? DEFAULT_MIN_IELTS
+
+    const gpaOk = prefGpa <= 0 || prefGpa >= minGpa
+    const ieltsOk = prefIelts <= 0 || prefIelts >= minIelts
+    const gpaSafe = prefGpa <= 0 || prefGpa >= minGpa + 0.5
+    const ieltsSafe = prefIelts <= 0 || prefIelts >= minIelts + 1.0
+
+    let admitChance: "reach" | "target" | "safe"
+    if ((gpaSafe && ieltsSafe) || (prefGpa <= 0 && ieltsSafe) || (gpaSafe && prefIelts <= 0)) {
+      admitChance = "safe"
+    } else if ((gpaOk && ieltsOk) || (prefGpa <= 0 && ieltsOk) || (gpaOk && prefIelts <= 0)) {
+      admitChance = "target"
+    } else {
+      admitChance = "reach"
+    }
+
+    // Admit score (0-100): how likely the user is to get admitted
+    let admitScore = 50
+    if (prefGpa > 0 && minGpa > 0) {
+      const gpaGap = prefGpa - minGpa
+      admitScore += Math.min(25, Math.max(-25, Math.round(gpaGap * 25)))
+    } else {
+      admitScore += 10 // no GPA data = neutral positive
+    }
+    if (prefIelts > 0 && minIelts > 0) {
+      const ieltsGap = prefIelts - minIelts
+      admitScore += Math.min(25, Math.max(-25, Math.round(ieltsGap * 10)))
+    } else {
+      admitScore += 10 // no IELTS data = neutral positive
+    }
+    admitScore = Math.min(100, Math.max(0, Math.round(admitScore)))
+
     return {
       ...p.toObject(),
       matchScore: Math.min(100, Math.round(Math.max(0, score))),
+      admitChance,
+      admitScore,
     }
   })
 

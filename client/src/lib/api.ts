@@ -877,6 +877,8 @@ export function useRemoveFavorite(): UseMutationResult<void, Error, { type: stri
 
 export interface MatchResult extends Program {
   matchScore: number
+  admitChance?: "reach" | "target" | "safe"
+  admitScore?: number
 }
 
 export async function getMatches(params: { budget?: number; gpa?: number; ielts?: number; countries?: string }): Promise<{ matches: MatchResult[]; total: number }> {
@@ -967,5 +969,108 @@ export function useUpdatePreferences(): UseMutationResult<UserPreferences, Error
   return useMutation({
     mutationFn: updatePreferences,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["preferences"] }),
+  })
+}
+
+// ─── Budget Calculator ─────────────────────────────────────────────────────────
+
+export interface BudgetData {
+  tuition: number
+  livingCost: number
+  visaFees: number
+  insurance: number
+  total: number
+  currency: string
+  breakdown: { label: string; amount: number }[]
+}
+
+export function useBudgetCalculation(programId: string | null): UseQueryResult<BudgetData | null> {
+  return useQuery({
+    queryKey: ["budget", programId],
+    queryFn: async () => {
+      if (!programId) return null
+      const { data } = await api.get(`/budget?programId=${programId}`)
+      return data
+    },
+    enabled: !!programId,
+  })
+}
+
+// ─── Students Import ──────────────────────────────────────────────────────────
+
+export function useImportStudents(): UseMutationResult<
+  { imported: number; skipped: number; errors: { row: number; message: string }[] },
+  Error,
+  File
+> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      const { data } = await api.post("/agency/students/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] })
+    },
+  })
+}
+
+// ─── Saved Searches ───────────────────────────────────────────────────────────
+
+export interface SavedSearch {
+  _id: string
+  name: string
+  entityType: "program" | "university"
+  filters: Record<string, string>
+  createdAt: string
+}
+
+export async function getSavedSearches(): Promise<{ savedSearches: SavedSearch[] }> {
+  const res = await api.get("/saved-searches")
+  return res.data
+}
+
+export async function createSavedSearch(data: {
+  name: string
+  entityType: string
+  filters: Record<string, string>
+}): Promise<SavedSearch> {
+  const res = await api.post("/saved-searches", data)
+  return res.data
+}
+
+export async function deleteSavedSearch(id: string): Promise<{ message: string }> {
+  const res = await api.delete(`/saved-searches/${id}`)
+  return res.data
+}
+
+export function useSavedSearches(): UseQueryResult<{ savedSearches: SavedSearch[] }> {
+  return useQuery({
+    queryKey: ["saved-searches"],
+    queryFn: getSavedSearches,
+  })
+}
+
+export function useCreateSavedSearch(): UseMutationResult<
+  SavedSearch,
+  Error,
+  { name: string; entityType: string; filters: Record<string, string> }
+> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: createSavedSearch,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-searches"] }),
+  })
+}
+
+export function useDeleteSavedSearch(): UseMutationResult<{ message: string }, Error, string> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: deleteSavedSearch,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-searches"] }),
   })
 }

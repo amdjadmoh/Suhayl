@@ -33,6 +33,10 @@ import Users from "@/pages/Users";
 import UserDetail from "@/pages/UserDetail";
 import Saved from "@/pages/Saved";
 import Matches from "@/pages/Matches";
+import BudgetCalculator from "@/pages/BudgetCalculator";
+import StatementEditor from "@/pages/StatementEditor";
+import RecommenderManager from "@/pages/RecommenderManager";
+import RecommenderSubmit from "@/pages/RecommenderSubmit";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +60,7 @@ export default function App(): React.ReactElement {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/recommendation/:token" element={<RecommenderSubmit />} />
 
               {/* Authenticated routes wrapped in Layout */}
               <Route element={<ProtectedRoute />}>
@@ -99,10 +104,13 @@ export default function App(): React.ReactElement {
                   <Route path="applications/new" element={<AddEditApplication />} />
                   <Route path="applications/:id" element={<ApplicationDetail />} />
                   <Route path="applications/:id/edit" element={<AddEditApplication />} />
+                  <Route path="applications/:id/statement" element={<StatementEditor />} />
+                  <Route path="applications/:id/recommenders" element={<RecommenderManager />} />
 
                   {/* Other routes */}
                   <Route path="saved" element={<Saved />} />
                   <Route path="matches" element={<Matches />} />
+                  <Route path="budget-calculator" element={<BudgetCalculator />} />
                   <Route path="users" element={<ProtectedRoute role="admin"><Users /></ProtectedRoute>} />
                   <Route path="users/:id" element={<ProtectedRoute role="admin"><UserDetail /></ProtectedRoute>} />
                   <Route path="compare" element={<ProtectedRoute role="student"><Compare /></ProtectedRoute>} />

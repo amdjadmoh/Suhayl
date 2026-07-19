@@ -27,6 +27,15 @@ function MatchCard({ match }: { match: MatchResult }): React.ReactElement {
     match.matchScore >= 60 ? "bg-amber-500" :
     match.matchScore >= 40 ? "bg-orange-500" : "bg-red-500";
 
+  const admitBadgeColor =
+    match.admitChance === "safe"
+      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+      : match.admitChance === "target"
+      ? "bg-amber-100 text-amber-700 border-amber-200"
+      : match.admitChance === "reach"
+      ? "bg-red-100 text-red-700 border-red-200"
+      : "";
+
   return (
     <Link
       to={`/programs/${match._id}`}
@@ -35,7 +44,7 @@ function MatchCard({ match }: { match: MatchResult }): React.ReactElement {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="p-6">
-        {/* Match Score */}
+        {/* Match Score + Admit Chance */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className={`h-2.5 w-20 rounded-full bg-slate-100`}>
@@ -43,9 +52,19 @@ function MatchCard({ match }: { match: MatchResult }): React.ReactElement {
             </div>
             <span className="text-sm font-bold text-[#0F172A] tabular-nums">{match.matchScore}%</span>
           </div>
-          {match.scholarshipAvailable && (
-            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-full">Scholarship</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {match.admitChance && (
+              <Badge className={`${admitBadgeColor} rounded-full`}>
+                {match.admitChance === "safe" ? "Safe" : match.admitChance === "target" ? "Target" : "Reach"}
+              </Badge>
+            )}
+            {match.admitScore !== undefined && (
+              <span className="text-xs text-slate-500 font-medium">{match.admitScore}% fit</span>
+            )}
+            {match.scholarshipAvailable && (
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-full">Scholarship</Badge>
+            )}
+          </div>
         </div>
 
         <h3 className="text-lg font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors mb-2">
@@ -229,6 +248,23 @@ export default function Matches(): React.ReactElement {
       {searched && !isLoading && !isError && matches.length > 0 && (
         <>
           <p className="text-sm text-slate-500">{data?.total ?? matches.length} match{matches.length === 1 ? "" : "es"} found</p>
+
+          {/* Admit Chance Legend */}
+          {matches.some((m) => m.admitChance) && (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 bg-white rounded-xl border border-slate-100 px-4 py-3 shadow-sm">
+              <span className="font-medium text-[#0F172A]">Admit Chance:</span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" /> Safe — Likely admission
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" /> Target — Competitive
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" /> Reach — Stretch goal
+              </span>
+            </div>
+          )}
+
           <div className="grid gap-6 sm:grid-cols-2">
             {matches.map((m) => (
               <MatchCard key={m._id} match={m} />

@@ -16,6 +16,7 @@ export interface ApplicationProgress {
 
 export interface Application {
   _id: string
+  personalStatement?: string
   programId:
     | string
     | {

@@ -39,6 +39,7 @@ export interface IApplication {
   readonly applicationDeadline?: Date
   readonly applicationProgress: IApplicationProgress
   readonly notes?: string
+  readonly personalStatement?: string
   readonly createdAt: Date
   readonly updatedAt: Date
 }
@@ -87,9 +88,15 @@ const applicationSchema = new Schema<IApplicationDocument>(
       default: {},
     },
     notes: { type: String },
+    personalStatement: { type: String, default: "" },
   },
   { timestamps: true }
 )
+
+applicationSchema.index({ applicationDeadline: 1 })
+applicationSchema.index({ applicationStatus: 1 })
+applicationSchema.index({ agencyId: 1 })
+applicationSchema.index({ createdBy: 1 })
 
 export const Application = model<IApplicationDocument>(
   "Application",

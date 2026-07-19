@@ -12,7 +12,7 @@ function buildFilter(query: Request["query"]): Record<string, unknown> {
 
   const search = query["search"]
   if (typeof search === "string" && search.length > 0) {
-    filter["name"] = { $regex: search, $options: "i" }
+    filter["$text"] = { $search: search }
   }
 
   return filter
@@ -20,6 +20,9 @@ function buildFilter(query: Request["query"]): Record<string, unknown> {
 
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter = buildFilter(req.query)
+
+  const search = req.query["search"]
+  const hasTextSearch = typeof search === "string" && search.length > 0
 
   // Visibility: show official OR created by current user OR admin sees all
   const customOnly = req.query["customOnly"]
@@ -33,10 +36,17 @@ export async function getAll(req: Request, res: Response): Promise<void> {
     ]
   }
 
-  const [universities, total] = await Promise.all([
-    University.find(filter).sort({ name: 1 }),
-    University.countDocuments(filter),
-  ])
+  const universities = await University.find(
+    filter,
+    hasTextSearch ? ({ score: { $meta: "textScore" } } as Record<string, unknown>) : undefined
+  ).sort(
+    hasTextSearch
+      ? ({ score: { $meta: "textScore" } } as unknown as Record<string, 1 | -1>)
+      : ({ name: 1 } as Record<string, 1 | -1>)
+  )
+
+  const total = await University.countDocuments(filter)
+
   res.json({ universities, total })
 }
 

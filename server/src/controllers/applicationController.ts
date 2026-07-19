@@ -3,6 +3,7 @@ import "../middleware/auth"
 import { Application } from "../models/Application"
 import { Program } from "../models/Program"
 import { Student } from "../models/Student"
+import { Notification } from "../models/Notification"
 import { buildApplicationCalendar } from "../services/calendar"
 
 const POPULATE_PROGRAM = {
@@ -166,6 +167,8 @@ export async function update(req: Request, res: Response): Promise<void> {
     }
   }
 
+  const newStatus = req.body["applicationStatus"] as string | undefined
+
   // req.body is pre-validated by validate(updateApplicationSchema, "body")
   const application = await Application.findByIdAndUpdate(
     req.params["id"],
@@ -176,6 +179,21 @@ export async function update(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: "Application not found" })
     return
   }
+
+  // Create notification if status actually changed
+  if (newStatus && newStatus !== existing.applicationStatus) {
+    const prog = await Program.findById(existing.programId).select("name")
+    const programName = prog?.name ?? "Unknown Program"
+
+    await Notification.create({
+      userId: (existing.createdBy ?? existing.agencyId)!,
+      type: "status_change",
+      title: `Application status: ${newStatus}`,
+      message: `Your application to "${programName}" is now ${newStatus}.`,
+      link: `/applications/${application._id}`,
+    })
+  }
+
   res.json(application)
 }
 
