@@ -59,4 +59,9 @@ const programSchema = new Schema<IProgramDocument>(
   { timestamps: true }
 )
 
+programSchema.index({ name: "text", notes: "text" })
+programSchema.index({ degreeLevel: 1 })
+programSchema.index({ isOfficial: 1 })
+programSchema.index({ universityId: 1 })
+
 export const Program = model<IProgramDocument>("Program", programSchema)

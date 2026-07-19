@@ -556,22 +556,38 @@ export default function ApplicationDetail(): React.ReactElement {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Writing</p>
                 <div className="space-y-1">
                   {prog?.requiresSOP && (
-                    <CheckItem
-                      done={p.sopStatus === "final"}
-                      label="Statement of Purpose"
-                      detail={p.sopStatus === "draft" ? "draft" : p.sopStatus === "final" ? "done" : undefined}
-                      loading={updating === "sopStatus"}
-                      onClick={() => toggleProgress({ sopStatus: p.sopStatus === "final" ? "not_started" : "final" })}
-                    />
+                    <div className="flex items-center justify-between">
+                      <CheckItem
+                        done={p.sopStatus === "final"}
+                        label="Statement of Purpose"
+                        detail={p.sopStatus === "draft" ? "draft" : p.sopStatus === "final" ? "done" : undefined}
+                        loading={updating === "sopStatus"}
+                        onClick={() => toggleProgress({ sopStatus: p.sopStatus === "final" ? "not_started" : "final" })}
+                      />
+                      <Link
+                        to={`/applications/${a._id}/statement`}
+                        className="text-xs text-[#0EA5E9] hover:underline shrink-0 ml-2"
+                      >
+                        Edit Statement
+                      </Link>
+                    </div>
                   )}
                   {((prog?.recommendationLetters ?? 0) > 0 || p.recommendationsRequested > 0) && (
-                    <CheckItem
-                      done={p.recommendationsReceived >= p.recommendationsRequested && p.recommendationsRequested > 0}
-                      label="Letters of Recommendation"
-                      detail={p.recommendationsRequested > 0 ? `${p.recommendationsReceived}/${p.recommendationsRequested}` : undefined}
-                      loading={updating === "recommendationsReceived"}
-                      onClick={() => toggleProgress({ recommendationsReceived: Math.min(p.recommendationsReceived + 1, p.recommendationsRequested || prog?.recommendationLetters || 2), recommendationsRequested: p.recommendationsRequested || prog?.recommendationLetters || 2 })}
-                    />
+                    <div className="flex items-center justify-between">
+                      <CheckItem
+                        done={p.recommendationsReceived >= p.recommendationsRequested && p.recommendationsRequested > 0}
+                        label="Letters of Recommendation"
+                        detail={p.recommendationsRequested > 0 ? `${p.recommendationsReceived}/${p.recommendationsRequested}` : undefined}
+                        loading={updating === "recommendationsReceived"}
+                        onClick={() => toggleProgress({ recommendationsReceived: Math.min(p.recommendationsReceived + 1, p.recommendationsRequested || prog?.recommendationLetters || 2), recommendationsRequested: p.recommendationsRequested || prog?.recommendationLetters || 2 })}
+                      />
+                      <Link
+                        to={`/applications/${a._id}/recommenders`}
+                        className="text-xs text-[#0EA5E9] hover:underline shrink-0 ml-2"
+                      >
+                        Manage Recommenders
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>

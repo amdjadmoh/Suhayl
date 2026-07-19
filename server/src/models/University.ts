@@ -35,6 +35,10 @@ const universitySchema = new Schema<IUniversityDocument>(
   { timestamps: true }
 )
 
+universitySchema.index({ name: "text", country: "text", city: "text" })
+universitySchema.index({ country: 1 })
+universitySchema.index({ isOfficial: 1 })
+
 export const University = model<IUniversityDocument>(
   "University",
   universitySchema

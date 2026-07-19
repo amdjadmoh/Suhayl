@@ -1,6 +1,15 @@
 import { useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useUniversities, useCountries, useFavorites, useAddFavorite, useRemoveFavorite } from "@/lib/api";
+import {
+  useUniversities,
+  useCountries,
+  useFavorites,
+  useAddFavorite,
+  useRemoveFavorite,
+  useSavedSearches,
+  useCreateSavedSearch,
+  useDeleteSavedSearch,
+} from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { COUNTRY_FLAGS } from "@/lib/constants";
 import type { University } from "@/types/university";
@@ -27,6 +36,9 @@ import {
   Pencil,
   Trash2,
   Star,
+  Save,
+  Bookmark,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,6 +52,14 @@ import {
 import { toast } from "sonner";
 import { useDeleteUniversity, useToggleUniversityOfficial } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 function UniversityCard({
   university,
@@ -207,6 +227,60 @@ export default function Universities(): React.ReactElement {
   const addFav = useAddFavorite();
   const removeFav = useRemoveFavorite();
 
+  // ─── Saved Searches ──────────────────────────────────────────────────────
+  const { data: savedSearchesData } = useSavedSearches();
+  const createSavedSearch = useCreateSavedSearch();
+  const deleteSavedSearch = useDeleteSavedSearch();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveSearchName, setSaveSearchName] = useState("");
+
+  const savedSearches = savedSearchesData?.savedSearches?.filter(
+    (s) => s.entityType === "university",
+  ) ?? [];
+
+  function handleApplySavedSearch(filters: Record<string, string>): void {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) params.set(key, value);
+    }
+    setSearchParams(params);
+    setSearchInput(filters.search ?? "");
+  }
+
+  function getCurrentFilters(): Record<string, string> {
+    const filters: Record<string, string> = {};
+    if (search) filters.search = search;
+    if (country) filters.country = country;
+    if (customOnly) filters.customOnly = customOnly;
+    return filters;
+  }
+
+  async function handleSaveSearch(): Promise<void> {
+    if (!saveSearchName.trim()) return;
+    try {
+      await createSavedSearch.mutateAsync({
+        name: saveSearchName.trim(),
+        entityType: "university",
+        filters: getCurrentFilters(),
+      });
+      toast.success("Search saved");
+      setSaveDialogOpen(false);
+      setSaveSearchName("");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to save search"));
+    }
+  }
+
+  async function handleDeleteSavedSearch(id: string): Promise<void> {
+    try {
+      await deleteSavedSearch.mutateAsync(id);
+      toast.success("Saved search deleted");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete saved search"));
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   const favoritesMap: Record<string, boolean> = {};
   if (favorites) {
     favorites.forEach((f) => { favoritesMap[f.itemId] = true; });
@@ -353,6 +427,78 @@ export default function Universities(): React.ReactElement {
           <Button variant="outline" size="icon" onClick={clearFilters} className="rounded-xl">
             <X className="h-4 w-4" />
           </Button>
+        )}
+
+        {isLoggedIn && (
+          <>
+            {/* Save Search */}
+            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl border-slate-200">
+                  <Save className="mr-1.5 h-4 w-4" /> Save Search
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Save Search</DialogTitle>
+                  <DialogDescription>
+                    Name this search to easily load it later.
+                  </DialogDescription>
+                </DialogHeader>
+                <Input
+                  placeholder="e.g., Top US Universities"
+                  value={saveSearchName}
+                  onChange={(e) => setSaveSearchName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveSearch(); }}
+                  className="rounded-lg border-slate-200"
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleSaveSearch} disabled={!saveSearchName.trim() || createSavedSearch.isPending}>
+                    {createSavedSearch.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Saved Searches Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="rounded-xl border border-slate-200">
+                  <Bookmark className="mr-1.5 h-4 w-4" />
+                  Saved Searches
+                  {savedSearches.length > 0 && (
+                    <span className="ml-1 text-xs text-slate-400">({savedSearches.length})</span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Saved Searches</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {savedSearches.length === 0 ? (
+                  <DropdownMenuItem disabled className="text-slate-400">No saved searches</DropdownMenuItem>
+                ) : (
+                  savedSearches.map((s) => (
+                    <div key={s._id} className="flex items-center justify-between px-2 py-1 group">
+                      <button
+                        className="flex-1 text-left text-sm py-1 hover:text-[#0EA5E9] transition-colors"
+                        onClick={() => handleApplySavedSearch(s.filters)}
+                      >
+                        {s.name}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSavedSearch(s._id)}
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all p-1"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         )}
       </div>
 

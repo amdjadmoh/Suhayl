@@ -66,6 +66,7 @@ export const updateApplicationSchema = z
     applicationProgress: applicationProgressSchema.optional(),
     applicationDeadline: deadlineSchema.optional(),
     notes: z.string().optional(),
+    personalStatement: z.string().optional(),
   })
   .strict()
 

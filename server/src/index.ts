@@ -23,10 +23,14 @@ import { applicationRouter } from "./routes/applicationRoutes"
 import { programRouter } from "./routes/programRoutes"
 import favoriteRoutes from "./routes/favoriteRoutes"
 import notificationRoutes from "./routes/notificationRoutes"
+import { budgetRouter } from "./routes/budgetRoutes"
+import { savedSearchRouter } from "./routes/savedSearchRoutes"
+import { recommendationRouter } from "./routes/recommendationRoutes"
 import { Application } from "./models/Application"
 import { Notification } from "./models/Notification"
 import { sendEmail, isEmailEnabled } from "./services/email"
 import { renderDeadlineReminder } from "./templates/email/render"
+import { initSentry } from "./services/sentry"
 
 // In-memory email dedup — tracks (userId, applicationId) combos that have
 // received a deadline email. Resets on server restart (acceptable for MVP).
@@ -91,6 +95,9 @@ app.use("/api/applications", applicationRouter)
 app.use("/api/programs", programRouter)
 app.use("/api/favorites", favoriteRoutes)
 app.use("/api/notifications", notificationRoutes)
+app.use("/api/budget", budgetRouter)
+app.use("/api/saved-searches", savedSearchRouter)
+app.use("/api/recommendations", recommendationRouter)
 
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")
@@ -118,6 +125,9 @@ app.use(
 )
 
 async function start(): Promise<void> {
+  // ── Sentry initialization ──────────────────────────────────────────────
+  initSentry()
+
   // ── JWT secret fail-fast check ──────────────────────────────────────────
   if (!process.env["JWT_SECRET"]) {
     if (process.env["NODE_ENV"] === "production") {

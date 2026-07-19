@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
@@ -6,6 +6,7 @@ import {
   useCreateStudent,
   useUpdateStudent,
   useDeleteStudent,
+  useImportStudents,
 } from "@/lib/api";
 import type { Student } from "@/types/student";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -32,6 +34,10 @@ import {
    Mail,
    Phone,
    FileText,
+   Upload,
+   Download,
+   CheckCircle2,
+   XCircle,
  } from "lucide-react";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -50,6 +56,15 @@ export default function AgencyStudents(): React.ReactElement {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{
+    imported: number;
+    skipped: number;
+    errors: { row: number; message: string }[];
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const importMutation = useImportStudents();
 
   const {
     register,
@@ -139,13 +154,183 @@ export default function AgencyStudents(): React.ReactElement {
             Manage the students you work with
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setImportFile(null);
+                  setImportResult(null);
+                }}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Import Students from CSV</DialogTitle>
+                <DialogDescription>
+                  Upload a CSV file with columns: <strong>name</strong>,{" "}
+                  <strong>email</strong>, <strong>phone</strong>,{" "}
+                  <strong>notes</strong>
+                </DialogDescription>
+              </DialogHeader>
+
+              {importResult ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 rounded-lg bg-slate-50">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      <span>
+                        Imported: <strong>{importResult.imported}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <XCircle className="h-5 w-5 text-amber-500" />
+                      <span>
+                        Skipped: <strong>{importResult.skipped}</strong>
+                      </span>
+                    </div>
+                  </div>
+                  {importResult.errors.length > 0 && (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      <p className="text-sm font-medium text-red-600">Errors:</p>
+                      {importResult.errors.map((err, i) => (
+                        <p key={i} className="text-xs text-red-500">
+                          Row {err.row}: {err.message}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl"
+                    onClick={() => {
+                      setImportDialogOpen(false);
+                      setImportResult(null);
+                    }}
+                  >
+                    Done
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-lg border-2 border-dashed border-slate-200 p-6 text-center hover:border-[#0EA5E9]/50 transition-colors">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        setImportFile(file);
+                      }}
+                    />
+                    {importFile ? (
+                      <div className="space-y-2">
+                        <FileText className="h-8 w-8 text-[#0EA5E9] mx-auto" />
+                        <p className="text-sm font-medium text-[#0F172A]">
+                          {importFile.name}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {(importFile.size / 1024).toFixed(1)} KB
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => {
+                            setImportFile(null);
+                            if (fileInputRef.current)
+                              fileInputRef.current.value = "";
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full"
+                      >
+                        <Upload className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-slate-600">
+                          Click to select CSV file
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          or drag and drop
+                        </p>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <a
+                      href="data:text/csv;charset=utf-8,name,email,phone,notes%0AJohn Doe,john@example.com,+1234567890,My notes here"
+                      download="students_template.csv"
+                      className="inline-flex items-center gap-1.5 text-xs text-[#0EA5E9] hover:underline"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download Template
+                    </a>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setImportDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={!importFile || importMutation.isPending}
+                      onClick={async () => {
+                        if (!importFile) return;
+                        try {
+                          const result = await importMutation.mutateAsync(
+                            importFile,
+                          );
+                          setImportResult(result);
+                          toast.success(
+                            `Imported ${result.imported} student${result.imported !== 1 ? "s" : ""}`,
+                          );
+                        } catch (err: unknown) {
+                          toast.error(
+                            getErrorMessage(err, "Failed to import students"),
+                          );
+                        }
+                      }}
+                    >
+                      {importMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Importing...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Import
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Student
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
