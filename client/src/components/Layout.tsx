@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/authContext";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/lib/api";
 import {
   DropdownMenu,
@@ -79,7 +80,7 @@ function SidebarNav({
   }
 
   return (
-    <nav className="flex flex-col gap-0.5 px-3">
+    <nav className="flex flex-col gap-1 px-3">
       {items.map((item) => (
         <NavLink
           key={item.to}
@@ -88,10 +89,10 @@ function SidebarNav({
           onClick={onItemClick}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-[#0EA5E9]/10 text-[#0EA5E9]"
-                : "text-slate-500 hover:text-[#0F172A] hover:bg-slate-50"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )
           }
         >
@@ -132,7 +133,7 @@ function NotificationBell(): React.ReactElement | null {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-[#0F172A] hover:bg-slate-100">
+        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-accent">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1">
@@ -145,31 +146,31 @@ function NotificationBell(): React.ReactElement | null {
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
           {unreadCount > 0 && (
-            <button onClick={() => markAll.mutate()} className="text-xs text-[#0EA5E9] hover:underline">
+            <button onClick={() => markAll.mutate()} className="text-xs text-primary hover:underline">
               Mark all read
             </button>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
-          <div className="px-2 py-6 text-center text-sm text-slate-400">No notifications yet</div>
+          <div className="px-2 py-6 text-center text-sm text-muted-foreground">No notifications yet</div>
         ) : (
           notifications.slice(0, 10).map((n) => (
             <DropdownMenuItem
               key={n._id}
-              className={`flex flex-col items-start gap-1 px-3 py-2.5 cursor-pointer ${!n.read ? "bg-slate-50" : ""}`}
+              className={`flex flex-col items-start gap-1 px-3 py-2.5 cursor-pointer ${!n.read ? "bg-accent/60" : ""}`}
               onClick={() => {
                 if (!n.read) markRead.mutate(n._id);
                 if (n.link) navigate(n.link);
               }}
             >
               <div className="flex items-center gap-2 w-full">
-                <span className={`text-sm font-medium flex-1 ${!n.read ? "text-[#0F172A]" : "text-slate-600"}`}>
+                <span className={`text-sm font-medium flex-1 ${!n.read ? "text-foreground" : "text-muted-foreground"}`}>
                   {n.title}
                 </span>
-                <span className="text-xs text-slate-400 shrink-0">{timeAgo(n.createdAt)}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{timeAgo(n.createdAt)}</span>
               </div>
-              <p className="text-xs text-slate-500 line-clamp-2">{n.message}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
             </DropdownMenuItem>
           ))
         )}
@@ -191,11 +192,11 @@ export default function Layout(): React.ReactElement {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 border border-slate-200 shadow-sm">
+      <div className="flex h-16 items-center gap-3 border-b border-border px-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted border border-border shadow-sm">
           <img src="/logo.svg" alt="" className="h-full w-full" />
         </div>
-        <span className="text-xl font-bold tracking-tight text-[#0F172A]">
+        <span className="text-xl font-bold tracking-tight text-foreground">
           Suhayl
         </span>
       </div>
@@ -207,16 +208,16 @@ export default function Layout(): React.ReactElement {
 
       {/* User section */}
       {user && (
-        <div className="border-t border-slate-100 p-4">
+        <div className="border-t border-border p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0EA5E9] text-sm font-bold text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               {user.name?.charAt(0)?.toUpperCase() ?? "?"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-[#0F172A]">
+              <p className="truncate text-sm font-medium text-foreground">
                 {user.name}
               </p>
-              <p className="truncate text-xs capitalize text-slate-400">
+              <p className="truncate text-xs capitalize text-muted-foreground">
                 {user.role}
               </p>
             </div>
@@ -224,7 +225,7 @@ export default function Layout(): React.ReactElement {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="text-slate-400 hover:text-[#0F172A] hover:bg-slate-100"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent"
               title="Log out"
             >
               <LogOut className="h-4 w-4" />
@@ -236,40 +237,42 @@ export default function Layout(): React.ReactElement {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F8FAFC]">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-slate-100 bg-white lg:flex">
+      <aside className="hidden w-64 flex-shrink-0 flex-col border-r border-border bg-card lg:flex">
         {sidebarContent}
       </aside>
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Desktop top bar */}
-        <header className="hidden h-14 items-center justify-end gap-3 border-b border-slate-100 bg-white/90 backdrop-blur-md px-6 lg:flex">
+        <header className="hidden h-14 items-center justify-end gap-2 border-b border-border bg-card/80 backdrop-blur-md px-6 lg:flex">
+          <ThemeToggle />
           {user && <NotificationBell />}
         </header>
 
         {/* Mobile top bar */}
-        <header className="flex h-14 items-center justify-between border-b border-slate-100 bg-white/90 backdrop-blur-md px-4 lg:hidden">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-4 lg:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-slate-500">
+              <Button variant="ghost" size="icon" className="text-muted-foreground">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 border-r border-slate-100 bg-white p-0">
+            <SheetContent side="left" className="w-64 border-r border-border bg-card p-0">
               <div className="flex h-full flex-col">
                 {sidebarContent}
               </div>
             </SheetContent>
           </Sheet>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 border border-slate-200">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted border border-border">
               <img src="/logo.svg" alt="" className="h-full w-full" />
             </div>
-            <span className="text-lg font-bold text-[#0F172A]">Suhayl</span>
+            <span className="text-lg font-bold text-foreground">Suhayl</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
             {user && <NotificationBell />}
           </div>
         </header>

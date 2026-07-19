@@ -9,9 +9,9 @@ import type { City } from "@/types/city"
 import { getErrorMessage } from "@/lib/utils"
 
 const verificationStyles: Record<string, string> = {
-  manual: "bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full",
-  ai: "bg-amber-100 text-amber-700 border-amber-200 rounded-full",
-  none: "bg-red-100 text-red-700 border-red-200 rounded-full",
+  manual: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 rounded-full",
+  ai: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 rounded-full",
+  none: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30 rounded-full",
 };
 const verificationLabels: Record<string, string> = {
   manual: "✓ Verified",
@@ -68,14 +68,14 @@ export default function CountryDetail(): React.ReactElement {
   if (isError || !data) {
     return (
       <div className="space-y-6">
-        <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+        <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="rounded-xl border border-slate-100 bg-white p-12">
+        <div className="rounded-xl border border-border bg-card p-12">
           <div className="flex flex-col items-center justify-center">
             <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-            <h2 className="mb-2 text-xl font-semibold text-[#0F172A]">Country not found</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="mb-2 text-xl font-semibold text-foreground">Country not found</h2>
+            <p className="text-sm text-muted-foreground">
               {error instanceof Error
                 ? error.message
                 : "The country details could not be loaded."}
@@ -101,25 +101,25 @@ export default function CountryDetail(): React.ReactElement {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               <span className="mr-2">{COUNTRY_FLAGS[country.name] ?? <Globe className="inline h-6 w-6" />}</span>
               {country.name}
               <Badge className={`ml-2 ${verificationStyles[country.verificationStatus || "ai"]}`}>
                 {verificationLabels[country.verificationStatus || "ai"]}
               </Badge>
             </h1>
-            <p className="text-sm text-slate-500">{country.currency}</p>
+            <p className="text-sm text-muted-foreground">{country.currency}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link to={`/countries/${country._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
+          <Link to={`/countries/${country._id}/edit`} className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
             <Pencil className="h-4 w-4" /> Edit
           </Link>
-          <button onClick={handleDelete} disabled={deleteMutation.isPending} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600">
+          <button onClick={handleDelete} disabled={deleteMutation.isPending} className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600">
             {deleteMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -132,99 +132,99 @@ export default function CountryDetail(): React.ReactElement {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Visa Information Card */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <Globe className="h-5 w-5 text-slate-400" /> Visa Information
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Globe className="h-5 w-5 text-muted-foreground" /> Visa Information
             </h3>
           </div>
           <div className="space-y-4 p-6">
             {country.visaType && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Visa Type</span>
-                  <span className="text-sm font-medium text-[#0F172A] text-right max-w-[60%]">{country.visaType}</span>
+                  <span className="text-sm text-muted-foreground">Visa Type</span>
+                  <span className="text-sm font-medium text-foreground text-right max-w-[60%]">{country.visaType}</span>
                 </div>
               </>
             )}
 
             {country.proofOfFundsMonthly != null && country.proofOfFundsMonthly > 0 && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Proof of Funds/Month</span>
-                  <span className="text-sm font-medium text-[#0F172A]">{formatCurrency(country.proofOfFundsMonthly)}</span>
+                  <span className="text-sm text-muted-foreground">Proof of Funds/Month</span>
+                  <span className="text-sm font-medium text-foreground">{formatCurrency(country.proofOfFundsMonthly)}</span>
                 </div>
               </>
             )}
 
             {country.whereToApply && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Where to Apply</span>
-                  <span className="text-sm font-medium text-[#0F172A] text-right max-w-[60%]">{country.whereToApply}</span>
+                  <span className="text-sm text-muted-foreground">Where to Apply</span>
+                  <span className="text-sm font-medium text-foreground text-right max-w-[60%]">{country.whereToApply}</span>
                 </div>
               </>
             )}
 
             {country.processingTime && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Processing Time</span>
-                  <span className="text-sm font-medium text-[#0F172A]">{country.processingTime}</span>
+                  <span className="text-sm text-muted-foreground">Processing Time</span>
+                  <span className="text-sm font-medium text-foreground">{country.processingTime}</span>
                 </div>
               </>
             )}
 
             {country.workPermit && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Work Permit</span>
-                  <span className="text-sm font-medium text-[#0F172A]">{country.workPermit}</span>
+                  <span className="text-sm text-muted-foreground">Work Permit</span>
+                  <span className="text-sm font-medium text-foreground">{country.workPermit}</span>
                 </div>
               </>
             )}
 
             {country.postGraduationVisa && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Post-Graduation Visa</span>
-                  <span className="text-sm font-medium text-[#0F172A] text-right max-w-[60%]">{country.postGraduationVisa}</span>
+                  <span className="text-sm text-muted-foreground">Post-Graduation Visa</span>
+                  <span className="text-sm font-medium text-foreground text-right max-w-[60%]">{country.postGraduationVisa}</span>
                 </div>
               </>
             )}
 
             {country.additionalVisaNotes && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="flex items-start justify-between">
-                  <span className="text-sm text-slate-500">Additional Notes</span>
-                  <span className="text-sm text-[#0F172A] text-right max-w-[60%] whitespace-pre-wrap">{country.additionalVisaNotes}</span>
+                  <span className="text-sm text-muted-foreground">Additional Notes</span>
+                  <span className="text-sm text-foreground text-right max-w-[60%] whitespace-pre-wrap">{country.additionalVisaNotes}</span>
                 </div>
               </>
             )}
 
-            <div className="border-t border-slate-100" />
+            <div className="border-t border-border" />
 
             <div className="flex items-start justify-between">
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 Bank Account Required
               </span>
               <div className="flex flex-col items-end gap-1 text-right">
-                <span className="text-sm font-medium text-[#0F172A]">
+                <span className="text-sm font-medium text-foreground">
                   {formatCurrency(country.visaBankAccountAmount)}/year
                 </span>
                 <Badge
                   variant="secondary"
                   className={
                     country.visaBankAccountLocked
-                      ? "rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700"
-                      : "rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"
+                      ? "rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                      : "rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400"
                   }
                 >
                   {country.visaBankAccountLocked
@@ -234,21 +234,21 @@ export default function CountryDetail(): React.ReactElement {
               </div>
             </div>
 
-            <div className="border-t border-slate-100" />
+            <div className="border-t border-border" />
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 Living Cost / Month
               </span>
-              <span className="text-sm font-medium text-[#0F172A]">
+              <span className="text-sm font-medium text-foreground">
                 {formatCurrency(country.livingCostEstimate)}
               </span>
             </div>
 
-            <div className="border-t border-slate-100" />
+            <div className="border-t border-border" />
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-muted-foreground">
                 Currency
               </span>
               <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">{country.currency}</Badge>
@@ -256,14 +256,14 @@ export default function CountryDetail(): React.ReactElement {
 
             {country.requiredDocuments?.length > 0 && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Required Visa Documents ({country.requiredDocuments.length})
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {country.requiredDocuments.map((doc, i) => (
-                      <span key={i} className="bg-slate-100 text-slate-700 rounded-full px-3 py-1 text-xs">
+                      <span key={i} className="bg-muted text-foreground rounded-full px-3 py-1 text-xs">
                         {doc}
                       </span>
                     ))}
@@ -274,11 +274,11 @@ export default function CountryDetail(): React.ReactElement {
 
             {(country.pros.length > 0 || country.cons.length > 0) && (
               <>
-                <div className="border-t border-slate-100" />
+                <div className="border-t border-border" />
                 <div className="grid gap-3 sm:grid-cols-2">
                   {country.pros.length > 0 && (
                     <div>
-                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                         Pros
                       </h3>
                       <ul className="space-y-1.5">
@@ -323,12 +323,12 @@ export default function CountryDetail(): React.ReactElement {
         </div>
 
         {/* Cities Card */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <Globe className="h-5 w-5 text-slate-400" /> Cities in {country.name} ({cities.length})
+        <div className="rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Globe className="h-5 w-5 text-muted-foreground" /> Cities in {country.name} ({cities.length})
             </h3>
-            <Link to={`/cities/new?countryName=${encodeURIComponent(country.name)}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium hover:bg-slate-50 transition-colors">
+            <Link to={`/cities/new?countryName=${encodeURIComponent(country.name)}`} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
               <Plus className="h-4 w-4" /> Add City
             </Link>
           </div>
@@ -338,29 +338,29 @@ export default function CountryDetail(): React.ReactElement {
                 {cities.map((city) => (
                   <div
                     key={city._id}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 p-3"
+                    className="flex items-center justify-between rounded-lg border border-border p-3"
                   >
                     <div className="min-w-0 flex-1">
                       <Link
                         to={`/cities/${city._id}`}
-                        className="font-semibold text-[#0F172A] hover:text-[#0EA5E9]"
+                        className="font-semibold text-foreground hover:text-primary"
                       >
                         {city.name}
                         {city.isCapital && (
-                          <Badge className="ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
+                          <Badge className="ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400">
                             Capital
                           </Badge>
                         )}
                       </Link>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-muted-foreground">
                         ${city.monthlyLivingCost.toLocaleString()}/mo · Quality of Life: {city.qualityOfLifeScore}/10
                       </p>
                     </div>
                     <div className="ml-3 flex flex-shrink-0 items-center gap-1">
-                      <Link to={`/cities/${city._id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-                        <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                      <Link to={`/cities/${city._id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </Link>
-                      <button onClick={() => handleDeleteCity(city)} disabled={deleteCityMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-red-500 hover:text-red-600">
+                      <button onClick={() => handleDeleteCity(city)} disabled={deleteCityMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors text-red-500 hover:text-red-600">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -368,8 +368,8 @@ export default function CountryDetail(): React.ReactElement {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 py-8 text-center text-slate-500">
-                <Globe className="h-8 w-8 text-slate-300" />
+              <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
+                <Globe className="h-8 w-8 text-muted-foreground/40" />
                 <p>No cities added yet</p>
               </div>
             )}
@@ -377,10 +377,10 @@ export default function CountryDetail(): React.ReactElement {
         </div>
 
         {/* Universities Card */}
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-[#0F172A]">
-              <Globe className="h-5 w-5 text-slate-400" /> Universities in {country.name} ({universities.length})
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Globe className="h-5 w-5 text-muted-foreground" /> Universities in {country.name} ({universities.length})
             </h3>
           </div>
           <div className="p-6">
@@ -390,12 +390,12 @@ export default function CountryDetail(): React.ReactElement {
                   <div
                     key={uni._id}
                     onClick={() => navigate(`/universities/${uni._id}`)}
-                    className="flex cursor-pointer flex-col gap-2 rounded-lg border border-slate-100 p-4 transition-all hover:border-slate-200"
+                    className="flex cursor-pointer flex-col gap-2 rounded-lg border border-border p-4 transition-all hover:border-border"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h4 className="font-semibold text-[#0F172A]">{uni.name}</h4>
-                        <p className="text-sm text-slate-500">
+                        <h4 className="font-semibold text-foreground">{uni.name}</h4>
+                        <p className="text-sm text-muted-foreground">
                           {uni.city}
                         </p>
                       </div>
@@ -404,8 +404,8 @@ export default function CountryDetail(): React.ReactElement {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 py-8 text-center text-slate-500">
-                <Globe className="h-8 w-8 text-slate-300" />
+              <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
+                <Globe className="h-8 w-8 text-muted-foreground/40" />
                 <p>No universities added yet</p>
               </div>
             )}

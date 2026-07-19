@@ -16,9 +16,9 @@ import { useAuth } from "@/lib/authContext"
 import { COUNTRY_FLAGS } from "@/lib/constants"
 
 const verificationStyles: Record<string, string> = {
-  manual: "bg-emerald-100 text-emerald-700 border-emerald-200 rounded-full",
-  ai: "bg-amber-100 text-amber-700 border-amber-200 rounded-full",
-  none: "bg-red-100 text-red-700 border-red-200 rounded-full",
+  manual: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 rounded-full",
+  ai: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 rounded-full",
+  none: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30 rounded-full",
 };
 const verificationLabels: Record<string, string> = {
   manual: "✓ Verified",
@@ -52,7 +52,7 @@ export default function Countries(): React.ReactElement {
       <div className="space-y-8">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 text-white">
           <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
             <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-emerald-400 blur-3xl" />
           </div>
           <div className="relative flex items-center justify-between">
@@ -68,12 +68,12 @@ export default function Countries(): React.ReactElement {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50">
+              <TableRow className="bg-muted">
                 {["Country", "Bank Account Required", "Processing", ""].map((h) => (
-                  <TableHead key={h} className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <TableHead key={h} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     {h}
                   </TableHead>
                 ))}
@@ -100,8 +100,8 @@ export default function Countries(): React.ReactElement {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-[#0F172A]">Failed to load countries</h2>
-        <p className="text-sm text-slate-500">Please try again later</p>
+        <h2 className="text-lg font-semibold text-foreground">Failed to load countries</h2>
+        <p className="text-sm text-muted-foreground">Please try again later</p>
       </div>
     )
   }
@@ -124,7 +124,7 @@ export default function Countries(): React.ReactElement {
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 text-white">
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-white blur-3xl" />
+          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-emerald-400 blur-3xl" />
         </div>
         <div className="relative flex items-center justify-between">
@@ -141,33 +141,33 @@ export default function Countries(): React.ReactElement {
       </div>
 
       {/* Countries Table */}
-      <div className="rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Country</TableHead>
-              <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bank Account Required</TableHead>
-              <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Processing</TableHead>
-              <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider">Visa Docs</TableHead>
-              <TableHead className="text-xs font-medium text-slate-500 uppercase tracking-wider w-10" />
+            <TableRow className="bg-muted hover:bg-muted">
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Country</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bank Account Required</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Processing</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Visa Docs</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {countries?.map((country) => {
               const isFav = favoritesMap[country._id] ?? false
               return (
-              <TableRow key={country._id} className="group hover:bg-slate-50 transition-colors">
+              <TableRow key={country._id} className="group hover:bg-muted transition-colors">
                 {/* Country */}
                 <TableCell>
                   <Link
                     to={`/countries/${country._id}`}
                     className="flex items-center gap-3"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-lg shrink-0">
-                      {COUNTRY_FLAGS[country.name] ?? <Globe className="h-4 w-4 text-slate-400" />}
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-muted to-muted text-lg shrink-0">
+                      {COUNTRY_FLAGS[country.name] ?? <Globe className="h-4 w-4 text-muted-foreground" />}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">
+                      <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
                         {country.name}
                       </span>
                       <Badge className={`text-[10px] px-1.5 py-0 ${verificationStyles[country.verificationStatus || "ai"]}`}>
@@ -180,7 +180,7 @@ export default function Countries(): React.ReactElement {
                           className="ml-1"
                           title={isFav ? "Remove from saved" : "Save"}
                         >
-                          <Star className={`h-4 w-4 ${isFav ? "fill-amber-400 text-amber-400" : "text-slate-300 hover:text-amber-400"}`} />
+                          <Star className={`h-4 w-4 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"}`} />
                         </button>
                       )}
                     </div>
@@ -190,16 +190,16 @@ export default function Countries(): React.ReactElement {
                 {/* Bank Account Required */}
                 <TableCell>
                   <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-[#0F172A] whitespace-nowrap">
+                    <span className="text-sm font-medium text-foreground whitespace-nowrap">
                       {formatCurrency(country.visaBankAccountAmount, country.currency)}
-                      <span className="text-xs text-slate-400 font-normal">/year</span>
+                      <span className="text-xs text-muted-foreground font-normal">/year</span>
                     </span>
                     {country.visaBankAccountLocked ? (
-                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 w-fit text-xs">
+                      <Badge className="bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 w-fit text-xs">
                         <Lock className="mr-1 h-3 w-3" /> Blocked
                       </Badge>
                     ) : (
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 w-fit text-xs">
+                      <Badge className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 w-fit text-xs">
                         <Unlock className="mr-1 h-3 w-3" /> Regular
                       </Badge>
                     )}
@@ -209,9 +209,9 @@ export default function Countries(): React.ReactElement {
                 {/* Processing */}
                 <TableCell>
                   {country.processingTime ? (
-                    <span className="text-sm text-slate-600 whitespace-nowrap">{country.processingTime}</span>
+                    <span className="text-sm text-foreground/70 whitespace-nowrap">{country.processingTime}</span>
                   ) : (
-                    <span className="text-sm text-slate-400">—</span>
+                    <span className="text-sm text-muted-foreground">—</span>
                   )}
                 </TableCell>
 
@@ -222,7 +222,7 @@ export default function Countries(): React.ReactElement {
                       {country.requiredDocuments.length} doc{country.requiredDocuments.length !== 1 ? "s" : ""}
                     </Badge>
                   ) : (
-                    <span className="text-sm text-slate-400">—</span>
+                    <span className="text-sm text-muted-foreground">—</span>
                   )}
                 </TableCell>
 
@@ -230,9 +230,9 @@ export default function Countries(): React.ReactElement {
                 <TableCell>
                   <Link
                     to={`/countries/${country._id}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-100 hover:border-slate-300 transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted hover:border-border transition-colors"
                   >
-                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-[#0EA5E9]" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
                   </Link>
                 </TableCell>
               </TableRow>

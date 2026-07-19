@@ -9,7 +9,6 @@ import {
   AlertCircle,
   Loader2,
   Send,
-  User,
   GraduationCap,
 } from "lucide-react"
 import {
@@ -45,7 +44,7 @@ export default function RecommenderSubmit(): React.ReactElement {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
         <div className="w-full max-w-lg space-y-6">
           <Skeleton className="h-8 w-64 mx-auto" />
           <Skeleton className="h-48 w-full rounded-xl" />
@@ -57,13 +56,13 @@ export default function RecommenderSubmit(): React.ReactElement {
   // Error state - recommendation not found
   if (isError || !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
         <div className="w-full max-w-md text-center">
           <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-400" />
-          <h1 className="text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-foreground">
             Recommendation not found
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             This link may be invalid or expired. Please contact the student who
             requested the recommendation.
           </p>
@@ -75,13 +74,13 @@ export default function RecommenderSubmit(): React.ReactElement {
   // Already submitted
   if (data.status === "submitted" && !submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
         <div className="w-full max-w-md text-center">
           <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-400" />
-          <h1 className="text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-foreground">
             Letter already submitted
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             This letter of recommendation has already been submitted. Thank you
             for your contribution!
           </p>
@@ -93,13 +92,13 @@ export default function RecommenderSubmit(): React.ReactElement {
   // Success state after submission
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
         <div className="w-full max-w-md text-center">
           <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-400" />
-          <h1 className="text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-foreground">
             Thank you!
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             Your letter of recommendation for {data.studentName} has been
             submitted successfully. The student will be notified.
           </p>
@@ -111,13 +110,13 @@ export default function RecommenderSubmit(): React.ReactElement {
   // Declined
   if (data.status === "declined") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
         <div className="w-full max-w-md text-center">
           <AlertCircle className="mx-auto mb-4 h-16 w-16 text-amber-400" />
-          <h1 className="text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-foreground">
             Invitation declined
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p className="mt-2 text-muted-foreground">
             This recommendation invitation was declined.
           </p>
         </div>
@@ -127,25 +126,25 @@ export default function RecommenderSubmit(): React.ReactElement {
 
   // Main form — invited state
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
       <div className="w-full max-w-lg">
-        <div className="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
           {/* Header */}
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#0EA5E9]/10">
-              <GraduationCap className="h-8 w-8 text-[#0EA5E9]" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <GraduationCap className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-[#0F172A]">
+            <h1 className="text-2xl font-bold text-foreground">
               Letter of Recommendation
             </h1>
           </div>
 
           {/* Request Details */}
-          <div className="mb-6 rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-sm text-slate-600 leading-relaxed">
+          <div className="mb-6 rounded-xl border border-border bg-muted p-4">
+            <p className="text-sm text-foreground/70 leading-relaxed">
               Dear <strong>{data.recommenderName}</strong>,
             </p>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            <p className="mt-2 text-sm text-foreground/70 leading-relaxed">
               <strong>{data.studentName}</strong> has requested a letter of
               recommendation for <strong>{data.programName}</strong>. Please
               write your letter below.
@@ -154,16 +153,16 @@ export default function RecommenderSubmit(): React.ReactElement {
 
           {/* Letter Textarea */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-[#0F172A]">
+            <label className="text-sm font-medium text-foreground">
               Your Letter
             </label>
             <Textarea
               placeholder="Write your letter of recommendation here... (minimum 50 characters)"
               value={letterText}
               onChange={(e) => setLetterText(e.target.value)}
-              className="min-h-48 rounded-xl border-slate-200 resize-y"
+              className="min-h-48 rounded-xl border-border resize-y"
             />
-            <p className="text-right text-xs text-slate-400">
+            <p className="text-right text-xs text-muted-foreground">
               {wordCount} {wordCount === 1 ? "word" : "words"}
             </p>
           </div>
@@ -174,7 +173,7 @@ export default function RecommenderSubmit(): React.ReactElement {
             disabled={
               submitMutation.isPending || letterText.trim().length < 50
             }
-            className="mt-6 w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white rounded-xl py-6"
+            className="mt-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl py-6"
           >
             {submitMutation.isPending ? (
               <>
@@ -188,7 +187,7 @@ export default function RecommenderSubmit(): React.ReactElement {
             )}
           </Button>
           {letterText.trim().length > 0 && letterText.trim().length < 50 && (
-            <p className="mt-2 text-center text-xs text-amber-600">
+            <p className="mt-2 text-center text-xs text-amber-600 dark:text-amber-400">
               Letter must be at least 50 characters
               ({letterText.trim().length}/50)
             </p>

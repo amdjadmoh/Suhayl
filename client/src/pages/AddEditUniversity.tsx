@@ -90,7 +90,7 @@ export default function AddEditUniversity(): React.ReactElement {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="rounded-xl border border-slate-100 bg-white p-6"><Skeleton className="h-64 w-full" /></div>
+        <div className="rounded-xl border border-border bg-card p-6"><Skeleton className="h-64 w-full" /></div>
       </div>
     );
   }
@@ -108,32 +108,32 @@ export default function AddEditUniversity(): React.ReactElement {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors" onClick={() => navigate(-1)}>
+        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">{isEdit ? "Edit University" : "Add University"}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{isEdit ? "Edit University" : "Add University"}</h1>
       </div>
 
       {!isEdit && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700">
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-4 text-sm text-amber-700 dark:text-amber-400">
           Custom university — visible only to you until reviewed by an admin
         </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="rounded-xl border border-slate-100 bg-white">
-          <div className="border-b border-slate-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-[#0F172A]">University Information</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <h3 className="text-base font-semibold text-foreground">University Information</h3>
           </div>
           <div className="p-6 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="name" className="text-sm font-medium text-slate-700">University Name <span className="text-red-500">*</span></Label>
-              <Input id="name" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("name", { required: "Name is required" })} placeholder="e.g. University of Oxford" />
+              <Label htmlFor="name" className="text-sm font-medium text-foreground">University Name <span className="text-red-500">*</span></Label>
+              <Input id="name" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("name", { required: "Name is required" })} placeholder="e.g. University of Oxford" />
               {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country" className="text-sm font-medium text-slate-700">Country <span className="text-red-500">*</span></Label>
+              <Label htmlFor="country" className="text-sm font-medium text-foreground">Country <span className="text-red-500">*</span></Label>
               <Select value={watch("country")} onValueChange={(v) => setValue("country", v)}>
                 <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select country..." /></SelectTrigger>
                 <SelectContent>
@@ -146,46 +146,46 @@ export default function AddEditUniversity(): React.ReactElement {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="city" className="text-sm font-medium text-slate-700">City <span className="text-red-500">*</span></Label>
-              <Input id="city" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("city", { required: "City is required" })} placeholder="e.g. Oxford" />
+              <Label htmlFor="city" className="text-sm font-medium text-foreground">City <span className="text-red-500">*</span></Label>
+              <Input id="city" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("city", { required: "City is required" })} placeholder="e.g. Oxford" />
               {errors.city && <p className="text-sm text-red-500">{errors.city.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ranking" className="text-sm font-medium text-slate-700">World Ranking</Label>
-              <Input id="ranking" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("ranking", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 5" />
+              <Label htmlFor="ranking" className="text-sm font-medium text-foreground">World Ranking</Label>
+              <Input id="ranking" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("ranking", { setValueAs: (v) => v === "" ? undefined : Number(v) })} placeholder="e.g. 5" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="qsRank" className="text-sm font-medium text-slate-700">QS World Ranking</Label>
-              <Input id="qsRank" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("qsRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 10" />
+              <Label htmlFor="qsRank" className="text-sm font-medium text-foreground">QS World Ranking</Label>
+              <Input id="qsRank" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("qsRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 10" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="theRank" className="text-sm font-medium text-slate-700">Times Higher Education Ranking</Label>
-              <Input id="theRank" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("theRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 15" />
+              <Label htmlFor="theRank" className="text-sm font-medium text-foreground">Times Higher Education Ranking</Label>
+              <Input id="theRank" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("theRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 15" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="arwuRank" className="text-sm font-medium text-slate-700">ARWU / Shanghai Ranking</Label>
-              <Input id="arwuRank" type="number" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("arwuRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 20" />
+              <Label htmlFor="arwuRank" className="text-sm font-medium text-foreground">ARWU / Shanghai Ranking</Label>
+              <Input id="arwuRank" type="number" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("arwuRank", { setValueAs: (v) => v === "" ? null : Number(v) })} placeholder="e.g. 20" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="websiteUrl" className="text-sm font-medium text-slate-700">Website URL</Label>
-              <Input id="websiteUrl" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("websiteUrl")} placeholder="https://..." />
+              <Label htmlFor="websiteUrl" className="text-sm font-medium text-foreground">Website URL</Label>
+              <Input id="websiteUrl" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("websiteUrl")} placeholder="https://..." />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="notes" className="text-sm font-medium text-slate-700">Notes</Label>
-              <Textarea id="notes" className="rounded-lg border-slate-200 focus:border-[#0EA5E9] focus:ring-[#0EA5E9]/20" {...register("notes")} placeholder="Any notes about this institution..." rows={3} />
+              <Label htmlFor="notes" className="text-sm font-medium text-foreground">Notes</Label>
+              <Textarea id="notes" className="rounded-lg border-border focus:border-primary focus:ring-primary/20" {...register("notes")} placeholder="Any notes about this institution..." rows={3} />
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="outline" className="border-slate-200 hover:bg-slate-50 rounded-xl" onClick={() => navigate("/universities")}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl">
+          <Button type="button" variant="outline" className="border-border hover:bg-muted rounded-xl" onClick={() => navigate("/universities")}>Cancel</Button>
+          <Button type="submit" disabled={isSubmitting} className="bg-foreground text-background hover:bg-foreground/90 rounded-xl">
             {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
               : <><Save className="mr-2 h-4 w-4" /> {isEdit ? "Update" : "Save"} University</>}
           </Button>

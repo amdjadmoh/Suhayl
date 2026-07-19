@@ -21,12 +21,18 @@ export const APPLICATION_STATUSES = [
 export const TUITION_PERIODS = ["Year", "Semester", "Total"] as const;
 
 export const STATUS_COLORS: Record<string, string> = {
-  Preparing: "bg-amber-100 text-amber-700 hover:bg-amber-100",
-  Applied: "bg-blue-100 text-blue-700 hover:bg-blue-100",
-  Accepted: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-  Rejected: "bg-red-100 text-red-700 hover:bg-red-100",
-  Waitlisted: "bg-orange-100 text-orange-700 hover:bg-orange-100",
-  Enrolled: "bg-violet-100 text-violet-700 hover:bg-violet-100",
+  Preparing:
+    "bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/15",
+  Applied:
+    "bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/15",
+  Accepted:
+    "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400 dark:hover:bg-emerald-500/15",
+  Rejected:
+    "bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/15",
+  Waitlisted:
+    "bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-500/15 dark:text-orange-400 dark:hover:bg-orange-500/15",
+  Enrolled:
+    "bg-violet-100 text-violet-700 hover:bg-violet-100 dark:bg-violet-500/15 dark:text-violet-400 dark:hover:bg-violet-500/15",
 };
 
 export const COUNTRY_FLAGS: Record<string, string> = {
