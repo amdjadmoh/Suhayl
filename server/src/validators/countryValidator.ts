@@ -18,6 +18,7 @@ export const createCountrySchema = z
     postGraduationVisa: z.string().optional(),
     additionalVisaNotes: z.string().optional(),
     requiredDocuments: z.array(z.string()).optional(),
+    verificationStatus: z.enum(["manual", "ai", "none"]),
   })
   .strict()
 
@@ -39,5 +40,6 @@ export const updateCountrySchema = z
     postGraduationVisa: z.string().optional(),
     additionalVisaNotes: z.string().optional(),
     requiredDocuments: z.array(z.string()).optional(),
+    verificationStatus: z.enum(["manual", "ai", "none"]).optional(),
   })
   .strict()
