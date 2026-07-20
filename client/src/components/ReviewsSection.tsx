@@ -119,6 +119,15 @@ export default function ReviewsSection({
     }
   }
 
+  async function handleAdminDelete(reviewId: string): Promise<void> {
+    try {
+      await deleteMutation.mutateAsync({ id: reviewId, targetType, targetId });
+      toast.success("Review deleted");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete review"));
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm">
       <div className="border-b border-border px-6 py-4">
@@ -274,6 +283,22 @@ export default function ReviewsSection({
                         <span className="text-xs text-muted-foreground">
                           {formatReviewDate(r.createdAt)}
                         </span>
+                        {user?.role === "admin" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-auto h-7 w-7 text-muted-foreground hover:text-red-500"
+                            onClick={() => handleAdminDelete(r._id)}
+                            disabled={deleteMutation.isPending}
+                            title="Delete review (admin)"
+                          >
+                            {deleteMutation.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                       <p className="mt-1 text-sm text-foreground/80 leading-relaxed">{r.comment}</p>
                     </div>
