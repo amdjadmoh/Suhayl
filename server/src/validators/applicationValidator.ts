@@ -29,7 +29,8 @@ const applicationProgressSchema = z
     applicationFeePaid: z.boolean().optional(),
     applicationSubmittedDate: z.string().datetime().optional(),
     visaApplied: z.boolean().optional(),
-    visaApproved: z.boolean().optional(),
+    // Tri-state: true = approved, false = rejected, null = decision reset/pending
+    visaApproved: z.boolean().nullable().optional(),
     interviewScheduled: z.string().datetime().optional(),
     interviewCompleted: z.boolean().optional(),
     visaDocumentsObtained: z.array(z.string()).optional(),
