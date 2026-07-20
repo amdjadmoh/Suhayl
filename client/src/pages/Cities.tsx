@@ -81,7 +81,7 @@ export default function Cities(): React.ReactElement {
             to={`/cities/${city._id}`}
             className="group block"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-sm border border-border hover:shadow-xl hover:border-primary/30 transition-all duration-300">
+            <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-sm border border-border card-hover">
               {/* Gradient accent */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
               

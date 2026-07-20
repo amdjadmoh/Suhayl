@@ -39,7 +39,7 @@ function MatchCard({ match }: { match: MatchResult }): React.ReactElement {
   return (
     <Link
       to={`/programs/${match._id}`}
-      className="group relative overflow-hidden rounded-2xl bg-card shadow-sm border border-border hover:shadow-xl hover:border-primary/30 transition-all duration-300 block"
+      className="group relative overflow-hidden rounded-2xl bg-card shadow-sm border border-border card-hover block"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 

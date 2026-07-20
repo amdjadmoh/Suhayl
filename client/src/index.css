@@ -117,9 +117,138 @@
   --font-sans:
     "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display:
+    "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
+}
+
+/* Motion & effects */
+@theme {
+  --animate-fade-up: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.7s ease-out both;
+  --animate-scale-in: scale-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 9s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-12px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Brand text gradient (adapts to theme via --primary) */
+@utility text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    var(--primary),
+    oklch(0.715 0.143 215.221)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Frosted surface */
+@utility glass {
+  background: color-mix(in oklab, var(--card) 72%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Soft aurora mesh background */
+@utility bg-mesh {
+  background-image:
+    radial-gradient(
+      at 15% 20%,
+      color-mix(in oklab, var(--primary) 16%, transparent) 0,
+      transparent 55%
+    ),
+    radial-gradient(
+      at 85% 5%,
+      color-mix(in oklab, oklch(0.715 0.143 215.221) 14%, transparent) 0,
+      transparent 50%
+    ),
+    radial-gradient(
+      at 60% 90%,
+      color-mix(in oklab, oklch(0.627 0.265 303.9) 10%, transparent) 0,
+      transparent 55%
+    );
+}
+
+/* Subtle blueprint grid */
+@utility bg-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--foreground) 5%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 44px 44px;
+}
+
+/* Lift + glow on hover for interactive cards */
+@utility card-hover {
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+  &:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+    box-shadow:
+      0 16px 40px -16px color-mix(in oklab, var(--primary) 35%, transparent),
+      0 4px 12px -6px rgb(0 0 0 / 0.08);
+  }
 }
 
 * {
