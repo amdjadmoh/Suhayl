@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import request from "supertest"
 import type express from "express"
+import { Notification } from "../models/Notification"
 import {
   startMemoryServer,
   stopMemoryServer,
@@ -109,3 +110,74 @@ describe("GET /api/applications", () => {
     expect(app1["studentName"]).toBe("Test Student")
   })
 })
+
+describe("Visa decision → enroll flow (PUT /api/applications/:id)", () => {
+  let appId: string
+
+  it("creates an application to drive the flow", async () => {
+    const res = await request(app)
+      .post("/api/applications")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        programId,
+        studentName: "Visa Flow",
+        studentEmail: "visa.flow@test.com",
+      })
+    expect(res.status).toBe(201)
+    appId = String(res.body._id)
+  })
+
+  it("accepts a visa approval and moves to Enrolled with a notification", async () => {
+    // Mark accepted + visa applied/approved
+    const acceptRes = await request(app)
+      .put(`/api/applications/${appId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        applicationStatus: "Accepted",
+        applicationProgress: { visaApplied: true, visaApproved: true },
+      })
+    expect(acceptRes.status).toBe(200)
+    expect(acceptRes.body.applicationProgress.visaApproved).toBe(true)
+
+    // Enroll
+    const enrollRes = await request(app)
+      .put(`/api/applications/${appId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ applicationStatus: "Enrolled" })
+    expect(enrollRes.status).toBe(200)
+    expect(enrollRes.body.applicationStatus).toBe("Enrolled")
+
+    // A status-change notification was created for the owner
+    const notif = await Notification.findOne({
+      link: `/applications/${appId}`,
+      type: "status_change",
+      title: "Application status: Enrolled",
+    })
+    expect(notif).not.toBeNull()
+  })
+
+  it("clears the visa decision when visaApproved is set to null", async () => {
+    const res = await request(app)
+      .put(`/api/applications/${appId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        applicationProgress: { visaApplied: true, visaApproved: null },
+      })
+    expect(res.status).toBe(200)
+    expect(res.body.applicationProgress.visaApplied).toBe(true)
+    // null (or unset) means the decision is pending again
+    expect(res.body.applicationProgress.visaApproved ?? null).toBeNull()
+  })
+
+  it("rejects a non-boolean visaApproved value", async () => {
+    const res = await request(app)
+      .put(`/api/applications/${appId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        applicationProgress: { visaApproved: "yes" },
+      })
+    expect(res.status).toBe(400)
+    expect(res.body.message).toBe("Validation failed")
+  })
+})
+

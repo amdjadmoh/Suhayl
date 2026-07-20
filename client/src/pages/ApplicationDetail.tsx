@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   ArrowLeft, Trash2, AlertCircle, Loader2, ClipboardList, User, Mail,
-  GraduationCap, Send, Check, Pencil, X,
+  GraduationCap, Send, Check, Pencil, X, CheckCircle2, XCircle, RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
 import type { Program } from "@/types/program";
@@ -65,9 +65,9 @@ export default function ApplicationDetail(): React.ReactElement {
   const updateMutation = useUpdateApplication();
   const { data: countries } = useCountries();
 
-  async function toggleProgress(update: Partial<ApplicationProgress>): Promise<void> {
-    if (isReadOnly) return;
-    if (!application || !id) return;
+  async function toggleProgress(update: Partial<ApplicationProgress>): Promise<boolean> {
+    if (isReadOnly) return false;
+    if (!application || !id) return false;
     const key = Object.keys(update)[0] ?? null;
     setUpdating(key);
     const payload: any = {
@@ -81,8 +81,10 @@ export default function ApplicationDetail(): React.ReactElement {
     };
     try {
       await updateMutation.mutateAsync({ id, data: payload });
+      return true;
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to update"));
+      return false;
     } finally {
       setUpdating(null);
     }
@@ -130,6 +132,52 @@ export default function ApplicationDetail(): React.ReactElement {
       toast.success(`Application marked as ${newStatus}`);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to update status"));
+    } finally {
+      setUpdating(null);
+    }
+  }
+
+  async function decideVisa(approved: boolean): Promise<void> {
+    if (!application) return;
+    const ok = await toggleProgress({ visaApproved: approved });
+    if (ok) {
+      toast.success(
+        approved
+          ? "Visa approved — you can now enroll"
+          : "Visa marked as rejected",
+      );
+    }
+  }
+
+  async function resetVisaDecision(): Promise<void> {
+    if (!application) return;
+    const ok = await toggleProgress({ visaApproved: null });
+    if (ok) toast.success("Visa decision cleared");
+  }
+
+  async function restartVisaApplication(): Promise<void> {
+    if (!application) return;
+    const ok = await toggleProgress({ visaApplied: false, visaApproved: null });
+    if (ok) toast.success("Visa process restarted — mark 'Visa Applied' when you re-apply");
+  }
+
+  async function enroll(): Promise<void> {
+    if (!application || !id) return;
+    setUpdating("status");
+    const payload: any = {
+      programId: typeof application.programId === "string" ? application.programId : application.programId?._id ?? "",
+      studentName: application.studentName,
+      studentEmail: application.studentEmail,
+      applicationStatus: "Enrolled",
+      applicationDeadline: application.applicationDeadline,
+      notes: application.notes,
+      applicationProgress: { ...application.applicationProgress },
+    };
+    try {
+      await updateMutation.mutateAsync({ id, data: payload });
+      toast.success("Congratulations — officially enrolled!");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to enroll"));
     } finally {
       setUpdating(null);
     }
@@ -198,7 +246,7 @@ export default function ApplicationDetail(): React.ReactElement {
   const uni = prog?.universityId && typeof prog.universityId === "object" ? prog.universityId : null;
   const p = a.applicationProgress;
   const country = countries?.find((c) => c.name === uni?.country);
-  const isReadOnly = a.applicationStatus === "Applied" || a.applicationStatus === "Waitlisted" || a.applicationStatus === "Rejected";
+  const isReadOnly = a.applicationStatus === "Applied" || a.applicationStatus === "Waitlisted" || a.applicationStatus === "Rejected" || a.applicationStatus === "Enrolled";
 
   // Compute all required documents obtained (or no required documents)
   const allRequiredDocsObtained =
@@ -260,6 +308,26 @@ export default function ApplicationDetail(): React.ReactElement {
           </Dialog>
         </div>
       </div>
+
+      {/* Enrolled success banner */}
+      {a.applicationStatus === "Enrolled" && (
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-teal-500/10 p-6 animate-fade-up">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25">
+              <GraduationCap className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <p className="font-display text-xl font-bold text-foreground">
+                Enrolled — congratulations!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                The journey is complete: {a.studentName} is officially enrolled
+                {prog?.name ? ` in ${prog.name}` : ""}.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Submit Application Confirmation Dialog */}
       <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
@@ -386,13 +454,16 @@ export default function ApplicationDetail(): React.ReactElement {
           </div>
           <div className="p-6">
             {(() => {
-              const steps = [
+              const steps: { label: string; done: boolean; date?: string; rejected?: boolean }[] = [
                 { label: "Application Created", date: a.createdAt, done: true },
                 { label: "Documents Prepared", date: allRequiredDocsObtained ? a.updatedAt : undefined, done: allRequiredDocsObtained },
                 { label: "Submitted", date: p.applicationSubmittedDate, done: !!p.applicationSubmittedDate },
                 { label: "Interview", done: p.interviewCompleted, date: p.interviewScheduled },
                 { label: "Visa Applied", done: p.visaApplied },
-                { label: "Visa Approved", done: p.visaApproved ?? false },
+                p.visaApproved === false
+                  ? { label: "Visa Decision", done: true, rejected: true }
+                  : { label: "Visa Approved", done: p.visaApproved === true },
+                { label: "Enrolled", done: a.applicationStatus === "Enrolled", date: a.applicationStatus === "Enrolled" ? a.updatedAt : undefined },
               ];
               return (
                 <div className="relative pl-8">
@@ -400,13 +471,33 @@ export default function ApplicationDetail(): React.ReactElement {
                   {steps.map((step, i) => (
                     <div key={i} className="relative pb-6 last:pb-0">
                       <div className={`absolute -left-[17px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                        step.done ? "bg-emerald-500 border-emerald-500 text-white" : "bg-card border-border text-muted-foreground"
+                        step.rejected
+                          ? "bg-red-500 border-red-500 text-white"
+                          : step.done
+                          ? "bg-emerald-500 border-emerald-500 text-white"
+                          : "bg-card border-border text-muted-foreground"
                       }`}>
-                        {step.done ? <Check className="h-3 w-3" /> : <div className="h-2 w-2 rounded-full bg-muted" />}
+                        {step.rejected ? (
+                          <X className="h-3 w-3" />
+                        ) : step.done ? (
+                          <Check className="h-3 w-3" />
+                        ) : (
+                          <div className="h-2 w-2 rounded-full bg-muted" />
+                        )}
                       </div>
                       <div className="ml-2">
-                        <p className={`text-sm font-medium ${step.done ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p>
-                        <p className="text-xs text-muted-foreground">{step.done && step.date ? formatDate(step.date) : step.done ? "✓" : "Pending"}</p>
+                        <p className={`text-sm font-medium ${
+                          step.rejected ? "text-red-500" : step.done ? "text-foreground" : "text-muted-foreground"
+                        }`}>{step.label}</p>
+                        <p className={`text-xs ${step.rejected ? "text-red-500/80" : "text-muted-foreground"}`}>
+                          {step.rejected
+                            ? "Rejected"
+                            : step.done && step.date
+                            ? formatDate(step.date)
+                            : step.done
+                            ? "✓"
+                            : "Pending"}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -733,12 +824,156 @@ export default function ApplicationDetail(): React.ReactElement {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Visa & Interview</p>
                   <div className="space-y-1">
                     <CheckItem done={p.visaApplied} label="Visa Applied" loading={updating === "visaApplied"} onClick={() => toggleProgress({ visaApplied: !p.visaApplied })} />
-                    {p.visaApplied && (
-                      <CheckItem done={p.visaApproved ?? false} label="Visa Approved" loading={updating === "visaApproved"} onClick={() => toggleProgress({ visaApproved: !p.visaApproved })} />
-                    )}
                     <CheckItem done={p.interviewCompleted} label="Interview Completed" detail={p.interviewScheduled ? formatDate(p.interviewScheduled) : undefined} loading={updating === "interviewCompleted"} onClick={() => toggleProgress({ interviewCompleted: !p.interviewCompleted })} />
                   </div>
+
+                  {/* Visa decision flow */}
+                  {p.visaApplied && a.applicationStatus !== "Enrolled" && (
+                    <div className="mt-3">
+                      {/* Pending decision */}
+                      {p.visaApproved == null && (
+                        <div className="rounded-xl border border-border bg-muted/40 p-4">
+                          <p className="text-sm font-semibold text-foreground">Visa decision</p>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Record the embassy's decision on your visa application
+                          </p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              variant="outline"
+                              onClick={() => decideVisa(true)}
+                              disabled={updating === "visaApproved"}
+                              className="border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
+                            >
+                              {updating === "visaApproved" ? (
+                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Check className="mr-1.5 h-4 w-4" />
+                              )}
+                              Approved
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => decideVisa(false)}
+                              disabled={updating === "visaApproved"}
+                              className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 hover:border-red-300 rounded-xl"
+                            >
+                              {updating === "visaApproved" ? (
+                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                              ) : (
+                                <X className="mr-1.5 h-4 w-4" />
+                              )}
+                              Rejected
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Rejected state */}
+                      {p.visaApproved === false && (
+                        <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4">
+                          <div className="flex items-start gap-3">
+                            <XCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-red-700 dark:text-red-400">
+                                Visa rejected
+                              </p>
+                              <p className="text-xs text-red-600/90 dark:text-red-400/80 mt-1 leading-relaxed">
+                                The visa application was not approved. You can
+                                restart the visa process when ready — your
+                                obtained visa documents are kept.
+                              </p>
+                              <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={restartVisaApplication}
+                                  disabled={updating === "visaApplied"}
+                                  className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl"
+                                >
+                                  {updating === "visaApplied" ? (
+                                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="mr-1.5 h-4 w-4" />
+                                  )}
+                                  Restart visa application
+                                </Button>
+                                <button
+                                  onClick={resetVisaDecision}
+                                  disabled={updating === "visaApproved"}
+                                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                                >
+                                  Undo decision
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Approved state */}
+                      {p.visaApproved === true && (
+                        <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-4">
+                          <div className="flex items-start gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                                Visa approved
+                              </p>
+                              <p className="text-xs text-emerald-600/90 dark:text-emerald-400/80 mt-1">
+                                Congratulations — your visa was approved.
+                              </p>
+                              {a.applicationStatus === "Accepted" && (
+                                <button
+                                  onClick={resetVisaDecision}
+                                  disabled={updating === "visaApproved"}
+                                  className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
+                                >
+                                  Undo decision
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+
+                {/* Enroll CTA — visa approved, not yet enrolled */}
+                {p.visaApproved === true && a.applicationStatus === "Accepted" && (
+                  <>
+                    <div className="border-t border-border" />
+                    <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-cyan-500/10 p-5 text-center animate-fade-up">
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-500 shadow-lg shadow-primary/25">
+                        <GraduationCap className="h-6 w-6 text-white" />
+                      </div>
+                      <p className="font-display text-lg font-semibold text-foreground">
+                        You're all set!
+                      </p>
+                      <p className="mt-1 mb-4 text-sm text-muted-foreground">
+                        Visa approved — complete the enrollment to finish the
+                        journey.
+                      </p>
+                      <Button
+                        onClick={enroll}
+                        disabled={updating === "status"}
+                        className="w-full rounded-xl bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-600 text-white shadow-lg shadow-primary/25"
+                      >
+                        {updating === "status" ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enrolling...
+                          </>
+                        ) : (
+                          <>
+                            <GraduationCap className="mr-2 h-4 w-4" />
+                            Enroll Now
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </>
             )}
 
