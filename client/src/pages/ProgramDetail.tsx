@@ -1,4 +1,5 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
+import ReviewsSection from "@/components/ReviewsSection";
 import {
   useProgram,
   useDeleteProgram,
@@ -348,6 +349,8 @@ export default function ProgramDetail(): React.ReactElement {
           </Link>
         </div>
       )}
+
+      <ReviewsSection targetType="program" targetId={p._id} />
 
       <p className="text-center text-xs text-muted-foreground">
         Created {formatDate(p.createdAt)} · Updated {formatDate(p.updatedAt)}

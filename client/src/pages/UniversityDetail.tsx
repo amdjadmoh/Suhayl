@@ -1,4 +1,5 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
+import ReviewsSection from "@/components/ReviewsSection";
 import { useUniversity, useDeleteUniversity, useProgramsByUniversity, useDeleteProgram, useCountries, useCitiesByCountry, useToggleUniversityOfficial, useToggleProgramOfficial } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
 import { Button } from "@/components/ui/button";
@@ -582,6 +583,8 @@ export default function UniversityDetail(): React.ReactElement {
           )}
         </div>
       </div>
+
+      <ReviewsSection targetType="university" targetId={u._id} />
 
       <p className="text-center text-xs text-muted-foreground">
         Created {new Date(u.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} · Updated {new Date(u.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}

@@ -4,7 +4,8 @@ export type UserRole = "admin" | "student" | "agency"
 
 export interface IUser {
   email: string
-  passwordHash: string
+  passwordHash?: string
+  googleId?: string
   name: string
   role: UserRole
   preferredMonthlyBudget?: number
@@ -21,7 +22,8 @@ export interface IUserDocument extends IUser, Document {}
 const userSchema = new Schema<IUserDocument>(
   {
     email: { type: String, required: true, unique: true },
-    passwordHash: { type: String, required: true, select: false },
+    passwordHash: { type: String, required: false, select: false },
+    googleId: { type: String, select: false },
     name: { type: String, required: true },
     role: {
       type: String,

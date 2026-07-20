@@ -636,6 +636,11 @@ export async function getMe(): Promise<User> {
   return response.data.user;
 }
 
+export async function googleLoginUser(credential: string): Promise<AuthResponse> {
+  const response = await api.post("/auth/google", { credential });
+  return response.data;
+}
+
 // ─── Agency ──────────────────────────────────────────────────────────────────
 
 export async function getAgencyApplications(): Promise<Application[]> {
