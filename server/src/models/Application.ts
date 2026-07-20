@@ -23,6 +23,7 @@ export interface IApplicationProgress {
   applicationSubmittedDate?: Date
   visaApplied: boolean
   visaApproved?: boolean
+  visaDeadline?: Date
   interviewScheduled?: Date
   interviewCompleted: boolean
   visaDocumentsObtained: readonly string[]
@@ -78,6 +79,7 @@ const applicationSchema = new Schema<IApplicationDocument>(
           applicationSubmittedDate: { type: Date },
           visaApplied: { type: Boolean, default: false },
           visaApproved: { type: Boolean },
+          visaDeadline: { type: Date },
           interviewScheduled: { type: Date },
           interviewCompleted: { type: Boolean, default: false },
           visaDocumentsObtained: { type: [String], default: [] },

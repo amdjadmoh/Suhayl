@@ -20,6 +20,12 @@ import type { Country, CountryWithUniversities } from "@/types/country";
 import type { City, CityWithUniversities, CityFormData } from "@/types/city";
 import type { User, AuthResponse } from "@/types/auth";
 import type { Student } from "@/types/student";
+import type {
+  Review,
+  ReviewsResponse,
+  ReviewTargetType,
+  UpsertReviewPayload,
+} from "@/types/review";
 
 export const api = axios.create({
   baseURL: "/api",
@@ -1072,5 +1078,54 @@ export function useDeleteSavedSearch(): UseMutationResult<{ message: string }, E
   return useMutation({
     mutationFn: deleteSavedSearch,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-searches"] }),
+  })
+}
+
+// ── Reviews ─────────────────────────────────────────────────────────────
+
+export async function getReviews(
+  targetType: ReviewTargetType,
+  targetId: string,
+): Promise<ReviewsResponse> {
+  const res = await api.get("/reviews", { params: { targetType, targetId } })
+  return res.data
+}
+
+export async function upsertReview(payload: UpsertReviewPayload): Promise<Review> {
+  const res = await api.post("/reviews", payload)
+  return res.data
+}
+
+export async function deleteReview(id: string): Promise<{ message: string }> {
+  const res = await api.delete(`/reviews/${id}`)
+  return res.data
+}
+
+export function useReviews(
+  targetType: ReviewTargetType,
+  targetId: string,
+): UseQueryResult<ReviewsResponse> {
+  return useQuery({
+    queryKey: ["reviews", targetType, targetId],
+    queryFn: () => getReviews(targetType, targetId),
+    enabled: !!targetId,
+  })
+}
+
+export function useUpsertReview(): UseMutationResult<Review, Error, UpsertReviewPayload> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: upsertReview,
+    onSuccess: (review) =>
+      qc.invalidateQueries({ queryKey: ["reviews", review.targetType, review.targetId] }),
+  })
+}
+
+export function useDeleteReview(): UseMutationResult<{ message: string }, Error, { id: string; targetType: ReviewTargetType; targetId: string }> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id }) => deleteReview(id),
+    onSuccess: (_data, vars) =>
+      qc.invalidateQueries({ queryKey: ["reviews", vars.targetType, vars.targetId] }),
   })
 }

@@ -26,6 +26,7 @@ import notificationRoutes from "./routes/notificationRoutes"
 import { budgetRouter } from "./routes/budgetRoutes"
 import { savedSearchRouter } from "./routes/savedSearchRoutes"
 import { recommendationRouter } from "./routes/recommendationRoutes"
+import { reviewRouter } from "./routes/reviewRoutes"
 import { Application } from "./models/Application"
 import { Notification } from "./models/Notification"
 import { sendEmail, isEmailEnabled } from "./services/email"
@@ -98,6 +99,7 @@ app.use("/api/notifications", notificationRoutes)
 app.use("/api/budget", budgetRouter)
 app.use("/api/saved-searches", savedSearchRouter)
 app.use("/api/recommendations", recommendationRouter)
+app.use("/api/reviews", reviewRouter)
 
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")
@@ -241,7 +243,42 @@ async function start(): Promise<void> {
         }
       }
     }
-    console.log(`Checked deadlines: ${apps.length} upcoming`)
+    // ── Visa application deadlines (in-app notifications) ─────────
+    const visaApps = await Application.find({
+      "applicationProgress.visaDeadline": { $gte: now, $lte: thirtyDays },
+    }).populate("programId", "name")
+
+    for (const app of visaApps) {
+      if (!app.createdBy) continue
+      const visaDeadline = app.applicationProgress?.visaDeadline
+      if (!visaDeadline) continue
+      const daysLeft = Math.ceil(
+        (new Date(visaDeadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      const progName = (app.programId as any)?.name ?? "a program"
+      const title = daysLeft <= 7
+        ? `⚠️ Visa deadline in ${daysLeft} days!`
+        : `Visa deadline in ${daysLeft} days`
+      const message = `"${progName}" visa application is due in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}.`
+
+      const exists = await Notification.findOne({
+        userId: app.createdBy as any,
+        type: "deadline",
+        message,
+        createdAt: { $gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+      })
+      if (!exists) {
+        await Notification.create({
+          userId: app.createdBy as any,
+          type: "deadline",
+          title,
+          message,
+          link: `/applications/${app._id}`,
+        })
+      }
+    }
+
+    console.log(`Checked deadlines: ${apps.length} upcoming, ${visaApps.length} visa`)
   }
 
   setTimeout(checkDeadlines, 5000)
