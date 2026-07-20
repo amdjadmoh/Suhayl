@@ -8,13 +8,14 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { User } from "@/types/auth";
-import { loginUser, registerUser, getMe } from "@/lib/api";
+import { loginUser, registerUser, getMe, googleLoginUser } from "@/lib/api";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   register: (
     name: string,
     email: string,
@@ -72,6 +73,17 @@ export function AuthProvider({
     [queryClient],
   );
 
+  const loginWithGoogle = useCallback(
+    async (credential: string): Promise<void> => {
+      const data = await googleLoginUser(credential);
+      queryClient.clear();
+      localStorage.setItem("token", data.token);
+      setToken(data.token);
+      setUser(data.user);
+    },
+    [queryClient],
+  );
+
   const register = useCallback(
     async (
       name: string,
@@ -99,7 +111,7 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, login, register, logout }}
+      value={{ user, token, isLoading, login, loginWithGoogle, register, logout }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,9 +1,12 @@
 import type { Request, Response } from "express"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
+import { OAuth2Client } from "google-auth-library"
 import { User, type IUserDocument } from "../models/User"
 
 const JWT_SECRET: string = process.env["JWT_SECRET"]!
+const GOOGLE_CLIENT_ID: string = process.env["GOOGLE_CLIENT_ID"] ?? ""
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID)
 
 function signToken(user: IUserDocument): string {
   return jwt.sign(
@@ -63,7 +66,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
 
   const user = await User.findOne({ email }).select("+passwordHash")
-  if (!user) {
+  if (!user || !user.passwordHash) {
     res.status(401).json({ message: "Invalid email or password" })
     return
   }
@@ -128,4 +131,59 @@ export async function updatePreferences(req: Request, res: Response): Promise<vo
     preferredCountries: user.preferredCountries,
     preferredCurrency: user.preferredCurrency,
   })
+}
+
+/**
+ * POST /api/auth/google
+ * Verifies a Google ID token (from Google Identity Services).
+ * Finds or creates the user (role defaults to "student").
+ * Body: { credential: string }
+ */
+export async function googleAuth(req: Request, res: Response): Promise<void> {
+  if (!GOOGLE_CLIENT_ID) {
+    res.status(501).json({ message: "Google OAuth not configured on this server" })
+    return
+  }
+
+  const { credential } = req.body as { credential?: string }
+  if (!credential) {
+    res.status(400).json({ message: "credential is required" })
+    return
+  }
+
+  let payload: { sub: string; email: string; name: string } | undefined
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    })
+    const p = ticket.getPayload()
+    if (!p?.sub || !p.email || !p.name) throw new Error("Incomplete payload")
+    payload = { sub: p.sub, email: p.email, name: p.name }
+  } catch {
+    res.status(401).json({ message: "Invalid Google credential" })
+    return
+  }
+
+  // Find by googleId first, then fall back to email
+  let user = await User.findOne({ googleId: payload.sub }).select("+googleId")
+  if (!user) {
+    user = await User.findOne({ email: payload.email }).select("+googleId")
+    if (user) {
+      // Link existing email account to Google
+      user.googleId = payload.sub
+      await user.save()
+    } else {
+      // New user — create with student role
+      user = await User.create({
+        email: payload.email,
+        name: payload.name,
+        googleId: payload.sub,
+        role: "student",
+      })
+    }
+  }
+
+  const token = signToken(user)
+  res.json({ token, user: sanitizeUser(user) })
 }

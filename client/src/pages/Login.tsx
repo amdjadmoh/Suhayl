@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/authContext";
 import AuthLayout from "@/components/AuthLayout";
@@ -9,13 +9,72 @@ import { Loader2, LogIn, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 
+const GOOGLE_CLIENT_ID = import.meta.env["VITE_GOOGLE_CLIENT_ID"] as string | undefined;
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (cfg: object) => void;
+          renderButton: (el: HTMLElement, cfg: object) => void;
+        };
+      };
+    };
+  }
+}
+
 export default function Login(): React.ReactElement {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Load Google Identity Services and render button
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    const scriptId = "google-gsi";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+      script.onload = initGoogle;
+    } else {
+      initGoogle();
+    }
+
+    function initGoogle() {
+      if (!window.google || !googleBtnRef.current) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        theme: "outline",
+        size: "large",
+        width: googleBtnRef.current.offsetWidth || 360,
+        text: "signin_with",
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleGoogleResponse(response: { credential: string }) {
+    setError("");
+    try {
+      await loginWithGoogle(response.credential);
+      toast.success("Welcome back!");
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Google sign-in failed"));
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
@@ -95,6 +154,17 @@ export default function Login(): React.ReactElement {
             </>
           )}
         </Button>
+
+        {GOOGLE_CLIENT_ID && (
+          <>
+            <div className="relative flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <div ref={googleBtnRef} className="w-full" />
+          </>
+        )}
       </form>
     </AuthLayout>
   );
