@@ -500,6 +500,11 @@ export default function UniversityDetail(): React.ReactElement {
           <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
             <BookOpen className="h-5 w-5 text-muted-foreground" /> Programs ({filteredPrograms.length}{programs && filteredPrograms.length !== programs.length ? ` of ${programs.length}` : ""})
           </h3>
+          {isAdmin && (
+            <Link to={`/programs/new?universityId=${u._id}`} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
+              <PlusCircle className="h-4 w-4" /> Add Official Program
+            </Link>
+          )}
           {(isLoggedIn && !isAdmin) && (
             <Link to={`/programs/new?universityId=${u._id}`} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
               <PlusCircle className="h-4 w-4" /> Add Custom Program

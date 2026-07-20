@@ -384,17 +384,20 @@ export default function Programs(): React.ReactElement {
           <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
           <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-indigo-400 blur-3xl" />
         </div>
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Programs</h1>
-            <p className="mt-2 text-blue-100">Browse academic programs across universities</p>
+          <div className="relative flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Programs</h1>
+              <p className="mt-2 text-blue-100">Browse academic programs across universities</p>
+            </div>
+            {user && (
+              <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
+                <Link to="/programs/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  {isAdmin ? "Add Official Program" : "Add your own program"}
+                </Link>
+              </Button>
+            )}
           </div>
-          <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-            <Link to="/programs/new">
-              <Plus className="mr-2 h-4 w-4" /> Add your own program
-            </Link>
-          </Button>
-        </div>
       </div>
 
       {/* Filters */}
