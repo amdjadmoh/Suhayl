@@ -31,6 +31,10 @@ const applicationProgressSchema = z
     visaApplied: z.boolean().optional(),
     // Tri-state: true = approved, false = rejected, null = decision reset/pending
     visaApproved: z.boolean().nullable().optional(),
+    // Accept ISO datetime or date-only; null clears the deadline
+    visaDeadline: z
+      .union([z.string().datetime(), z.string().date(), z.null()])
+      .optional(),
     interviewScheduled: z.string().datetime().optional(),
     interviewCompleted: z.boolean().optional(),
     visaDocumentsObtained: z.array(z.string()).optional(),

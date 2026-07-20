@@ -9,6 +9,8 @@ export interface ApplicationProgress {
   visaApplied: boolean
   /** Tri-state: true = approved, false = rejected, null/undefined = pending */
   visaApproved?: boolean | null
+  /** ISO date string; null clears it */
+  visaDeadline?: string | null
   interviewScheduled?: string
   interviewCompleted: boolean
   visaDocumentsObtained: string[]

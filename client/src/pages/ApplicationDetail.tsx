@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Trash2, AlertCircle, Loader2, ClipboardList, User, Mail,
   GraduationCap, Send, Check, Pencil, X, CheckCircle2, XCircle, RotateCcw,
+  CalendarClock,
 } from "lucide-react";
 import { useState } from "react";
 import type { Program } from "@/types/program";
@@ -428,6 +429,34 @@ export default function ApplicationDetail(): React.ReactElement {
               <span className="text-muted-foreground">Deadline:</span>
               <span className="font-medium text-foreground">{formatDate(a.applicationDeadline)}</span>
             </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground">Application Fee:</span>
+              <span className="font-medium text-foreground">
+                {prog?.applicationFee != null && prog.applicationFee > 0
+                  ? `€${prog.applicationFee.toLocaleString()}`
+                  : prog?.applicationFee === 0
+                  ? "Free"
+                  : "Not set"}
+              </span>
+              {prog?.applicationFee != null && prog.applicationFee > 0 && (
+                <Badge
+                  variant="secondary"
+                  className={
+                    p.applicationFeePaid
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                      : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
+                  }
+                >
+                  {p.applicationFeePaid ? "Paid" : "Unpaid"}
+                </Badge>
+              )}
+            </div>
+            {p.visaDeadline && (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-muted-foreground">Visa Deadline:</span>
+                <span className="font-medium text-foreground">{formatDate(p.visaDeadline)}</span>
+              </div>
+            )}
             {a.notes && (
               <div className="border-t border-border pt-3">
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
@@ -693,7 +722,13 @@ export default function ApplicationDetail(): React.ReactElement {
                 <CheckItem
                   done={p.applicationFeePaid}
                   label="Application Fee Paid"
-                  detail={prog?.applicationFee ? `€${prog.applicationFee}` : undefined}
+                  detail={
+                    prog?.applicationFee != null && prog.applicationFee > 0
+                      ? `€${prog.applicationFee.toLocaleString()}`
+                      : prog?.applicationFee === 0
+                      ? "Free"
+                      : undefined
+                  }
                   loading={updating === "applicationFeePaid"}
                   onClick={() => toggleProgress({ applicationFeePaid: !p.applicationFeePaid })}
                 />
@@ -825,6 +860,33 @@ export default function ApplicationDetail(): React.ReactElement {
                   <div className="space-y-1">
                     <CheckItem done={p.visaApplied} label="Visa Applied" loading={updating === "visaApplied"} onClick={() => toggleProgress({ visaApplied: !p.visaApplied })} />
                     <CheckItem done={p.interviewCompleted} label="Interview Completed" detail={p.interviewScheduled ? formatDate(p.interviewScheduled) : undefined} loading={updating === "interviewCompleted"} onClick={() => toggleProgress({ interviewCompleted: !p.interviewCompleted })} />
+                    {/* Visa deadline */}
+                    <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+                      <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Visa deadline</span>
+                      <div className="ml-auto flex items-center gap-2">
+                        {p.visaDeadline && (
+                          <button
+                            type="button"
+                            onClick={() => toggleProgress({ visaDeadline: null })}
+                            disabled={isReadOnly || updating === "visaDeadline"}
+                            className="text-xs text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
+                            title="Clear visa deadline"
+                          >
+                            Clear
+                          </button>
+                        )}
+                        <Input
+                          type="date"
+                          value={p.visaDeadline ? String(p.visaDeadline).slice(0, 10) : ""}
+                          onChange={(e) =>
+                            toggleProgress({ visaDeadline: e.target.value ? e.target.value : null })
+                          }
+                          disabled={isReadOnly || updating === "visaDeadline"}
+                          className="h-8 w-40 text-sm rounded-lg border-border"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Visa decision flow */}
