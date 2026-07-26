@@ -1204,9 +1204,9 @@ const appMeta: Array<{
 ]
 
 export async function seedIfEmpty(): Promise<number> {
-  const count = await University.countDocuments()
-  if (count > 0) {
-    console.log(`Skipping seed — ${count} universities already exist`)
+  const countryCount = await Country.countDocuments()
+  if (countryCount > 0) {
+    console.log(`Skipping seed — ${countryCount} countries already exist`)
     return 0
   }
 
@@ -1216,59 +1216,7 @@ export async function seedIfEmpty(): Promise<number> {
   await City.insertMany(cities)
   console.log(`Seeded ${cities.length} cities`)
 
-  // Seed default users
-  const hashedPassword = await bcrypt.hash("password123", 10)
-
-  const adminUser = await User.create({ email: "admin@test.com", passwordHash: hashedPassword, name: "Admin User", role: "admin" } as any)
-  console.log(`Created admin user: ${adminUser.email}`)
-
-  const agencyUser = await User.create({ email: "agency@test.com", passwordHash: hashedPassword, name: "Test Agency", role: "agency" } as any)
-  console.log(`Created agency user: ${agencyUser.email}`)
-
-  const studentUser = await User.create({ email: "student@test.com", passwordHash: hashedPassword, name: "Test Student", role: "student" } as any)
-  console.log(`Created student user: ${studentUser.email}`)
-
-  // Create Student records for the agency
-  const ahmed = await Student.create({ name: "Ahmed Hassan", email: "ahmed@example.com", agencyId: agencyUser._id })
-  const sarah = await Student.create({ name: "Sarah Miller", email: "sarah@example.com", agencyId: agencyUser._id })
-  console.log(`Created 2 Student records for agency`)
-
-  // Seed institutions (universities)
-  const uniDocs = await University.insertMany(institutionData)
-  console.log(`Seeded ${uniDocs.length} universities`)
-
-  // Seed programs (one per university)
-  const programDocs = await Program.insertMany(
-    programData.map((p, i) => ({ ...p, universityId: uniDocs[i]!._id }))
-  )
-  console.log(`Seeded ${programDocs.length} programs`)
-
-  // Seed applications (one per program)
-  const appDocs = programDocs.map((prog, i) => {
-    const meta = appMeta[i]!
-    let extra: Record<string, unknown> = {}
-    if (i < 5) {
-      extra = { agencyId: agencyUser._id }
-    } else if (i < 10) {
-      extra = { agencyId: agencyUser._id }
-    } else {
-      extra = { createdBy: studentUser._id }
-    }
-    return {
-      programId: prog._id,
-      studentName: i < 5 ? "Ahmed Hassan" : i < 10 ? "Sarah Miller" : "Test Student",
-      studentEmail: i < 5 ? "ahmed@example.com" : i < 10 ? "sarah@example.com" : "student@test.com",
-      applicationStatus: meta.status,
-      applicationDeadline: meta.deadline,
-      applicationProgress: meta.progress,
-      notes: meta.notes,
-      ...extra,
-    }
-  })
-  await Application.insertMany(appDocs)
-  console.log(`Seeded ${appDocs.length} applications`)
-
-  return uniDocs.length
+  return countries.length
 }
 
 // Standalone runner

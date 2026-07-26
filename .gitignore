@@ -35,6 +35,10 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
+# Extension build output
+extension/.output/
+extension/.wxt/
+
 # Codegraph / internal tooling
 .codegraph/
 .omo/
@@ -46,3 +50,6 @@ Desktop.ini
 
 # Runtime database (mongodb-memory-server persistence)
 data/db/
+
+# Orchestrator deepwork scratchpad (local-only, ignored from git, visible to ripgrep)
+.slim/deepwork/

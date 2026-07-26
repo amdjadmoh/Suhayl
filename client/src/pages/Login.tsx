@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/lib/authContext";
 import AuthLayout from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,15 @@ declare global {
   }
 }
 
+/** Prevent open-redirect: only allow same-origin paths starting with "/". */
+function isSafeReturnTo(path: string | null): path is string {
+  return !!path && path.startsWith("/") && !path.startsWith("//");
+}
+
 export default function Login(): React.ReactElement {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = isSafeReturnTo(searchParams.get("returnTo")) ? searchParams.get("returnTo")! : "/dashboard";
   const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,7 +77,7 @@ export default function Login(): React.ReactElement {
     try {
       await loginWithGoogle(response.credential);
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      navigate(returnTo);
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Google sign-in failed"));
     }
@@ -84,7 +91,7 @@ export default function Login(): React.ReactElement {
     try {
       await login(email, password);
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      navigate(returnTo);
     } catch (err: unknown) {
       const message = getErrorMessage(err, "Invalid email or password");
       setError(message);

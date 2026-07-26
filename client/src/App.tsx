@@ -38,6 +38,7 @@ import BudgetCalculator from "@/pages/BudgetCalculator";
 import StatementEditor from "@/pages/StatementEditor";
 import RecommenderManager from "@/pages/RecommenderManager";
 import RecommenderSubmit from "@/pages/RecommenderSubmit";
+import ExtensionBridge from "@/pages/ExtensionBridge";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ export default function App(): React.ReactElement {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/extension-bridge" element={<ExtensionBridge />} />
               <Route path="/recommendation/:token" element={<RecommenderSubmit />} />
 
               {/* Authenticated routes wrapped in Layout */}

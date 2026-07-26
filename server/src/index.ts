@@ -50,6 +50,10 @@ const MONGODB_URI =
 const DATA_DIR = path.resolve(__dirname, "..", "..", "data", "db")
 
 // ── CORS ───────────────────────────────────────────────────────────────────
+// The env var is a comma-separated list of allowed origins (e.g. web app +
+// chrome-extension://<id> for the unpacked dev extension).
+//   Dev:   .env.example includes chrome-extension://cgahnajflkjbbbpnmennbfpojdpahfdg
+//   Prod:  Replace the dev extension ID with the Chrome Web Store ID.
 const corsOrigins = process.env["CORS_ORIGINS"]
   ? process.env["CORS_ORIGINS"].split(",").map((s) => s.trim())
   : ["http://localhost:5173"]

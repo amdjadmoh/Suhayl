@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { ExtensionCTA } from "@/components/ExtensionCTA";
 
 function daysUntil(dateStr: string): number {
   const now = new Date();
@@ -372,6 +373,8 @@ function StudentDashboard(): React.ReactElement {
         }
       />
 
+      <ExtensionCTA variant="card" />
+
       {/* Stat cards */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
@@ -514,6 +517,8 @@ function AdminDashboard(): React.ReactElement {
         title="Platform Overview"
         subtitle="Key metrics across the entire platform"
       />
+
+      <ExtensionCTA variant="card" />
 
       {/* Stat cards */}
       {isLoading ? (
@@ -670,6 +675,8 @@ function AgencyOverview(): React.ReactElement {
           </Button>
         }
       />
+
+      <ExtensionCTA variant="card" />
 
       {isLoading ? (
         <div className="grid gap-6 sm:grid-cols-2">
