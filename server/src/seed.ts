@@ -1216,6 +1216,14 @@ export async function seedIfEmpty(): Promise<number> {
   await City.insertMany(cities)
   console.log(`Seeded ${cities.length} cities`)
 
+  // Create production admin account
+  const existingAdmin = await User.findOne({ email: "admin@admin.com" })
+  if (!existingAdmin) {
+    const hashedPassword = await bcrypt.hash("REDACTED", 10)
+    await User.create({ email: "admin@admin.com", passwordHash: hashedPassword, name: "Admin", role: "admin" } as any)
+    console.log("Created admin account: admin@admin.com")
+  }
+
   return countries.length
 }
 
