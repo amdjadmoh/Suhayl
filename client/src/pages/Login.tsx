@@ -63,10 +63,9 @@ export default function Login(): React.ReactElement {
         callback: handleGoogleResponse,
       });
       window.google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: "outline",
+        type: "icon",
+        shape: "circle",
         size: "large",
-        width: googleBtnRef.current.offsetWidth || 360,
-        text: "signin_with",
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,10 +170,12 @@ export default function Login(): React.ReactElement {
           <>
             <div className="relative flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or</span>
+              <span className="text-xs text-muted-foreground">or continue with</span>
               <div className="h-px flex-1 bg-border" />
             </div>
-            <div ref={googleBtnRef} className="w-full" />
+            <div className="flex justify-center">
+              <div ref={googleBtnRef} />
+            </div>
           </>
         )}
       </form>
