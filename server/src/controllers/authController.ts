@@ -1,8 +1,12 @@
 import type { Request, Response } from "express"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
+import crypto from "crypto"
 import { OAuth2Client } from "google-auth-library"
 import { User, type IUserDocument } from "../models/User"
+import { PasswordResetToken } from "../models/PasswordResetToken"
+import { sendEmail } from "../services/email"
+import { renderForgotPassword } from "../templates/email/render"
 
 const JWT_SECRET: string = process.env["JWT_SECRET"]!
 const GOOGLE_CLIENT_ID: string = process.env["GOOGLE_CLIENT_ID"] ?? ""
@@ -186,4 +190,63 @@ export async function googleAuth(req: Request, res: Response): Promise<void> {
 
   const token = signToken(user)
   res.json({ token, user: sanitizeUser(user) })
+}
+
+/**
+ * POST /api/auth/forgot-password
+ * Body: { email }
+ * Always returns 200 to avoid user enumeration.
+ */
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+  const { email } = req.body as { email: string }
+
+  const user = await User.findOne({ email })
+  if (!user) {
+    res.json({ message: "If that email is registered, a reset link has been sent." })
+    return
+  }
+
+  // Invalidate any existing tokens for this user
+  await PasswordResetToken.deleteMany({ userId: user._id as any })
+
+  const rawToken = crypto.randomBytes(32).toString("hex")
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+  await PasswordResetToken.create({ userId: user._id as any, expiresAt, token: rawToken })
+
+  const appUrl = process.env["APP_URL"] ?? "https://suhayl.online"
+  const resetUrl = `${appUrl}/reset-password?token=${rawToken}`
+
+  const { html, text } = await renderForgotPassword({ name: user.name, resetUrl })
+  await sendEmail({ to: user.email, subject: "Reset your Suhayl password", html, text })
+
+  res.json({ message: "If that email is registered, a reset link has been sent." })
+}
+
+/**
+ * POST /api/auth/reset-password
+ * Body: { token, password }
+ */
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  const { token, password } = req.body as { token: string; password: string }
+
+  const record = await PasswordResetToken.findOne({ token })
+  if (!record || record.expiresAt < new Date()) {
+    res.status(400).json({ message: "Reset link is invalid or has expired." })
+    return
+  }
+
+  const user = await User.findById(record.userId)
+  if (!user) {
+    res.status(400).json({ message: "User not found." })
+    return
+  }
+
+  user.passwordHash = await bcrypt.hash(password, 10)
+  await user.save()
+
+  // Consume the token
+  await PasswordResetToken.deleteOne({ _id: record._id })
+
+  res.json({ message: "Password reset successfully. You can now log in." })
 }

@@ -25,3 +25,16 @@ export const updatePreferencesSchema = z
     preferredCurrency: z.string().optional(),
   })
   .strict()
+
+export const forgotPasswordSchema = z
+  .object({
+    email: z.string().email(),
+  })
+  .strict()
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  })
+  .strict()

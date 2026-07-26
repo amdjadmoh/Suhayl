@@ -1,4 +1,4 @@
-import type { Resend } from "resend"
+import nodemailer from "nodemailer"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -17,46 +17,47 @@ export interface EmailResult {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 export function isEmailEnabled(): boolean {
-  return !!process.env["RESEND_API_KEY"]
+  return !!(process.env["SMTP_USER"] && process.env["SMTP_PASS"])
 }
 
-// ── Send ────────────────────────────────────────────────────────────────────
-// Calls Resend if RESEND_API_KEY is set, otherwise logs a warning.
+// ── Transport (lazy singleton) ───────────────────────────────────────────────
+
+let _transporter: nodemailer.Transporter | null = null
+
+function getTransporter(): nodemailer.Transporter | null {
+  if (_transporter) return _transporter
+  const user = process.env["SMTP_USER"]
+  const pass = process.env["SMTP_PASS"]
+  if (!user || !pass) return null
+  _transporter = nodemailer.createTransport({
+    host: process.env["SMTP_HOST"] ?? "smtp.gmail.com",
+    port: Number(process.env["SMTP_PORT"] ?? 587),
+    secure: false, // STARTTLS
+    auth: { user, pass },
+  })
+  return _transporter
+}
+
+// ── Send ─────────────────────────────────────────────────────────────────────
 // NEVER throws — email failures must not break the caller.
-
-let _resend: Resend | null = null
-
-function getResend(): Resend | null {
-  if (_resend) return _resend
-  const apiKey = process.env["RESEND_API_KEY"]
-  if (!apiKey) return null
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { Resend: R } = require("resend") as { Resend: new (key: string) => Resend }
-  _resend = new R(apiKey)
-  return _resend
-}
 
 export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
   try {
-    const resend = getResend()
-    if (!resend) {
-      console.warn("Email not sent: RESEND_API_KEY is not set")
-      return { ok: false, error: "RESEND_API_KEY not set" }
+    const transporter = getTransporter()
+    if (!transporter) {
+      console.warn("Email not sent: SMTP_USER / SMTP_PASS not set")
+      return { ok: false, error: "SMTP credentials not configured" }
     }
 
-    const from = process.env["EMAIL_FROM"] ?? "WannaOut <noreply@wannaout.app>"
+    const from = process.env["EMAIL_FROM"] ?? "Suhayl <suhayl@suhayl.online>"
 
-    // Build payload conditionally to satisfy exactOptionalPropertyTypes
-    const payload: Record<string, string> = {
+    await transporter.sendMail({
       from,
       to: msg.to,
       subject: msg.subject,
       html: msg.html,
-    }
-    if (msg.text) {
-      payload["text"] = msg.text
-    }
-    await resend.emails.send(payload as any)
+      ...(msg.text ? { text: msg.text } : {}),
+    })
 
     return { ok: true }
   } catch (err: unknown) {
