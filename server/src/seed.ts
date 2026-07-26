@@ -1219,7 +1219,7 @@ export async function seedIfEmpty(): Promise<number> {
   // Create production admin account
   const existingAdmin = await User.findOne({ email: "admin@admin.com" })
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash("REDACTED", 10)
+    const hashedPassword = await bcrypt.hash(process.env["ADMIN_PASSWORD"] ?? "admin123", 10)
     await User.create({ email: "admin@admin.com", passwordHash: hashedPassword, name: "Admin", role: "admin" } as any)
     console.log("Created admin account: admin@admin.com")
   }
@@ -1258,7 +1258,7 @@ async function run(): Promise<void> {
   await City.insertMany(cities)
   console.log(`Inserted ${cities.length} cities`)
 
-  const hashedPassword = await bcrypt.hash("password123", 10)
+  const hashedPassword = await bcrypt.hash(process.env["TEST_PASSWORD"] ?? "password123", 10)
 
   const adminUser = await User.create({ email: "admin@test.com", passwordHash: hashedPassword, name: "Admin User", role: "admin" } as any)
   console.log(`Created admin user: ${adminUser.email}`)
