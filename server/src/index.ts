@@ -63,7 +63,18 @@ if (process.env["NODE_ENV"] === "production" && !process.env["CORS_ORIGINS"]) {
 }
 
 // ── Security headers (before CORS so helmet sets headers first) ─────────
-app.use(helmet())
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": ["'self'", "https://accounts.google.com"],
+        "frame-src": ["'self'", "https://accounts.google.com"],
+        "connect-src": ["'self'", "https://accounts.google.com"],
+      },
+    },
+  })
+)
 app.use(cors({ origin: corsOrigins }))
 app.use(express.json())
 
