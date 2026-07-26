@@ -65,12 +65,15 @@ if (process.env["NODE_ENV"] === "production" && !process.env["CORS_ORIGINS"]) {
 // ── Security headers (before CORS so helmet sets headers first) ─────────
 app.use(
   helmet({
+    crossOriginOpenerPolicy: { policy: "unsafe-none" },
     contentSecurityPolicy: {
       directives: {
         "default-src": ["'self'"],
         "script-src": ["'self'", "https://accounts.google.com"],
         "frame-src": ["'self'", "https://accounts.google.com"],
         "connect-src": ["'self'", "https://accounts.google.com"],
+        "img-src": ["'self'", "https://*.googleusercontent.com", "https://accounts.google.com"],
+        "style-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
       },
     },
   })
