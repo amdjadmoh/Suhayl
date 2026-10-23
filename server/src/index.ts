@@ -10,7 +10,6 @@ import { ZodError } from "zod"
 import path from "path"
 import fs from "fs"
 import mongoose from "mongoose"
-import { MongoMemoryServer } from "mongodb-memory-server"
 import { universityRouter } from "./routes/universityRoutes"
 import { statsRouter } from "./routes/statsRoutes"
 import { countryRouter } from "./routes/countryRoutes"
@@ -35,12 +34,17 @@ import { Notification } from "./models/Notification"
 import { sendEmail, isEmailEnabled } from "./services/email"
 import { renderDeadlineReminder } from "./templates/email/render"
 import { initSentry } from "./services/sentry"
+import { checkConfig, isProduction } from "./config"
+import { rateLimitStore } from "./services/rateLimitStore"
 
 // In-memory email dedup — tracks (userId, applicationId) combos that have
 // received a deadline email. Resets on server restart (acceptable for MVP).
 const emailedDeadlines = new Set<string>()
 
 const app = express()
+// Behind a host's proxy (Render, Railway, Fly, nginx) the client's real IP is in
+// X-Forwarded-For; rate limits need it, so trust the first proxy in production.
+if (isProduction || process.env["TRUST_PROXY"]) app.set("trust proxy", 1)
 const PORT = process.env["PORT"] ?? "5000"
 const MONGODB_URI =
   process.env["MONGODB_URI"] ?? "mongodb://localhost:27017/wannaout"
@@ -74,9 +78,10 @@ app.use(
         "default-src": ["'self'"],
         "script-src": ["'self'", "https://accounts.google.com"],
         "frame-src": ["'self'", "https://accounts.google.com"],
-        "connect-src": ["'self'", "https://accounts.google.com"],
-        "img-src": ["'self'", "https://*.googleusercontent.com", "https://accounts.google.com"],
-        "style-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com"],
+        "connect-src": ["'self'", "https://accounts.google.com", "https://*.sentry.io", "https://*.ingest.sentry.io"],
+        "img-src": ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://accounts.google.com"],
+        "style-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://fonts.googleapis.com"],
+        "font-src": ["'self'", "https://fonts.gstatic.com"],
       },
     },
   })
@@ -100,6 +105,7 @@ function signedInUserId(req: Request): string | null {
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: (req: Request) => (signedInUserId(req) ? 1500 : 300),
+  ...rateLimitStore("global"),
   keyGenerator: (req: Request) => {
     const userId = signedInUserId(req)
     return userId ? `user:${userId}` : ipKeyGenerator(req.ip ?? "")
@@ -113,6 +119,7 @@ app.use("/api/", globalLimiter)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  ...rateLimitStore("auth"),
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
@@ -120,6 +127,12 @@ const authLimiter = rateLimit({
 })
 app.use("/api/auth/login", authLimiter)
 app.use("/api/auth/register", authLimiter)
+
+// For uptime monitors and the host's health check
+app.get("/api/health", (_req: Request, res: Response) => {
+  const dbUp = mongoose.connection.readyState === 1
+  res.status(dbUp ? 200 : 503).json({ ok: dbUp, db: dbUp ? "up" : "down", uptime: Math.round(process.uptime()) })
+})
 
 app.use("/api/universities", universityRouter)
 app.use("/api/stats", statsRouter)
@@ -178,23 +191,20 @@ async function start(): Promise<void> {
   // ── Sentry initialization ──────────────────────────────────────────────
   initSentry()
 
-  // ── JWT secret fail-fast check ──────────────────────────────────────────
-  if (!process.env["JWT_SECRET"]) {
-    if (process.env["NODE_ENV"] === "production") {
-      throw new Error("JWT_SECRET must be set in production")
-    }
-    console.warn(
-      "WARNING: JWT_SECRET is not set. Auth tokens will fail to sign/verify."
-    )
-  }
+  // ── Settings fail-fast check ────────────────────────────────────────────
+  checkConfig()
 
   let uri = MONGODB_URI
 
   try {
     await mongoose.connect(MONGODB_URI)
     console.log("Connected to MongoDB at", MONGODB_URI)
-  } catch {
+  } catch (err: unknown) {
+    // Production never falls back to a local copy: losing real data silently is worse than not starting
+    if (isProduction) throw err
     console.log("Local MongoDB not available, starting persistent in-memory server...")
+    // Dev-only dependency, so it's loaded only here and never in the production image
+    const { MongoMemoryServer } = await import("mongodb-memory-server")
     // Persist the in-memory database to disk so it survives restarts.
     // mongodb-memory-server requires the directory to exist.
     fs.mkdirSync(DATA_DIR, { recursive: true })
@@ -209,9 +219,20 @@ async function start(): Promise<void> {
 
   await seedIfEmpty()
 
-  app.listen(parseInt(PORT, 10), () => {
+  const server = app.listen(parseInt(PORT, 10), () => {
     console.log(`Server running on http://localhost:${PORT}`)
   })
+
+  // Hosts send SIGTERM on every deploy: finish in-flight requests, then close the database
+  const shutdown = (signal: string): void => {
+    console.log(`${signal} received, shutting down`)
+    server.close(() => {
+      mongoose.connection.close().finally(() => process.exit(0))
+    })
+    setTimeout(() => process.exit(1), 10_000).unref()
+  }
+  process.once("SIGTERM", () => shutdown("SIGTERM"))
+  process.once("SIGINT", () => shutdown("SIGINT"))
 
   // Deadline checker — runs 5s after startup and every 24h
   async function checkDeadlines(): Promise<void> {

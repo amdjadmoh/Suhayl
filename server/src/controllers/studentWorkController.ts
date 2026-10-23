@@ -3,6 +3,8 @@ import { agencyScope } from "../middleware/auth"
 import { Types } from "mongoose"
 import { Student } from "../models/Student"
 import { DocumentRequest } from "../models/DocumentRequest"
+import { notifyFamily } from "../services/familyEmail"
+import { logActivity } from "../services/activity"
 
 /*
  * The agency's own work on a student: follow-ups to do and money received,
@@ -26,6 +28,7 @@ export async function addTask(req: Request, res: Response): Promise<void> {
   const { text, dueDate } = req.body as { text: string; dueDate?: string }
   student.tasks.push({ text, ...(dueDate ? { dueDate: new Date(dueDate) } : {}), done: false, createdAt: new Date() } as never)
   await student.save()
+  await logActivity(req, student._id, `Added a follow-up: ${text}`)
   res.status(201).json(student)
 }
 
@@ -46,6 +49,7 @@ export async function updateTask(req: Request, res: Response): Promise<void> {
     ;(task as unknown as { set: (k: string, v: unknown) => void }).set("doneAt", done ? new Date() : undefined)
   }
   await student.save()
+  if (done !== undefined) await logActivity(req, student._id, `${done ? "Did" : "Reopened"}: ${task.text}`)
   res.json(student)
 }
 
@@ -65,6 +69,7 @@ export async function addPayment(req: Request, res: Response): Promise<void> {
   const { amount, paidAt, method, note } = req.body as { amount: number; paidAt: string; method?: string; note?: string }
   student.payments.push({ amount, paidAt: new Date(paidAt), ...(method ? { method } : {}), ...(note ? { note } : {}) } as never)
   await student.save()
+  await logActivity(req, student._id, `Recorded a payment of ${amount.toLocaleString("en-GB")} ${student.feeCurrency}${method ? ` (${method})` : ""}`)
   res.status(201).json(student)
 }
 
@@ -72,8 +77,10 @@ export async function addPayment(req: Request, res: Response): Promise<void> {
 export async function removePayment(req: Request, res: Response): Promise<void> {
   const student = await ownStudent(req, res)
   if (!student) return
+  const gone = student.payments.find((p) => String(p._id) === req.params["paymentId"])
   student.payments = student.payments.filter((p) => String(p._id) !== req.params["paymentId"]) as never
   await student.save()
+  if (gone) await logActivity(req, student._id, `Deleted a payment of ${gone.amount.toLocaleString("en-GB")} ${student.feeCurrency}`)
   res.json(student)
 }
 
@@ -84,7 +91,7 @@ export async function removePayment(req: Request, res: Response): Promise<void> 
 export async function bulkRequestDocument(req: Request, res: Response): Promise<void> {
   const agencyId = agencyOf(req)
   const { studentIds, title, note, dueDate } = req.body as { studentIds: string[]; title: string; note?: string; dueDate?: string }
-  const students = await Student.find({ _id: { $in: studentIds }, agencyId }).select("_id")
+  const students = await Student.find({ _id: { $in: studentIds }, agencyId })
   const ids = students.map((s) => s._id)
   const already = await DocumentRequest.find({
     agencyId,
@@ -105,5 +112,10 @@ export async function bulkRequestDocument(req: Request, res: Response): Promise<
       })),
     )
   }
-  res.status(201).json({ requested: fresh.length, alreadyAsked: skip.size, notFound: studentIds.length - ids.length })
+  for (const id of fresh) await logActivity(req, id, `Asked for ${title}`)
+  let emailed = 0
+  for (const st of students) {
+    if (!skip.has(String(st._id)) && (await notifyFamily(st, [title], dueDate ? new Date(dueDate) : undefined))) emailed++
+  }
+  res.status(201).json({ requested: fresh.length, alreadyAsked: skip.size, notFound: studentIds.length - ids.length, emailed })
 }

@@ -6,11 +6,12 @@ import { sendEmail, isEmailEnabled } from "../services/email"
 import { renderRecommenderInvite } from "../templates/email/renderRecommenderInvite"
 import { Notification } from "../models/Notification"
 import { countLetter } from "../services/accounts"
+import { appUrl } from "../config"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getClientUrl(): string {
-  return process.env["CLIENT_URL"] ?? "http://localhost:5173"
+  return appUrl()
 }
 
 /**

@@ -52,6 +52,8 @@ export interface BulkRequestResult {
   requested: number
   alreadyAsked: number
   notFound: number
+  /** Families emailed with their link (needs email set up and the family link on) */
+  emailed?: number
 }
 
 export function useBulkRequestDocument(): UseMutationResult<

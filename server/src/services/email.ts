@@ -32,7 +32,8 @@ function getTransporter(): nodemailer.Transporter | null {
   _transporter = nodemailer.createTransport({
     host: process.env["SMTP_HOST"] ?? "smtp.gmail.com",
     port: Number(process.env["SMTP_PORT"] ?? 587),
-    secure: false, // STARTTLS
+    // 465 is TLS from the start; 587 and 25 upgrade with STARTTLS
+    secure: process.env["SMTP_SECURE"] ? process.env["SMTP_SECURE"] === "true" : Number(process.env["SMTP_PORT"] ?? 587) === 465,
     auth: { user, pass },
   })
   return _transporter
@@ -45,7 +46,18 @@ export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
   try {
     const transporter = getTransporter()
     if (!transporter) {
-      console.warn("Email not sent: SMTP_USER / SMTP_PASS not set")
+      if (process.env["NODE_ENV"] !== "production") {
+        // In development, print the email so its links (resets, invites) can still be followed
+        console.log(`
+── Email (not sent, SMTP is off) ──
+To: ${msg.to}
+Subject: ${msg.subject}
+${msg.text ?? msg.html.replace(/<[^>]+>/g, " ")}
+──
+`)
+      } else {
+        console.warn("Email not sent: SMTP_USER / SMTP_PASS not set")
+      }
       return { ok: false, error: "SMTP credentials not configured" }
     }
 

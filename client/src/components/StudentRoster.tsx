@@ -71,7 +71,10 @@ function BulkAskDialog({
         dueDate: dueDate || undefined,
       });
       toast.success(`Asked ${plural(r.requested, "student")} for ${title.trim()}`, {
-        description: r.alreadyAsked ? `${plural(r.alreadyAsked, "student")} already had this request open.` : undefined,
+        description:
+          [r.emailed ? `${plural(r.emailed, "family", "families")} emailed their link.` : "", r.alreadyAsked ? `${plural(r.alreadyAsked, "student")} already had this request open.` : ""]
+            .filter(Boolean)
+            .join(" ") || undefined,
       });
       setTitle("");
       setNote("");

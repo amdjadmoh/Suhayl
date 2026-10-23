@@ -7,6 +7,10 @@ import { agencyScope } from "../middleware/auth"
 import { User } from "../models/User"
 import { Student } from "../models/Student"
 import { Notification } from "../models/Notification"
+import { isEmailEnabled, sendEmail } from "../services/email"
+import { simpleEmail } from "../services/emailTemplates"
+import { appUrl } from "../config"
+import { logActivity } from "../services/activity"
 
 /*
  * An agency is its owner's account plus any counsellors the owner invites.
@@ -18,6 +22,22 @@ const ANY_CASE = { locale: "en", strength: 2 }
 
 function newInviteToken(): string {
   return crypto.randomBytes(24).toString("base64url")
+}
+
+/** Emails the join link when email is set up; the owner always gets the link to share too. */
+async function emailInvite(to: string, name: string, agencyName: string, inviteToken: string, reset: boolean): Promise<boolean> {
+  if (!isEmailEnabled()) return false
+  const url = `${appUrl()}/join/${inviteToken}`
+  const { html, text } = simpleEmail({
+    heading: reset ? "Choose a new password" : `Join ${agencyName} on Suhayl`,
+    lines: reset
+      ? [`Hi ${name},`, `${agencyName} sent you a link to choose a new password for Suhayl.`]
+      : [`Hi ${name},`, `${agencyName} invited you to help manage their students on Suhayl: applications, deadlines and documents in one place.`],
+    buttonText: reset ? "Choose a password" : "Join the team",
+    url,
+    footer: "This link works once. If you weren't expecting it, you can ignore this email.",
+  })
+  return (await sendEmail({ to, subject: reset ? "Your Suhayl password" : `${agencyName} invited you to Suhayl`, html, text })).ok
 }
 
 function requireOwner(req: Request, res: Response): boolean {
@@ -74,7 +94,10 @@ export async function inviteMember(req: Request, res: Response): Promise<void> {
     inviteToken,
     invitedAt: new Date(),
   })
-  res.status(201).json({ _id: member._id, name: member.name, email: member.email, inviteToken })
+  const owner = await User.findById(agencyScope(req)).select("name")
+  const emailSent = await emailInvite(member.email, member.name, owner?.name ?? "Your agency", inviteToken, false)
+  await logActivity(req, null, `Invited ${member.name} to the team`)
+  res.status(201).json({ _id: member._id, name: member.name, email: member.email, inviteToken, emailSent })
 }
 
 /** POST /api/agency/team/:id/invite — a fresh join link; also how a counsellor resets a forgotten password */
@@ -89,7 +112,10 @@ export async function renewInvite(req: Request, res: Response): Promise<void> {
   member.inviteToken = inviteToken
   member.invitedAt = new Date()
   await member.save()
-  res.json({ _id: member._id, inviteToken })
+  const owner = await User.findById(agencyScope(req)).select("name")
+  const joined = !!(await User.findById(member._id).select("+passwordHash"))?.passwordHash
+  const emailSent = await emailInvite(member.email, member.name, owner?.name ?? "Your agency", inviteToken, joined)
+  res.json({ _id: member._id, inviteToken, emailSent })
 }
 
 /** DELETE /api/agency/team/:id — their students go back to unassigned */
@@ -103,6 +129,7 @@ export async function removeMember(req: Request, res: Response): Promise<void> {
   const released = await Student.updateMany({ agencyId: agencyScope(req), counsellorId: member._id }, { $unset: { counsellorId: "" } })
   await Notification.deleteMany({ userId: member._id })
   await User.findByIdAndDelete(member._id)
+  await logActivity(req, null, `Removed ${member.name} from the team`)
   res.json({ message: "Removed from the team", studentsUnassigned: released.modifiedCount })
 }
 
@@ -127,6 +154,7 @@ export async function acceptInvite(req: Request, res: Response): Promise<void> {
   const { name, password } = req.body as { name: string; password: string }
   member.name = name
   member.passwordHash = await bcrypt.hash(password, 10)
+  member.acceptedTermsAt = new Date()
   member.set("inviteToken", undefined)
   await member.save()
   const token = jwt.sign({ _id: member._id.toString(), role: member.role }, process.env["JWT_SECRET"]!, { expiresIn: "7d" })
@@ -154,5 +182,7 @@ export async function bulkAssign(req: Request, res: Response): Promise<void> {
     { _id: { $in: studentIds }, agencyId },
     counsellorId ? { $set: { counsellorId: new Types.ObjectId(counsellorId) } } : { $unset: { counsellorId: "" } },
   )
+  const to = counsellorId ? await User.findById(counsellorId).select("name") : null
+  for (const id of studentIds) await logActivity(req, id, to ? `Gave the file to ${to.name}` : "Removed the counsellor")
   res.json({ updated: result.modifiedCount })
 }

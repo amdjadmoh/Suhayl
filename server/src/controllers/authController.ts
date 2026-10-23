@@ -9,6 +9,7 @@ import { Application } from "../models/Application"
 import { PasswordResetToken } from "../models/PasswordResetToken"
 import { sendEmail } from "../services/email"
 import { deleteUserData } from "../services/accounts"
+import { appUrl } from "../config"
 import { renderForgotPassword } from "../templates/email/render"
 
 const JWT_SECRET: string = process.env["JWT_SECRET"]!
@@ -46,11 +47,12 @@ function sanitizeUser(user: IUserDocument) {
  * Body is pre-validated by validate(registerSchema, "body") middleware.
  */
 export async function register(req: Request, res: Response): Promise<void> {
-  const { email, password, name, role } = req.body as {
+  const { email, password, name, role, acceptTerms } = req.body as {
     email: string
     password: string
     name: string
     role: "student" | "agency"
+    acceptTerms?: true
   }
 
   const existing = await User.findOne({ email }).collation(ANY_CASE)
@@ -62,7 +64,7 @@ export async function register(req: Request, res: Response): Promise<void> {
   const salt = await bcrypt.genSalt(10)
   const passwordHashValue = await bcrypt.hash(password, salt)
 
-  const user = await User.create({ email, passwordHash: passwordHashValue, name, role })
+  const user = await User.create({ email, passwordHash: passwordHashValue, name, role, ...(acceptTerms ? { acceptedTermsAt: new Date() } : {}) })
 
   const token = signToken(user)
   res.status(201).json({ token, user: sanitizeUser(user) })
@@ -228,8 +230,7 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
 
   await PasswordResetToken.create({ userId: user._id as any, expiresAt, token: rawToken })
 
-  const appUrl = process.env["APP_URL"] ?? "https://suhayl.online"
-  const resetUrl = `${appUrl}/reset-password?token=${rawToken}`
+  const resetUrl = `${appUrl()}/reset-password?token=${rawToken}`
 
   const { html, text } = await renderForgotPassword({ name: user.name, resetUrl })
   await sendEmail({ to: user.email, subject: "Reset your Suhayl password", html, text })

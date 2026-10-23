@@ -159,8 +159,8 @@ export function StudentDocuments({ studentId, firstName }: { studentId: string; 
 
   async function ask(docTitle: string, extra?: { note?: string; dueDate?: string }): Promise<boolean> {
     try {
-      await request.mutateAsync({ studentId, title: docTitle, ...extra });
-      toast.success(`Asked ${firstName} for ${docTitle}`);
+      const r = await request.mutateAsync({ studentId, title: docTitle, ...extra });
+      toast.success(`Asked ${firstName} for ${docTitle}`, { description: r.emailSent ? "We emailed them their family link." : undefined });
       return true;
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Couldn't send the request"));

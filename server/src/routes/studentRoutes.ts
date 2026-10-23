@@ -14,7 +14,7 @@ import { bulkAssign } from "../controllers/teamController"
 import { addPayment, addTask, bulkRequestDocument, removePayment, removeTask, updateTask } from "../controllers/studentWorkController"
 import { getAll, getById, create, update, remove } from "../controllers/studentController"
 import { createDocumentRequestSchema } from "../validators/documentValidator"
-import { createRequest, disablePortal, enablePortal, listForStudent } from "../controllers/documentController"
+import { createRequest, disablePortal, enablePortal, extendPortal, listForStudent, studentActivity } from "../controllers/documentController"
 
 export const studentRouter = Router()
 
@@ -32,6 +32,8 @@ studentRouter.get("/:id/documents", listForStudent)
 studentRouter.post("/:id/documents", validate(createDocumentRequestSchema, "body"), createRequest)
 studentRouter.post("/:id/portal", enablePortal)
 studentRouter.delete("/:id/portal", disablePortal)
+studentRouter.put("/:id/portal/extend", extendPortal)
+studentRouter.get("/:id/activity", studentActivity)
 studentRouter.post("/:id/tasks", validate(createTaskSchema, "body"), addTask)
 studentRouter.put("/:id/tasks/:taskId", validate(updateTaskSchema, "body"), updateTask)
 studentRouter.delete("/:id/tasks/:taskId", removeTask)

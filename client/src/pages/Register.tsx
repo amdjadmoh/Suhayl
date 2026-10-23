@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/authContext";
 import { cn, getErrorMessage } from "@/lib/utils";
 import AuthLayout from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/kit";
 import { GoogleSection } from "@/components/GoogleSignIn";
@@ -22,6 +23,7 @@ export default function Register(): React.ReactElement {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"student" | "agency">("student");
+  const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -123,12 +125,27 @@ export default function Register(): React.ReactElement {
           />
         </Field>
 
-        <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
+        <label className="flex items-start gap-3 text-[13.5px] leading-relaxed text-ink-2">
+          <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" aria-label="I agree to the terms and privacy policy" />
+          <span>
+            I agree to the{" "}
+            <Link to="/terms" target="_blank" className="link-ink">
+              terms
+            </Link>{" "}
+            and the{" "}
+            <Link to="/privacy" target="_blank" className="link-ink">
+              privacy policy
+            </Link>
+            .
+          </span>
+        </label>
+
+        <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting || !agreed}>
           {isSubmitting && <Loader2 className="animate-spin" />}
           {isSubmitting ? "Creating your account…" : "Create account"}
         </Button>
 
-        <GoogleSection onCredential={handleGoogleResponse} note="Signing up with Google creates a student account." />
+        <GoogleSection onCredential={handleGoogleResponse} note="Signing up with Google creates a student account and means you agree to the terms and privacy policy." />
       </form>
     </AuthLayout>
   );

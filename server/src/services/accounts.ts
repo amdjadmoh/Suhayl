@@ -12,6 +12,7 @@ import { University } from "../models/University"
 import { DocumentRequest } from "../models/DocumentRequest"
 import { removeFile } from "./files"
 import { User } from "../models/User"
+import { Activity } from "../models/Activity"
 
 /** Deletes document requests and the files sent for them. */
 export async function deleteDocuments(filter: Record<string, unknown>): Promise<void> {
@@ -46,6 +47,7 @@ export async function deleteUserData(userId: string): Promise<void> {
   await deleteDocuments({ agencyId: id })
   await Promise.all([
     Student.deleteMany({ agencyId: id }),
+    Activity.deleteMany({ agencyId: id }),
     Review.deleteMany({ userId: id }),
     Favorite.deleteMany({ userId: id }),
     SavedSearch.deleteMany({ userId: id }),

@@ -26,6 +26,8 @@ import { StudentDocuments } from "@/components/StudentDocuments";
 import { FamilyLink } from "@/components/FamilyLink";
 import { FollowUps, Payments } from "@/components/StudentWork";
 import { CounsellorPicker } from "@/components/CounsellorPicker";
+import { ActivityLog } from "@/components/ActivityLog";
+import { useStudentActivity } from "@/lib/api-team";
 import {
   EMPTY_PROFILE,
   belongsTo,
@@ -44,6 +46,7 @@ export default function AgencyStudentDetail(): React.ReactElement {
 
   const { data: student, isLoading, isError, error } = useStudent(id ?? "");
   const { data: applications } = useAgencyApplications();
+  const { data: activity, isLoading: activityLoading } = useStudentActivity(id ?? "");
   const updateMutation = useUpdateStudent();
   const deleteMutation = useDeleteStudent();
 
@@ -146,6 +149,7 @@ export default function AgencyStudentDetail(): React.ReactElement {
             )}
           </Section>
           <StudentDocuments studentId={student._id} firstName={firstName} />
+          <ActivityLog items={activity ?? []} isLoading={activityLoading} />
           {studentApplications.length > 1 && (
             <Section title="Where things stand">
               <div className="pt-2">

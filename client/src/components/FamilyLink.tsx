@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Check, Copy, Loader2, RefreshCw, Users } from "lucide-react";
-import { portalUrl, useSetPortal } from "@/lib/api-documents";
+import { portalUrl, useExtendPortal, useSetPortal } from "@/lib/api-documents";
+import { daysUntil, formatDate } from "@/lib/format";
 import type { Student } from "@/types/student";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 /** Turns on the private link a student and their parents use to follow the file and upload documents. */
 export function FamilyLink({ student }: { student: Student }): React.ReactElement {
   const setPortal = useSetPortal();
+  const extend = useExtendPortal();
   const [copied, setCopied] = useState(false);
   const firstName = student.name.split(" ")[0];
   const link = student.portalToken ? portalUrl(student.portalToken) : null;
@@ -60,6 +62,26 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
         <span className="rounded-full bg-moss-soft px-2.5 py-0.5 text-xs font-semibold text-moss">On</span>
       </div>
       <p className="mt-1 text-[13px] leading-relaxed text-ink-3">Anyone with this link can see {firstName}'s file. Share it only with them and their family.</p>
+      {student.portalExpiresAt && (
+        <p className={`mt-2 text-[13px] ${(daysUntil(student.portalExpiresAt) ?? 99) <= 14 ? "font-semibold text-ochre" : "text-ink-3"}`}>
+          Works until {formatDate(student.portalExpiresAt)}.{" "}
+          <button
+            type="button"
+            className="font-semibold text-brand-ink hover:underline"
+            disabled={extend.isPending}
+            onClick={async () => {
+              try {
+                await extend.mutateAsync(student._id);
+                toast.success("Link extended for another six months");
+              } catch (err: unknown) {
+                toast.error(getErrorMessage(err, "Couldn't extend the link"));
+              }
+            }}
+          >
+            Extend
+          </button>
+        </p>
+      )}
       <p className="mt-3 rounded-xl bg-paper-sunken px-3 py-2 font-mono text-[12px] break-all text-ink-2 select-all">{link}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="primary" size="sm" onClick={() => copy(link)}>

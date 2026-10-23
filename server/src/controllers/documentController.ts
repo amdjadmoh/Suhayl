@@ -4,7 +4,10 @@ import crypto from "crypto"
 import { Types } from "mongoose"
 import { Student } from "../models/Student"
 import { DocumentRequest } from "../models/DocumentRequest"
+import { Activity } from "../models/Activity"
 import { removeFile, sendStoredFile } from "../services/files"
+import { notifyFamily } from "../services/familyEmail"
+import { logActivity } from "../services/activity"
 
 function agencyOf(req: Request): Types.ObjectId {
   return new Types.ObjectId(agencyScope(req))
@@ -36,7 +39,9 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
     ...(note ? { note } : {}),
     ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
   })
-  res.status(201).json(document)
+  const emailSent = await notifyFamily(student, [title], dueDate ? new Date(dueDate) : undefined)
+  await logActivity(req, student._id, `Asked for ${title}`)
+  res.status(201).json({ ...document.toObject(), emailSent })
 }
 
 /** GET /api/documents?status=uploaded — the agency's requests across all students */
@@ -63,6 +68,7 @@ export async function review(req: Request, res: Response): Promise<void> {
   document.status = status
   document.set("rejectReason", status === "rejected" && rejectReason ? rejectReason : undefined)
   await document.save()
+  await logActivity(req, document.studentId, status === "accepted" ? `Accepted ${document.title}` : `Sent back ${document.title}${rejectReason ? `: ${rejectReason}` : ""}`)
   res.json(document)
 }
 
@@ -74,6 +80,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
     return
   }
   await removeFile(document.file?.storedName)
+  await logActivity(req, document.studentId, `Removed the request for ${document.title}`)
   res.json({ message: "Request removed" })
 }
 
@@ -84,8 +91,12 @@ export async function download(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: "File not found" })
     return
   }
-  sendStoredFile(res, document.file)
+  await sendStoredFile(res, document.file)
 }
+
+// How long a family link works before the agency has to extend it
+const PORTAL_LINK_DAYS = Number(process.env["PORTAL_LINK_DAYS"] ?? 180)
+const linkExpiry = (): Date => new Date(Date.now() + PORTAL_LINK_DAYS * 24 * 60 * 60 * 1000)
 
 /** POST /api/students/:id/portal — turn on the family link, or replace it with a new one */
 export async function enablePortal(req: Request, res: Response): Promise<void> {
@@ -93,7 +104,9 @@ export async function enablePortal(req: Request, res: Response): Promise<void> {
   if (!student) return
   student.portalToken = crypto.randomBytes(24).toString("base64url")
   student.portalEnabledAt = new Date()
+  student.portalExpiresAt = linkExpiry()
   await student.save()
+  await logActivity(req, student._id, "Made a new family link")
   res.json(student)
 }
 
@@ -103,6 +116,35 @@ export async function disablePortal(req: Request, res: Response): Promise<void> 
   if (!student) return
   student.set("portalToken", undefined)
   student.set("portalEnabledAt", undefined)
+  student.set("portalExpiresAt", undefined)
+  await student.save()
+  await logActivity(req, student._id, "Turned off the family link")
+  res.json(student)
+}
+
+/** PUT /api/students/:id/portal/extend — keep the same link working for another period */
+export async function extendPortal(req: Request, res: Response): Promise<void> {
+  const student = await findOwnStudent(req, res)
+  if (!student) return
+  if (!student.portalToken) {
+    res.status(400).json({ message: "The family link is off" })
+    return
+  }
+  student.portalExpiresAt = linkExpiry()
   await student.save()
   res.json(student)
+}
+
+/** GET /api/students/:id/activity — the last 100 things done on this student */
+export async function studentActivity(req: Request, res: Response): Promise<void> {
+  const student = await findOwnStudent(req, res)
+  if (!student) return
+  const items = await Activity.find({ studentId: student._id, agencyId: agencyOf(req) }).sort({ createdAt: -1 }).limit(100)
+  res.json(items)
+}
+
+/** GET /api/agency/activity — recent activity across the agency, newest first */
+export async function agencyActivity(req: Request, res: Response): Promise<void> {
+  const items = await Activity.find({ agencyId: agencyOf(req) }).sort({ createdAt: -1 }).limit(100).populate("studentId", "name")
+  res.json(items)
 }

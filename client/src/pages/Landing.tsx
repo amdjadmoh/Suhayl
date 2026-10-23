@@ -384,6 +384,12 @@ export default function Landing(): React.ReactElement {
                 </Link>
               </>
             )}
+            <Link to="/privacy" className="hover:text-ink">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-ink">
+              Terms
+            </Link>
             <span className="text-xs text-ink-4">© {new Date().getFullYear()}</span>
           </div>
         </div>

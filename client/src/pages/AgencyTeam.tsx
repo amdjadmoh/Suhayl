@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Check, Copy, Link2, Loader2, UserPlus } from "lucide-react";
-import { joinUrl, useInviteMember, useRemoveMember, useRenewInvite, useTeam, type TeamMember } from "@/lib/api-team";
+import { joinUrl, useAgencyActivity, useInviteMember, useRemoveMember, useRenewInvite, useTeam, type TeamMember } from "@/lib/api-team";
+import { ActivityLog } from "@/components/ActivityLog";
 import { useAuth } from "@/lib/authContext";
 import { getErrorMessage } from "@/lib/utils";
 import { initials, plural, timeAgo } from "@/lib/format";
@@ -28,7 +29,7 @@ async function copy(text: string): Promise<boolean> {
 }
 
 /** Shows a join link once, with a copy button, after inviting or renewing. */
-function LinkDialog({ link, name, onClose }: { link: string | null; name: string; onClose: () => void }): React.ReactElement {
+function LinkDialog({ link, name, emailed, onClose }: { link: string | null; name: string; emailed?: boolean; onClose: () => void }): React.ReactElement {
   const [copied, setCopied] = useState(false);
   return (
     <Dialog open={!!link} onOpenChange={(o) => !o && onClose()}>
@@ -36,7 +37,7 @@ function LinkDialog({ link, name, onClose }: { link: string | null; name: string
         <DialogHeader>
           <DialogTitle>Send this link to {name}</DialogTitle>
           <DialogDescription>
-            They open it, choose a password and they're in. It works once; make a new one any time from this page.
+            {emailed ? `We also emailed it to ${name}. ` : ""}They open it, choose a password and they're in. It works once; make a new one any time from this page.
           </DialogDescription>
         </DialogHeader>
         <p className="rounded-xl bg-paper-sunken px-3 py-2.5 text-[13px] break-all text-ink-2 select-all">{link}</p>
@@ -59,7 +60,7 @@ function LinkDialog({ link, name, onClose }: { link: string | null; name: string
   );
 }
 
-function MemberRow({ m, canManage, onLink }: { m: TeamMember; canManage: boolean; onLink: (link: string, name: string) => void }): React.ReactElement {
+function MemberRow({ m, canManage, onLink }: { m: TeamMember; canManage: boolean; onLink: (link: string, name: string, emailed?: boolean) => void }): React.ReactElement {
   const renew = useRenewInvite();
   const remove = useRemoveMember();
   const [confirming, setConfirming] = useState(false);
@@ -67,7 +68,7 @@ function MemberRow({ m, canManage, onLink }: { m: TeamMember; canManage: boolean
   async function newLink(): Promise<void> {
     try {
       const r = await renew.mutateAsync(m._id);
-      onLink(joinUrl(r.inviteToken), m.name);
+      onLink(joinUrl(r.inviteToken), m.name, r.emailSent);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Couldn't make a new link"));
     }
@@ -134,17 +135,18 @@ export default function AgencyTeam(): React.ReactElement {
   const isOwner = user?.agencyRole !== "counsellor";
   const { data: team, isLoading, isError } = useTeam();
   const invite = useInviteMember();
+  const { data: activity, isLoading: activityLoading } = useAgencyActivity();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [shown, setShown] = useState<{ link: string; name: string } | null>(null);
+  const [shown, setShown] = useState<{ link: string; name: string; emailed?: boolean } | null>(null);
 
   async function onInvite(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     try {
       const r = await invite.mutateAsync({ name: name.trim(), email: email.trim() });
       setOpen(false);
-      setShown({ link: joinUrl(r.inviteToken), name: name.trim() });
+      setShown({ link: joinUrl(r.inviteToken), name: name.trim(), emailed: r.emailSent });
       setName("");
       setEmail("");
     } catch (err: unknown) {
@@ -180,7 +182,7 @@ export default function AgencyTeam(): React.ReactElement {
         <div className="max-w-3xl">
           <ul className="card divide-y divide-rule-soft overflow-hidden">
             {members.map((m) => (
-              <MemberRow key={m._id} m={m} canManage={isOwner} onLink={(link, n) => setShown({ link, name: n })} />
+              <MemberRow key={m._id} m={m} canManage={isOwner} onLink={(link, n, emailed) => setShown({ link, name: n, emailed })} />
             ))}
           </ul>
           {!!team?.unassigned && (
@@ -191,6 +193,9 @@ export default function AgencyTeam(): React.ReactElement {
               {team.unassigned === 1 ? "has" : "have"} no counsellor yet.
             </p>
           )}
+          <div className="mt-10">
+            <ActivityLog items={activity ?? []} isLoading={activityLoading} title="Recent activity" showStudent />
+          </div>
           {members.length === 1 && isOwner && (
             <div className="card-soft mt-4 px-5 py-4 text-[13.5px] leading-relaxed text-ink-2">
               Working with others? Invite your counsellors so each one sees their own students, follow-ups and deadlines first.
@@ -227,7 +232,7 @@ export default function AgencyTeam(): React.ReactElement {
         </DialogContent>
       </Dialog>
 
-      <LinkDialog link={shown?.link ?? null} name={shown?.name ?? ""} onClose={() => setShown(null)} />
+      <LinkDialog link={shown?.link ?? null} name={shown?.name ?? ""} emailed={shown?.emailed} onClose={() => setShown(null)} />
     </>
   );
 }

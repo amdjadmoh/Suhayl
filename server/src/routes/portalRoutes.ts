@@ -1,6 +1,7 @@
 import { Router } from "express"
 import rateLimit from "express-rate-limit"
 import { documentUpload } from "../services/files"
+import { rateLimitStore } from "../services/rateLimitStore"
 import { download, getPortal, upload } from "../controllers/portalController"
 
 export const portalRouter = Router()
@@ -10,6 +11,7 @@ portalRouter.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 120,
+    ...rateLimitStore("portal"),
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Too many requests, please try again later." },

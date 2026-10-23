@@ -6,6 +6,8 @@ export const registerSchema = z
     password: z.string().min(6, "Password must be at least 6 characters"),
     name: z.string().min(1, "Name is required"),
     role: z.enum(["student", "agency"]),
+    // The sign-up form only submits once the box is ticked
+    acceptTerms: z.literal(true).optional(),
   })
   .strict()
 

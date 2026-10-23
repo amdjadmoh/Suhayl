@@ -29,7 +29,7 @@ function useInvalidateDocuments(): () => void {
 }
 
 export function useRequestDocument(): UseMutationResult<
-  DocumentRequest,
+  DocumentRequest & { emailSent?: boolean },
   Error,
   { studentId: string; title: string; note?: string; dueDate?: string }
 > {
@@ -68,6 +68,17 @@ export function useSetPortal(): UseMutationResult<Student, Error, { studentId: s
   return useMutation({
     mutationFn: async ({ studentId, enabled }) =>
       (enabled ? await api.post(`/students/${studentId}/portal`) : await api.delete(`/students/${studentId}/portal`)).data,
+    onSuccess: (student) => {
+      qc.setQueryData(["students", student._id], student)
+      qc.invalidateQueries({ queryKey: ["students"] })
+    },
+  })
+}
+
+export function useExtendPortal(): UseMutationResult<Student, Error, string> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (studentId) => (await api.put(`/students/${studentId}/portal/extend`)).data,
     onSuccess: (student) => {
       qc.setQueryData(["students", student._id], student)
       qc.invalidateQueries({ queryKey: ["students"] })

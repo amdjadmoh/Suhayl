@@ -33,6 +33,7 @@ export interface Student {
   /** Set while the family link is on */
   portalToken?: string
   portalEnabledAt?: string
+  portalExpiresAt?: string
   // The agency's own work and money for this student
   tasks?: StudentTask[]
   feeAgreed?: number | null

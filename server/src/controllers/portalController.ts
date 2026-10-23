@@ -4,6 +4,7 @@ import { User } from "../models/User"
 import { Application } from "../models/Application"
 import { DocumentRequest } from "../models/DocumentRequest"
 import { Notification } from "../models/Notification"
+import { logFamilyActivity } from "../services/activity"
 import { isAllowedFile, removeFile, sendStoredFile, storeFile } from "../services/files"
 
 /*
@@ -15,7 +16,11 @@ import { isAllowedFile, removeFile, sendStoredFile, storeFile } from "../service
 async function studentForToken(req: Request, res: Response) {
   const token = String(req.params["token"] ?? "")
   const student = token.length >= 20 ? await Student.findOne({ portalToken: token }) : null
-  if (!student) res.status(404).json({ message: "This link isn't active. Ask your agency for a new one." })
+  // Links made before expiry existed have no date and keep working until replaced
+  if (!student || (student.portalExpiresAt && student.portalExpiresAt.getTime() < Date.now())) {
+    res.status(404).json({ message: "This link isn't active. Ask your agency for a new one." })
+    return null
+  }
   return student
 }
 
@@ -132,6 +137,7 @@ export async function upload(req: Request, res: Response): Promise<void> {
     link: `/agency/students/${student._id}`,
   })
 
+  await logFamilyActivity(student.agencyId, student._id, `Sent ${document.title}`)
   res.json(publicDocument(document))
 }
 
@@ -144,5 +150,5 @@ export async function download(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: "File not found" })
     return
   }
-  sendStoredFile(res, document.file)
+  await sendStoredFile(res, document.file)
 }

@@ -628,6 +628,7 @@ export async function registerUser(
     email,
     password,
     role,
+    acceptTerms: true,
   });
   return response.data;
 }

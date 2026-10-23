@@ -34,6 +34,8 @@ export interface IStudent {
   // Private link the student and family use to follow progress and upload documents
   portalToken?: string
   portalEnabledAt?: Date
+  // The link stops working after this; agencies can extend it
+  portalExpiresAt?: Date
   // The agency's own work and money for this student
   tasks: IStudentTask[]
   feeAgreed?: number
@@ -62,6 +64,7 @@ const studentSchema = new Schema<IStudentDocument>(
     targetIntake: { type: String },
     portalToken: { type: String },
     portalEnabledAt: { type: Date },
+    portalExpiresAt: { type: Date },
     tasks: {
       type: [
         new Schema<IStudentTask>({

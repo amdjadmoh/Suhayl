@@ -28,7 +28,7 @@ export function joinUrl(token: string): string {
   return `${window.location.origin}/join/${token}`
 }
 
-export function useInviteMember(): UseMutationResult<{ _id: string; inviteToken: string }, Error, { name: string; email: string }> {
+export function useInviteMember(): UseMutationResult<{ _id: string; inviteToken: string; emailSent?: boolean }, Error, { name: string; email: string }> {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (body) => (await api.post("/agency/team", body)).data,
@@ -36,7 +36,7 @@ export function useInviteMember(): UseMutationResult<{ _id: string; inviteToken:
   })
 }
 
-export function useRenewInvite(): UseMutationResult<{ _id: string; inviteToken: string }, Error, string> {
+export function useRenewInvite(): UseMutationResult<{ _id: string; inviteToken: string; emailSent?: boolean }, Error, string> {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id) => (await api.post(`/agency/team/${id}/invite`)).data,
@@ -81,4 +81,27 @@ export function useInvite(token: string): UseQueryResult<{ name: string; email: 
 
 export async function acceptInvite(token: string, name: string, password: string): Promise<AuthResponse> {
   return (await publicApi.post(`/invite/${token}`, { name, password })).data
+}
+
+// ─── Activity ────────────────────────────────────────────────────────────────
+
+export interface ActivityItem {
+  _id: string
+  studentId?: string | { _id: string; name: string }
+  actorId?: string
+  actorName: string
+  action: string
+  createdAt: string
+}
+
+export function useStudentActivity(studentId: string): UseQueryResult<ActivityItem[]> {
+  return useQuery({
+    queryKey: ["activity", "student", studentId],
+    queryFn: async () => (await api.get(`/students/${studentId}/activity`)).data,
+    enabled: studentId.length > 0,
+  })
+}
+
+export function useAgencyActivity(): UseQueryResult<ActivityItem[]> {
+  return useQuery({ queryKey: ["activity", "agency"], queryFn: async () => (await api.get("/agency/activity")).data })
 }

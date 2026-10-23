@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,12 +42,17 @@ import Settings from "@/pages/Settings";
 import Portal from "@/pages/Portal";
 import AgencyTeam from "@/pages/AgencyTeam";
 import JoinTeam from "@/pages/JoinTeam";
+import { Privacy, Terms } from "@/pages/Legal";
 import StatementEditor from "@/pages/StatementEditor";
 import RecommenderManager from "@/pages/RecommenderManager";
 import RecommenderSubmit from "@/pages/RecommenderSubmit";
 import ExtensionBridge from "@/pages/ExtensionBridge";
 
-const queryClient = new QueryClient({
+const queryClient: QueryClient = new QueryClient({
+  // Any successful change may add a line to an agency's history
+  mutationCache: new MutationCache({
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["activity"] }),
+  }),
   defaultOptions: {
     queries: {
       staleTime: 30 * 1000,
@@ -76,6 +81,8 @@ export default function App(): React.ReactElement {
               <Route path="/recommendation/:token" element={<RecommenderSubmit />} />
               <Route path="/portal/:token" element={<Portal />} />
               <Route path="/join/:token" element={<JoinTeam />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
 
               {/* Authenticated routes wrapped in Layout */}
               <Route element={<ProtectedRoute />}>

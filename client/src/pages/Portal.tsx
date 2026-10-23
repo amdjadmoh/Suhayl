@@ -41,6 +41,8 @@ const T = {
     visaPending: "Demande en cours",
     contact: "Une question ? Écrivez à votre agence :",
     privacy: "Ce lien est privé. Ne le partagez qu'avec votre famille.",
+    consent: "En envoyant un fichier, vous le partagez avec votre agence pour votre candidature.",
+    policy: "Politique de confidentialité",
     gone: "Ce lien ne fonctionne plus",
     goneText: "Il a peut-être été remplacé. Demandez à votre agence de vous envoyer le nouveau lien.",
     lastUpdate: "Mis à jour le",
@@ -82,6 +84,8 @@ const T = {
     visaPending: "Applied",
     contact: "A question? Write to your agency:",
     privacy: "This link is private. Only share it with your family.",
+    consent: "Sending a file shares it with your agency for your application.",
+    policy: "Privacy policy",
     gone: "This link doesn't work any more",
     goneText: "It may have been replaced. Ask your agency to send you the new link.",
     lastUpdate: "Updated",
@@ -419,6 +423,12 @@ export default function Portal(): React.ReactElement {
         <p className="flex items-center gap-1.5">
           <ShieldCheck className="size-4 text-moss" />
           {t.privacy}
+        </p>
+        <p>
+          {t.consent}{" "}
+          <a href="/privacy" target="_blank" rel="noreferrer" className="font-semibold text-ink-2 underline-offset-2 hover:underline">
+            {t.policy}
+          </a>
         </p>
       </footer>
     </>,

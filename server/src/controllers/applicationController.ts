@@ -5,6 +5,7 @@ import { Program } from "../models/Program"
 import { Student } from "../models/Student"
 import { Notification } from "../models/Notification"
 import { buildApplicationCalendar } from "../services/calendar"
+import { logActivity } from "../services/activity"
 
 const POPULATE_PROGRAM = {
   path: "programId",
@@ -157,6 +158,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     }
   }
 
+  await logActivity(req, application.studentId, `Started an application to ${program.name}`)
   res.status(201).json(application)
 }
 
@@ -216,6 +218,7 @@ export async function update(req: Request, res: Response): Promise<void> {
       message: `Your application to "${programName}" is now ${newStatus}.`,
       link: `/applications/${application._id}`,
     })
+    await logActivity(req, existing.studentId, `Moved ${programName} to ${newStatus}`)
   }
 
   res.json(application)
@@ -245,6 +248,8 @@ export async function remove(req: Request, res: Response): Promise<void> {
   }
 
   await Application.findByIdAndDelete(req.params["id"])
+  const prog = await Program.findById(existing.programId).select("name")
+  await logActivity(req, existing.studentId, `Deleted the application to ${prog?.name ?? "a program"}`)
   res.json({ message: "Application deleted" })
 }
 
