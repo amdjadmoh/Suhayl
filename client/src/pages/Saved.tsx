@@ -1,174 +1,169 @@
 import { Link } from "react-router-dom";
-import { useFavorites, useCountries, useUniversities, usePrograms } from "@/lib/api";
-import { Star, Globe, GraduationCap, BookOpen, ArrowRight } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useFavorites, useCountries, useUniversities, usePrograms, useRemoveFavorite } from "@/lib/api";
+import type { Favorite } from "@/lib/api";
+import { formatTuition, plural } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { COUNTRY_FLAGS } from "@/lib/constants";
+import { CountryPlate, EmptyState, LoadingRows, PageHeader, Section } from "@/components/kit";
+import { SaveToggle } from "@/components/SaveToggle";
+
+function SavedLine({
+  to,
+  title,
+  meta,
+  country,
+  trailing,
+  onRemove,
+}: {
+  to: string;
+  title: string;
+  meta?: React.ReactNode;
+  country?: string;
+  trailing?: React.ReactNode;
+  onRemove: () => void;
+}): React.ReactElement {
+  return (
+    <li className="flex items-center gap-4 py-3.5 px-5">
+      <CountryPlate country={country} />
+      <div className="min-w-0 flex-1">
+        <Link to={to} className="font-medium text-ink hover:text-brand-ink">
+          {title}
+        </Link>
+        {meta && <p className="mt-0.5 truncate text-[13px] text-ink-3">{meta}</p>}
+      </div>
+      {trailing}
+      <SaveToggle saved onToggle={onRemove} />
+    </li>
+  );
+}
 
 export default function Saved(): React.ReactElement {
   const { data: favorites, isLoading: favsLoading } = useFavorites();
   const { data: countries } = useCountries();
   const { data: unisData } = useUniversities();
   const { data: progsData } = usePrograms();
+  const removeFav = useRemoveFavorite();
+
+  const remove = (f: Favorite): void => removeFav.mutate({ type: f.type, itemId: f.itemId });
+
+  const header = (
+    <PageHeader
+      kicker={favorites?.length ? `Saved · ${plural(favorites.length, "item")}` : "Saved"}
+      title="Saved for later"
+    >
+      Programs, universities and countries you bookmarked while browsing. Press the bookmark again to let one go.
+    </PageHeader>
+  );
 
   if (favsLoading) {
     return (
-      <div className="space-y-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 p-8 text-white">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-            <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-amber-400 blur-3xl" />
-          </div>
-          <div className="relative">
-            <h1 className="text-3xl font-bold tracking-tight">Saved</h1>
-            <p className="mt-2 text-amber-100">Your favorited items</p>
-          </div>
-        </div>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (<Skeleton key={i} className="h-20 w-full rounded-xl" />))}
-        </div>
-      </div>
+      <>
+        {header}
+        <LoadingRows rows={4} />
+      </>
     );
   }
 
   if (!favorites || favorites.length === 0) {
     return (
-      <div className="space-y-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 p-8 text-white">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-            <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-amber-400 blur-3xl" />
-          </div>
-          <div className="relative">
-            <h1 className="text-3xl font-bold tracking-tight">Saved</h1>
-            <p className="mt-2 text-amber-100">Your favorited items</p>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-12 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 mx-auto mb-4">
-            <Star className="h-10 w-10 text-amber-500" />
-          </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">No saved items yet</h2>
-          <p className="text-muted-foreground">Start browsing and save countries, universities, and programs you're interested in.</p>
-        </div>
-      </div>
+      <>
+        {header}
+        <EmptyState
+          title="Nothing saved yet"
+          action={
+            <Button variant="primary" asChild>
+              <Link to="/programs">Browse programs</Link>
+            </Button>
+          }
+        >
+          Look for the bookmark next to a program, university or country. Whatever you mark ends up here.
+        </EmptyState>
+      </>
     );
   }
 
-  const countryFavorites = favorites.filter((f) => f.type === "country");
-  const universityFavorites = favorites.filter((f) => f.type === "university");
   const programFavorites = favorites.filter((f) => f.type === "program");
-
-  function getCountryById(id: string) {
-    return countries?.find((c) => c._id === id);
-  }
-
-  function getUniversityById(id: string) {
-    return unisData?.universities?.find((u) => u._id === id);
-  }
-
-  function getProgramById(id: string) {
-    return progsData?.programs?.find((p) => p._id === id);
-  }
+  const universityFavorites = favorites.filter((f) => f.type === "university");
+  const countryFavorites = favorites.filter((f) => f.type === "country");
 
   return (
-    <div className="space-y-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-600 via-orange-600 to-rose-700 p-8 text-white">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-amber-400 blur-3xl" />
-        </div>
-        <div className="relative">
-          <h1 className="text-3xl font-bold tracking-tight">Saved</h1>
-          <p className="mt-2 text-amber-100">{favorites.length} saved item{favorites.length !== 1 ? "s" : ""}</p>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        {/* Countries */}
-        {countryFavorites.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Globe className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold text-foreground">Countries ({countryFavorites.length})</h2>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {countryFavorites.map((fav) => {
-                const country = getCountryById(fav.itemId);
-                return (
-                  <Link key={fav._id} to={country ? `/countries/${country._id}` : "#"}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 hover:border-border hover:shadow-sm transition-all">
-                    <div className="text-2xl">{country ? (COUNTRY_FLAGS[country.name] ?? "🌍") : "🌍"}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{country?.name ?? "Unknown country"}</p>
-                      {country && <p className="text-xs text-muted-foreground">{country.currency}</p>}
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Universities */}
-        {universityFavorites.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <GraduationCap className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold text-foreground">Universities ({universityFavorites.length})</h2>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {universityFavorites.map((fav) => {
-                const uni = getUniversityById(fav.itemId);
-                return (
-                  <Link key={fav._id} to={uni ? `/universities/${uni._id}` : "#"}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 hover:border-border hover:shadow-sm transition-all">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 text-lg shrink-0">
-                      {uni ? (COUNTRY_FLAGS[uni.country] ?? <GraduationCap className="h-5 w-5 text-violet-500" />) : <GraduationCap className="h-5 w-5 text-violet-500" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{uni?.name ?? "Unknown university"}</p>
-                      {uni && <p className="text-xs text-muted-foreground">{uni.city}, {uni.country}</p>}
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Programs */}
+    <>
+      {header}
+      <div className="space-y-10">
         {programFavorites.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold text-foreground">Programs ({programFavorites.length})</h2>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Section title="Programs" count={programFavorites.length}>
+            <ul className="card divide-y divide-rule-soft overflow-hidden">
               {programFavorites.map((fav) => {
-                const prog = getProgramById(fav.itemId);
+                const prog = progsData?.programs?.find((p) => p._id === fav.itemId);
                 const uni = prog && typeof prog.universityId === "object" ? prog.universityId : null;
                 return (
-                  <Link key={fav._id} to={prog ? `/programs/${prog._id}` : "#"}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 hover:border-border hover:shadow-sm transition-all">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 text-lg shrink-0">
-                      <BookOpen className="h-5 w-5 text-indigo-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{prog?.name ?? "Unknown program"}</p>
-                      {uni && <p className="text-xs text-muted-foreground">{uni.name} · {prog?.degreeLevel}</p>}
-                      {prog && <Badge variant="outline" className="mt-1 text-[10px]">{prog.degreeLevel}</Badge>}
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </Link>
+                  <SavedLine
+                    key={fav._id}
+                    to={prog ? `/programs/${prog._id}` : "#"}
+                    title={prog?.name ?? "A program that's no longer listed"}
+                    country={uni?.country}
+                    meta={uni ? `${uni.name}, ${uni.city}` : undefined}
+                    trailing={
+                      prog && (
+                        <span className="hidden items-center gap-3 sm:flex">
+                          <Badge variant="outline">{prog.degreeLevel}</Badge>
+                          <span className="text-xs text-ink-2 tnum">
+                            {formatTuition(prog.tuitionFee, prog.tuitionCurrency, prog.tuitionPeriod)}
+                          </span>
+                        </span>
+                      )
+                    }
+                    onRemove={() => remove(fav)}
+                  />
                 );
               })}
-            </div>
-          </div>
+            </ul>
+          </Section>
+        )}
+
+        {universityFavorites.length > 0 && (
+          <Section title="Universities" count={universityFavorites.length}>
+            <ul className="card divide-y divide-rule-soft overflow-hidden">
+              {universityFavorites.map((fav) => {
+                const uni = unisData?.universities?.find((u) => u._id === fav.itemId);
+                return (
+                  <SavedLine
+                    key={fav._id}
+                    to={uni ? `/universities/${uni._id}` : "#"}
+                    title={uni?.name ?? "A university that's no longer listed"}
+                    country={uni?.country}
+                    meta={uni ? `${uni.city}, ${uni.country}` : undefined}
+                    trailing={
+                      uni?.qsRank != null && <span className="text-xs text-ink-3 tnum">QS {uni.qsRank}</span>
+                    }
+                    onRemove={() => remove(fav)}
+                  />
+                );
+              })}
+            </ul>
+          </Section>
+        )}
+
+        {countryFavorites.length > 0 && (
+          <Section title="Countries" count={countryFavorites.length}>
+            <ul className="card divide-y divide-rule-soft overflow-hidden">
+              {countryFavorites.map((fav) => {
+                const country = countries?.find((c) => c._id === fav.itemId);
+                return (
+                  <SavedLine
+                    key={fav._id}
+                    to={country ? `/countries/${country._id}` : "#"}
+                    title={country?.name ?? "A country that's no longer listed"}
+                    country={country?.name}
+                    meta={country?.visaType}
+                    onRemove={() => remove(fav)}
+                  />
+                );
+              })}
+            </ul>
+          </Section>
         )}
       </div>
-    </div>
+    </>
   );
 }

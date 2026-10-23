@@ -37,6 +37,11 @@ import UserDetail from "@/pages/UserDetail";
 import Saved from "@/pages/Saved";
 import Matches from "@/pages/Matches";
 import BudgetCalculator from "@/pages/BudgetCalculator";
+import NotFound from "@/pages/NotFound";
+import Settings from "@/pages/Settings";
+import Portal from "@/pages/Portal";
+import AgencyTeam from "@/pages/AgencyTeam";
+import JoinTeam from "@/pages/JoinTeam";
 import StatementEditor from "@/pages/StatementEditor";
 import RecommenderManager from "@/pages/RecommenderManager";
 import RecommenderSubmit from "@/pages/RecommenderSubmit";
@@ -69,6 +74,8 @@ export default function App(): React.ReactElement {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/extension-bridge" element={<ExtensionBridge />} />
               <Route path="/recommendation/:token" element={<RecommenderSubmit />} />
+              <Route path="/portal/:token" element={<Portal />} />
+              <Route path="/join/:token" element={<JoinTeam />} />
 
               {/* Authenticated routes wrapped in Layout */}
               <Route element={<ProtectedRoute />}>
@@ -119,17 +126,20 @@ export default function App(): React.ReactElement {
                   <Route path="saved" element={<Saved />} />
                   <Route path="matches" element={<Matches />} />
                   <Route path="budget-calculator" element={<BudgetCalculator />} />
+                  <Route path="settings" element={<Settings />} />
                   <Route path="users" element={<ProtectedRoute role="admin"><Users /></ProtectedRoute>} />
                   <Route path="users/:id" element={<ProtectedRoute role="admin"><UserDetail /></ProtectedRoute>} />
                   <Route path="compare" element={<ProtectedRoute role="student"><Compare /></ProtectedRoute>} />
                   <Route path="agency" element={<ProtectedRoute role="agency"><AgencyDashboard /></ProtectedRoute>} />
                   <Route path="agency/students" element={<ProtectedRoute role="agency"><AgencyStudents /></ProtectedRoute>} />
                   <Route path="agency/students/:id" element={<ProtectedRoute role="agency"><AgencyStudentDetail /></ProtectedRoute>} />
+                  <Route path="agency/team" element={<ProtectedRoute role="agency"><AgencyTeam /></ProtectedRoute>} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
               </Route>
             </Routes>
             </CompareProvider>
-            <Toaster richColors position="top-right" />
+            <Toaster richColors position="bottom-right" mobileOffset={{ bottom: 88 }} />
           </AuthProvider>
         </TooltipProvider>
       </BrowserRouter>

@@ -1,45 +1,25 @@
 import { useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { Loader2, Search } from "lucide-react";
 import {
   useUniversities,
   useCountries,
   useFavorites,
   useAddFavorite,
   useRemoveFavorite,
-  useSavedSearches,
-  useCreateSavedSearch,
-  useDeleteSavedSearch,
+  useDeleteUniversity,
+  useToggleUniversityOfficial,
 } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
-import { COUNTRY_FLAGS } from "@/lib/constants";
+import { cn, getErrorMessage } from "@/lib/utils";
+import { plural } from "@/lib/format";
 import type { University } from "@/types/university";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Search,
-  X,
-  Plus,
-  GraduationCap,
-  MapPin,
-  AlertCircle,
-  Pencil,
-  Trash2,
-  Star,
-  Save,
-  Bookmark,
-  Loader2,
-} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -47,32 +27,41 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { useDeleteUniversity, useToggleUniversityOfficial } from "@/lib/api";
-import { getErrorMessage } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+import { CountryPlate, EmptyState, ErrorState, LoadingRows, PageHeader } from "@/components/kit";
+import { SavedSearches } from "@/components/SavedSearches";
+import { SaveToggle } from "@/components/SaveToggle";
 
-function UniversityCard({
+function Ranks({ u }: { u: University }): React.ReactElement | null {
+  const ranks = [
+    u.qsRank != null && `QS ${u.qsRank}`,
+    u.theRank != null && `THE ${u.theRank}`,
+    u.arwuRank != null && `ARWU ${u.arwuRank}`,
+  ].filter(Boolean) as string[];
+  if (ranks.length === 0 && u.ranking) ranks.push(`No. ${u.ranking}`);
+  if (ranks.length === 0) return <span className="text-xs text-ink-4 tnum">unranked</span>;
+  return (
+    <span className="text-xs text-ink-2 tnum">
+      {ranks.map((r, i) => (
+        <span key={r}>
+          {i > 0 && <span className="mx-1.5 text-ink-4">·</span>}
+          {r}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function UniversityRow({
   university,
   isAdmin,
   isFav,
-  isLoggedIn,
   showOfficialToggle,
   onToggleFavorite,
 }: {
   university: University;
   isAdmin: boolean;
   isFav: boolean;
-  isLoggedIn: boolean;
   showOfficialToggle?: boolean;
   onToggleFavorite: (type: string, itemId: string, isFav: boolean) => void;
 }): React.ReactElement {
@@ -84,63 +73,39 @@ function UniversityCard({
     try {
       await deleteMutation.mutateAsync(university._id);
       toast.success("University deleted");
+      setDeleteOpen(false);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to delete university"));
     }
   }
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl bg-card shadow-sm border border-border card-hover">
-      {/* Gradient accent */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-      {/* Favorite button */}
-      {isLoggedIn && (
-        <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite("university", university._id, isFav); }}
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted transition-colors"
-          title={isFav ? "Remove from saved" : "Save"}
-        >
-          <Star className={`h-5 w-5 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"}`} />
-        </button>
-      )}
-
-      <div className="p-6">
-        <Link to={`/universities/${university._id}`}>
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-2xl">
-              {COUNTRY_FLAGS[university.country] ?? ""}
-            </div>
-            <div className="flex items-center gap-1">
-              {university.isOfficial === false && (
-                <Badge className="text-[10px] bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 rounded-full px-2 py-0.5">Custom</Badge>
-              )}
-              {university.ranking && (
-                <div className="flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
-                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                  #{university.ranking}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
+    <li className="grid items-center gap-x-6 gap-y-2 py-4 sm:grid-cols-[minmax(0,1fr)_14rem_auto] px-5">
+      <div className="flex min-w-0 items-center gap-4">
+        <CountryPlate country={university.country} />
+        <div className="min-w-0">
+          <Link
+            to={`/universities/${university._id}`}
+            className="text-[16px] leading-snug font-semibold text-ink hover:text-brand-ink"
+          >
             {university.name}
-          </h3>
-
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
+          </Link>
+          <p className="mt-0.5 flex items-center gap-2 text-[13px] text-ink-3">
             {university.city}, {university.country}
-          </div>
-        </Link>
-
+            {university.isOfficial === false && <Badge variant="secondary">Custom</Badge>}
+          </p>
+        </div>
+      </div>
+      <div className="pl-[46px] sm:pl-0">
+        <Ranks u={university} />
+      </div>
+      <div className="flex items-center justify-end gap-1">
         {isAdmin && (
-          <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
+          <>
             {showOfficialToggle && (
               <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 rounded-xl"
+                variant="ghost"
+                size="xs"
                 disabled={toggleUniOfficial.isPending}
                 onClick={async () => {
                   try {
@@ -151,54 +116,42 @@ function UniversityCard({
                   }
                 }}
               >
-                {university.isOfficial ? "Make Custom" : "Make Official"}
+                {university.isOfficial ? "Make custom" : "Make official"}
               </Button>
             )}
-            <Button variant="outline" size="sm" className="flex-1 rounded-xl" asChild>
-              <Link to={`/universities/${university._id}/edit`}>
-                <Pencil className="mr-1.5 h-4 w-4" />
-                Edit
-              </Link>
+            <Button variant="ghost" size="xs" asChild>
+              <Link to={`/universities/${university._id}/edit`}>Edit</Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-stamp hover:bg-stamp-soft hover:text-stamp"
+              onClick={() => setDeleteOpen(true)}
+            >
+              Delete
             </Button>
             <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl">
-                  <Trash2 className="mr-1.5 h-4 w-4" />
-                  Delete
-                </Button>
-              </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Delete University</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to delete {university.name}? This action cannot be undone.
-                  </DialogDescription>
+                  <DialogTitle>Delete {university.name}?</DialogTitle>
+                  <DialogDescription>This removes it from the catalogue for everyone. It can't be undone.</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                    Keep it
+                  </Button>
                   <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+                    {deleteMutation.isPending && <Loader2 className="animate-spin" />}
                     Delete
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
+          </>
         )}
+        <SaveToggle saved={isFav} onToggle={() => onToggleFavorite("university", university._id, isFav)} />
       </div>
-    </div>
-  );
-}
-
-function UniversityCardSkeleton(): React.ReactElement {
-  return (
-    <div className="rounded-2xl bg-card p-6 shadow-sm border border-border">
-      <div className="flex items-start justify-between mb-4">
-        <Skeleton className="h-14 w-14 rounded-2xl" />
-        <Skeleton className="h-6 w-16 rounded-full" />
-      </div>
-      <Skeleton className="h-5 w-3/4 mb-2" />
-      <Skeleton className="h-4 w-1/2" />
-    </div>
+    </li>
   );
 }
 
@@ -207,11 +160,10 @@ export default function Universities(): React.ReactElement {
   const isAdmin = user?.role === "admin";
   const isLoggedIn = !!user;
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") ?? "",
-  );
-
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
   const [top100, setTop100] = useState(false);
+  // Filters fold away on small screens so results come first
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const search = searchParams.get("search") ?? "";
   const country = searchParams.get("country") ?? "";
@@ -227,24 +179,33 @@ export default function Universities(): React.ReactElement {
   const addFav = useAddFavorite();
   const removeFav = useRemoveFavorite();
 
-  // ─── Saved Searches ──────────────────────────────────────────────────────
-  const { data: savedSearchesData } = useSavedSearches();
-  const createSavedSearch = useCreateSavedSearch();
-  const deleteSavedSearch = useDeleteSavedSearch();
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [saveSearchName, setSaveSearchName] = useState("");
+  const universities = useMemo(() => data?.universities ?? [], [data]);
+  const filteredUniversities = useMemo(() => {
+    if (!top100) return universities;
+    return universities.filter((u) => u.qsRank !== null && u.qsRank !== undefined && u.qsRank <= 100);
+  }, [universities, top100]);
 
-  const savedSearches = savedSearchesData?.savedSearches?.filter(
-    (s) => s.entityType === "university",
-  ) ?? [];
+  const favoritesMap: Record<string, boolean> = {};
+  favorites?.forEach((f) => {
+    favoritesMap[f.itemId] = true;
+  });
 
-  function handleApplySavedSearch(filters: Record<string, string>): void {
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(filters)) {
-      if (value) params.set(key, value);
-    }
+  function handleToggleFavorite(type: string, itemId: string, isFav: boolean): void {
+    if (isFav) removeFav.mutate({ type, itemId });
+    else addFav.mutate({ type, itemId });
+  }
+
+  function updateFilter(key: string, value: string): void {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
     setSearchParams(params);
-    setSearchInput(filters["search"] ?? "");
+  }
+
+  function clearFilters(): void {
+    setSearchInput("");
+    setSearchParams({});
+    setTop100(false);
   }
 
   function getCurrentFilters(): Record<string, string> {
@@ -255,285 +216,170 @@ export default function Universities(): React.ReactElement {
     return filters;
   }
 
-  async function handleSaveSearch(): Promise<void> {
-    if (!saveSearchName.trim()) return;
-    try {
-      await createSavedSearch.mutateAsync({
-        name: saveSearchName.trim(),
-        entityType: "university",
-        filters: getCurrentFilters(),
-      });
-      toast.success("Search saved");
-      setSaveDialogOpen(false);
-      setSaveSearchName("");
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to save search"));
-    }
-  }
-
-  async function handleDeleteSavedSearch(id: string): Promise<void> {
-    try {
-      await deleteSavedSearch.mutateAsync(id);
-      toast.success("Saved search deleted");
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to delete saved search"));
-    }
-  }
-  // ──────────────────────────────────────────────────────────────────────────
-
-  const favoritesMap: Record<string, boolean> = {};
-  if (favorites) {
-    favorites.forEach((f) => { favoritesMap[f.itemId] = true; });
-  }
-
-  function handleToggleFavorite(type: string, itemId: string, isFav: boolean): void {
-    if (isFav) {
-      removeFav.mutate({ type, itemId });
-    } else {
-      addFav.mutate({ type, itemId });
-    }
-  }
-
-  function updateFilter(key: string, value: string): void {
-    const params = new URLSearchParams(searchParams);
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
+  function handleApplySavedSearch(filters: Record<string, string>): void {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) params.set(key, value);
     }
     setSearchParams(params);
+    setSearchInput(filters["search"] ?? "");
   }
 
-  function handleSearch(): void {
-    updateFilter("search", searchInput);
-  }
-
-  function clearFilters(): void {
-    setSearchInput("");
-    setSearchParams({});
-    setTop100(false);
-  }
-
-  const hasFilters = search || country || customOnly || top100;
+  const hasFilters = !!(search || country || customOnly || top100);
+  const activeFilterCount = [searchParams.get("search"), searchParams.get("country"), searchParams.get("customOnly"), top100].filter(Boolean).length;
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Failed to load universities</h2>
-        <p className="text-sm text-muted-foreground">
-          {error instanceof Error ? error.message : "Unknown error"}
-        </p>
-      </div>
+      <ErrorState title="Universities didn't load">{error instanceof Error ? error.message : "Unknown error"}</ErrorState>
     );
   }
 
-  const universities = data?.universities ?? [];
-
-  const filteredUniversities = useMemo(() => {
-    if (!top100) return universities;
-    return universities.filter(
-      (u) => u.qsRank !== null && u.qsRank !== undefined && u.qsRank <= 100
-    );
-  }, [universities, top100]);
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-violet-400 blur-3xl" />
-        </div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Universities</h1>
-            <p className="mt-2 text-purple-100">Explore top institutions worldwide</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {(isLoggedIn && !isAdmin) && (
-              <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-                <Link to="/universities/new">
-                  <Plus className="mr-2 h-4 w-4" /> Add Custom University
-                </Link>
-              </Button>
-            )}
-            {isAdmin && (
-              <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-                <Link to="/universities/new">
-                  <Plus className="mr-2 h-4 w-4" /> Add Official
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        kicker={isLoading ? "Catalogue" : `Catalogue · ${plural(universities.length, "university", "universities")}`}
+        title="Universities"
+        actions={
+          isLoggedIn && (
+            <Button variant="outline" asChild>
+              <Link to="/universities/new">{isAdmin ? "Add an official university" : "Add one that's missing"}</Link>
+            </Button>
+          )
+        }
+      >
+        Institutions in the catalogue with their world rankings. Open one for its programs, the city, and what the visa
+        asks of you.
+      </PageHeader>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search universities..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-            className="pl-11 rounded-xl border-border focus:border-primary focus:ring-primary/20"
-          />
-        </div>
-
-        <Select
-          value={country}
-          onValueChange={(v) => updateFilter("country", v === "all" ? "" : v)}
-        >
-          <SelectTrigger className="w-[180px] rounded-xl border-border">
-            <SelectValue placeholder="Country" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Countries</SelectItem>
-            {countries?.map((c) => (
-              <SelectItem key={c.name} value={c.name}>
-                {COUNTRY_FLAGS[c.name] ?? ""} {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {isLoggedIn && (
-          <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-border bg-card">
-            <Checkbox
-              id="customOnly"
-              checked={customOnly === "true"}
-              onCheckedChange={(checked) => updateFilter("customOnly", checked ? "true" : "")}
-            />
-            <Label htmlFor="customOnly" className="text-sm text-foreground/70 whitespace-nowrap cursor-pointer">
-              {isAdmin ? "All Custom Programs" : "My Custom Only"}
-            </Label>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 h-10 px-3 rounded-xl border border-border bg-card">
-          <Checkbox
-            id="top100"
-            checked={top100}
-            onCheckedChange={(checked) => setTop100(checked === true)}
-          />
-          <Label htmlFor="top100" className="text-sm text-foreground/70 whitespace-nowrap cursor-pointer">
-            Top 100 globally
-          </Label>
-        </div>
-
-        {hasFilters && (
-          <Button variant="outline" size="icon" onClick={clearFilters} className="rounded-xl">
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-
-        {isLoggedIn && (
-          <>
-            {/* Save Search */}
-            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl border-border">
-                  <Save className="mr-1.5 h-4 w-4" /> Save Search
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                  <DialogTitle>Save Search</DialogTitle>
-                  <DialogDescription>
-                    Name this search to easily load it later.
-                  </DialogDescription>
-                </DialogHeader>
-                <Input
-                  placeholder="e.g., Top US Universities"
-                  value={saveSearchName}
-                  onChange={(e) => setSaveSearchName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveSearch(); }}
-                  className="rounded-lg border-border"
-                />
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleSaveSearch} disabled={!saveSearchName.trim() || createSavedSearch.isPending}>
-                    {createSavedSearch.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            {/* Saved Searches Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded-xl border border-border">
-                  <Bookmark className="mr-1.5 h-4 w-4" />
-                  Saved Searches
-                  {savedSearches.length > 0 && (
-                    <span className="ml-1 text-xs text-muted-foreground">({savedSearches.length})</span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Saved Searches</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {savedSearches.length === 0 ? (
-                  <DropdownMenuItem disabled className="text-muted-foreground">No saved searches</DropdownMenuItem>
-                ) : (
-                  savedSearches.map((s) => (
-                    <div key={s._id} className="flex items-center justify-between px-2 py-1 group">
-                      <button
-                        className="flex-1 text-left text-sm py-1 hover:text-primary transition-colors"
-                        onClick={() => handleApplySavedSearch(s.filters)}
-                      >
-                        {s.name}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSavedSearch(s._id)}
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all p-1"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))
+      <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            className="flex w-full items-center justify-between rounded-full bg-paper-sunken px-5 py-2.5 text-sm font-semibold text-ink lg:hidden"
+          >
+            <span>
+              Filters
+              {activeFilterCount > 0 && <span className="ml-2 text-xs text-stamp tnum">{activeFilterCount} on</span>}
+            </span>
+            <span className="text-xs text-ink-3 tnum">{filtersOpen ? "Hide −" : "Show +"}</span>
+          </button>
+          <div className={cn(filtersOpen ? "mt-4 block" : "hidden", "lg:mt-0 lg:block")}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateFilter("search", searchInput);
+              }}
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1"
+            >
+              <div className="space-y-1.5">
+                <label htmlFor="uni-search" className="text-[13px] font-medium text-ink-2">
+                  Search
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-4" />
+                  <Input
+                    id="uni-search"
+                    placeholder="University name"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[13px] font-medium text-ink-2">Country</span>
+                <Select value={country || "all"} onValueChange={(v) => updateFilter("country", v === "all" ? "" : v)}>
+                  <SelectTrigger aria-label="Country">
+                    <SelectValue placeholder="Anywhere" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Anywhere</SelectItem>
+                    {countries?.map((c) => (
+                      <SelectItem key={c.name} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2.5 sm:col-span-2 lg:col-span-1">
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-2">
+                  <Checkbox checked={top100} onCheckedChange={(checked) => setTop100(checked === true)} />
+                  QS top 100 only
+                </label>
+                {isLoggedIn && (
+                  <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-2">
+                    <Checkbox
+                      checked={customOnly === "true"}
+                      onCheckedChange={(checked) => updateFilter("customOnly", checked ? "true" : "")}
+                    />
+                    {isAdmin ? "Custom entries only" : "Only ones I added"}
+                  </label>
                 )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
-        )}
-      </div>
+              </div>
+              <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
+                <Button type="submit" size="sm">
+                  Search
+                </Button>
+                {hasFilters && (
+                  <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+                    Clear all
+                  </Button>
+                )}
+              </div>
+            </form>
 
-      {/* Results */}
-      {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <UniversityCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : filteredUniversities.length === 0 ? (
-        <div className="rounded-2xl bg-card p-12 shadow-sm border border-border text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 mx-auto mb-4">
-            <GraduationCap className="h-10 w-10 text-violet-500" />
+            {isLoggedIn && (
+              <div className="mt-8 border-t border-rule pt-5">
+                <SavedSearches
+                  entityType="university"
+                  currentFilters={getCurrentFilters()}
+                  onApply={handleApplySavedSearch}
+                  placeholder="Technical universities in the Netherlands"
+                />
+              </div>
+            )}
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">No universities found</h2>
-          <p className="text-muted-foreground">
-            {hasFilters ? "Try adjusting your filters" : "No universities in the catalog yet"}
-          </p>
+        </aside>
+
+        <div className="min-w-0">
+          {isLoading ? (
+            <LoadingRows rows={8} />
+          ) : filteredUniversities.length === 0 ? (
+            <EmptyState
+              title={hasFilters ? "No university fits those filters" : "No universities yet"}
+              action={
+                hasFilters && (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                )
+              }
+            />
+          ) : (
+            <>
+              <div className="mb-3 flex items-baseline justify-between px-1">
+                <p className="kicker">{plural(filteredUniversities.length, "result")}</p>
+                <p className="kicker hidden sm:block">World rankings</p>
+              </div>
+              <ul className="card divide-y divide-rule-soft overflow-hidden">
+                {filteredUniversities.map((u) => (
+                  <UniversityRow
+                    key={u._id}
+                    university={u}
+                    isAdmin={isAdmin}
+                    isFav={favoritesMap[u._id] ?? false}
+                    showOfficialToggle={isAdmin && customOnly === "true"}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
         </div>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {filteredUniversities.length} universit{filteredUniversities.length === 1 ? "y" : "ies"} found
-          </p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredUniversities.map((u) => (
-              <UniversityCard key={u._id} university={u} isAdmin={isAdmin}
-                isFav={favoritesMap[u._id] ?? false} isLoggedIn={isLoggedIn}
-                showOfficialToggle={isAdmin && customOnly === "true"}
-                onToggleFavorite={handleToggleFavorite} />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

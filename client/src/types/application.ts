@@ -35,6 +35,8 @@ export interface Application {
   studentName: string
   studentEmail: string
   agencyId?: string
+  /** The agency student record it's filed under (older ones match by email). */
+  studentId?: string
   createdBy?: string
   applicationStatus:
     | "Preparing"

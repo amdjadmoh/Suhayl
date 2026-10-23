@@ -23,6 +23,10 @@ interface AuthContextType {
     role: "student" | "agency",
   ) => Promise<void>;
   logout: () => void;
+  /** Sign in with a session the server already issued, e.g. after accepting a team invite. */
+  startSession: (data: { token: string; user: User }) => void;
+  /** Merge fresh fields (e.g. a new name) into the signed-in user. */
+  updateUser: (changes: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -109,9 +113,23 @@ export function AuthProvider({
     setUser(null);
   }, [queryClient]);
 
+  const startSession = useCallback(
+    (data: { token: string; user: User }) => {
+      queryClient.clear();
+      localStorage.setItem("token", data.token);
+      setToken(data.token);
+      setUser(data.user);
+    },
+    [queryClient],
+  );
+
+  const updateUser = useCallback((changes: Partial<User>) => {
+    setUser((current) => (current ? { ...current, ...changes } : current));
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, login, loginWithGoogle, register, logout }}
+      value={{ user, token, isLoading, login, loginWithGoogle, register, logout, startSession, updateUser }}
     >
       {children}
     </AuthContext.Provider>

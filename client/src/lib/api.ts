@@ -389,6 +389,7 @@ export function useUpdateApplication(): UseMutationResult<
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["applications", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -702,8 +703,8 @@ export async function deleteStudent(id: string): Promise<void> {
   await api.delete(`/students/${id}`);
 }
 
-export function useStudents(): UseQueryResult<Student[]> {
-  return useQuery({ queryKey: ["students"], queryFn: getStudents });
+export function useStudents(enabled = true): UseQueryResult<Student[]> {
+  return useQuery({ queryKey: ["students"], queryFn: getStudents, enabled });
 }
 
 export function useStudent(
@@ -737,8 +738,13 @@ export function useUpdateStudent(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }) => updateStudent(id, data),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["students"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["team"] });
+      // A new name or email is copied onto their applications
+      queryClient.invalidateQueries({ queryKey: ["agency", "applications"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 
@@ -748,6 +754,8 @@ export function useDeleteStudent(): UseMutationResult<void, Error, string> {
     mutationFn: deleteStudent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["agency", "applications"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
   });
 }
@@ -966,7 +974,10 @@ export async function getPreferences(): Promise<UserPreferences> {
   return res.data
 }
 
-export async function updatePreferences(prefs: Partial<UserPreferences>): Promise<UserPreferences> {
+/** Fields left out stay as they are; null clears one. */
+export type PreferencesUpdate = { [K in keyof UserPreferences]?: UserPreferences[K] | null }
+
+export async function updatePreferences(prefs: PreferencesUpdate): Promise<UserPreferences> {
   const res = await api.put("/auth/preferences", prefs)
   return res.data
 }
@@ -975,11 +986,43 @@ export function usePreferences(): UseQueryResult<UserPreferences> {
   return useQuery({ queryKey: ["preferences"], queryFn: getPreferences })
 }
 
-export function useUpdatePreferences(): UseMutationResult<UserPreferences, Error, Partial<UserPreferences>> {
+export function useUpdatePreferences(): UseMutationResult<UserPreferences, Error, PreferencesUpdate> {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: updatePreferences,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["preferences"] }),
+    onSuccess: (data) => qc.setQueryData(["preferences"], data),
+  })
+}
+
+// ─── Account ────────────────────────────────────────────────────────────────────
+
+export function useMe(): UseQueryResult<User> {
+  return useQuery({ queryKey: ["me"], queryFn: getMe })
+}
+
+export function useUpdateProfile(): UseMutationResult<User, Error, { name: string }> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (data) => (await api.put("/auth/profile", data)).data.user,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
+  })
+}
+
+export function useChangePassword(): UseMutationResult<void, Error, { currentPassword?: string; newPassword: string }> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (data) => {
+      await api.put("/auth/password", data)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
+  })
+}
+
+export function useDeleteAccount(): UseMutationResult<void, Error, { password?: string; confirmEmail?: string }> {
+  return useMutation({
+    mutationFn: async (data) => {
+      await api.delete("/auth/me", { data })
+    },
   })
 }
 

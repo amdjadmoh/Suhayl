@@ -51,5 +51,8 @@ extension/.wxt/
 # Runtime database (mongodb-memory-server persistence)
 data/db/
 
+# Files families upload through the student portal
+data/uploads/
+
 # Orchestrator deepwork scratchpad (local-only, ignored from git, visible to ripgrep)
 .slim/deepwork/

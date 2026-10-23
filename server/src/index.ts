@@ -4,7 +4,8 @@ dotenv.config()
 import express, { type Request, type Response, type NextFunction } from "express"
 import helmet from "helmet"
 import cors from "cors"
-import rateLimit from "express-rate-limit"
+import rateLimit, { ipKeyGenerator } from "express-rate-limit"
+import jwt from "jsonwebtoken"
 import { ZodError } from "zod"
 import path from "path"
 import fs from "fs"
@@ -27,6 +28,8 @@ import { budgetRouter } from "./routes/budgetRoutes"
 import { savedSearchRouter } from "./routes/savedSearchRoutes"
 import { recommendationRouter } from "./routes/recommendationRoutes"
 import { reviewRouter } from "./routes/reviewRoutes"
+import { documentRouter } from "./routes/documentRoutes"
+import { portalRouter } from "./routes/portalRoutes"
 import { Application } from "./models/Application"
 import { Notification } from "./models/Notification"
 import { sendEmail, isEmailEnabled } from "./services/email"
@@ -82,9 +85,25 @@ app.use(cors({ origin: corsOrigins }))
 app.use(express.json())
 
 // ── Rate limiting ─────────────────────────────────────────────────────────
+// Signed-in people are counted one by one, so a whole agency office behind one
+// connection doesn't share a single allowance; anonymous traffic is counted by IP.
+function signedInUserId(req: Request): string | null {
+  const header = req.headers["authorization"]
+  if (!header?.startsWith("Bearer ")) return null
+  try {
+    return (jwt.verify(header.slice(7), process.env["JWT_SECRET"]!) as { _id: string })._id
+  } catch {
+    return null
+  }
+}
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300,
+  limit: (req: Request) => (signedInUserId(req) ? 1500 : 300),
+  keyGenerator: (req: Request) => {
+    const userId = signedInUserId(req)
+    return userId ? `user:${userId}` : ipKeyGenerator(req.ip ?? "")
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests, please try again later." },
@@ -118,6 +137,8 @@ app.use("/api/budget", budgetRouter)
 app.use("/api/saved-searches", savedSearchRouter)
 app.use("/api/recommendations", recommendationRouter)
 app.use("/api/reviews", reviewRouter)
+app.use("/api/documents", documentRouter)
+app.use("/api/portal", portalRouter)
 
 if (process.env["NODE_ENV"] === "production") {
   const clientDist = path.join(__dirname, "../../client/dist")
@@ -137,6 +158,15 @@ app.use(
           message: i.message,
         })),
       })
+      return
+    }
+    // A malformed id in the URL is a missing record, not a server fault
+    if (err.name === "CastError") {
+      res.status(404).json({ message: "Not found" })
+      return
+    }
+    if ((err as { code?: number }).code === 11000) {
+      res.status(409).json({ message: "That already exists" })
       return
     }
     console.error("Unhandled error:", err.message)

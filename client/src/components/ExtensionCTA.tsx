@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Puzzle, CheckCircle2, X, ExternalLink } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { isExtensionInstalled, detectBrowser, type SupportedBrowser } from '@/lib/extension-detect';
 import { STORE_IDS, INSTALL_INSTRUCTIONS_URL } from '@/config/extension-store-ids';
 
@@ -49,276 +48,19 @@ function getCtaLabel(browser: SupportedBrowser): string {
   if (browser === 'brave') return 'Add to Brave';
   if (browser === 'opera') return 'Add to Opera';
   if (browser === 'edge') return 'Add to Edge';
-  return 'Install instructions';
+  return 'How to install';
 }
 
-/* ---------- Sub-components for each variant ---------- */
-
-function CardCta({
-  state,
-  browser,
-  onDismiss,
-}: {
-  state: Exclude<CtaState, 'dismissed'>;
-  browser: SupportedBrowser;
-  onDismiss: () => void;
-}): React.ReactElement {
-  if (state === 'checking') {
-    return (
-      <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Puzzle className="h-4 w-4 text-muted-foreground animate-pulse" />
-            Checking extension…
-          </CardTitle>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  if (state === 'installed') {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              Extension ready
-            </CardTitle>
-          </div>
-          <CardDescription>
-            Save university programs from any page you visit.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  if (state === 'not-installed') {
-    const storeUrl = getStoreUrl(browser);
-    const hasStoreUrl = storeUrl !== null;
-    const href = hasStoreUrl ? storeUrl : INSTALL_INSTRUCTIONS_URL;
-    const label = hasStoreUrl ? getCtaLabel(browser) : 'Install instructions';
-
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Puzzle className="h-5 w-5 text-primary" />
-              Get the WannaOut extension
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={onDismiss}
-              aria-label="Dismiss"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <CardDescription>
-            Save university programs from any page you visit — works in Chrome, Edge, and Brave.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild className="w-full rounded-xl" size="sm">
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {label}
-            </a>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // unsupported-browser
+function DismissButton({ onClick }: { onClick: () => void }): React.ReactElement {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Puzzle className="h-5 w-5 text-muted-foreground" />
-            Use Chrome, Edge, or Brave
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={onDismiss}
-            aria-label="Dismiss"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <CardDescription>
-          The extension is currently available for Chromium-based browsers.
-        </CardDescription>
-      </CardHeader>
-    </Card>
-  );
-}
-
-function BannerCta({
-  state,
-  browser,
-  onDismiss,
-}: {
-  state: Exclude<CtaState, 'dismissed'>;
-  browser: SupportedBrowser;
-  onDismiss: () => void;
-}): React.ReactElement {
-  const base =
-    'flex items-center justify-between gap-4 rounded-xl border px-5 py-3';
-
-  if (state === 'checking') {
-    return (
-      <div className={`${base} border-dashed`}>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Puzzle className="h-4 w-4 animate-pulse" />
-          Checking extension…
-        </div>
-      </div>
-    );
-  }
-
-  if (state === 'installed') {
-    return (
-      <div className={`${base} border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/30`}>
-        <div className="flex items-center gap-2 text-sm">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-          <span className="font-medium">Extension ready</span>
-          <span className="text-muted-foreground">
-            — Save university programs from any page you visit.
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  if (state === 'not-installed') {
-    const storeUrl = getStoreUrl(browser);
-    const hasStoreUrl = storeUrl !== null;
-    const href = hasStoreUrl ? storeUrl : INSTALL_INSTRUCTIONS_URL;
-    const label = hasStoreUrl ? getCtaLabel(browser) : 'Install instructions';
-
-    return (
-      <div className={`${base} border-primary/20 bg-primary/[0.03]`}>
-        <div className="flex items-center gap-2 text-sm">
-          <Puzzle className="h-4 w-4 text-primary" />
-          <span className="font-medium">Get the WannaOut extension</span>
-          <span className="text-muted-foreground hidden sm:inline">
-            — Save programs from any page you visit.
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button asChild size="xs" className="rounded-lg">
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {label}
-            </a>
-          </Button>
-          <Button variant="ghost" size="icon-xs" onClick={onDismiss} aria-label="Dismiss">
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // unsupported-browser
-  return (
-    <div className={`${base} border-muted bg-muted/30`}>
-      <div className="flex items-center gap-2 text-sm">
-        <Puzzle className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">Use Chrome, Edge, or Brave</span>
-        <span className="text-muted-foreground hidden sm:inline">
-          — The extension is available for Chromium-based browsers.
-        </span>
-      </div>
-      <Button variant="ghost" size="icon-xs" onClick={onDismiss} aria-label="Dismiss">
-        <X className="h-3.5 w-3.5" />
-      </Button>
-    </div>
-  );
-}
-
-function InlineCta({
-  state,
-  browser,
-  onDismiss,
-}: {
-  state: Exclude<CtaState, 'dismissed'>;
-  browser: SupportedBrowser;
-  onDismiss: () => void;
-}): React.ReactElement {
-  if (state === 'checking') {
-    return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Puzzle className="h-3 w-3 animate-pulse" />
-        Checking extension…
-      </div>
-    );
-  }
-
-  if (state === 'installed') {
-    return (
-      <div className="flex items-center gap-2 text-xs">
-        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-        <span className="font-medium text-foreground">Extension ready</span>
-        <span className="text-muted-foreground">
-          — Save university programs from any page.
-        </span>
-      </div>
-    );
-  }
-
-  if (state === 'not-installed') {
-    const storeUrl = getStoreUrl(browser);
-    const hasStoreUrl = storeUrl !== null;
-    const href = hasStoreUrl ? storeUrl : INSTALL_INSTRUCTIONS_URL;
-    const label = hasStoreUrl ? getCtaLabel(browser) : 'Install instructions';
-
-    return (
-      <div className="flex items-center gap-2 text-xs">
-        <Puzzle className="h-3.5 w-3.5 text-primary" />
-        <span className="font-medium text-foreground">Get the WannaOut extension</span>
-        <span className="text-muted-foreground hidden sm:inline">
-          — Save programs from any page.
-        </span>
-        <Button asChild variant="link" size="xs" className="h-auto p-0 text-xs">
-          <a href={href} target="_blank" rel="noopener noreferrer">
-            {label}
-          </a>
-        </Button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="ml-1 text-muted-foreground hover:text-foreground"
-          aria-label="Dismiss"
-        >
-          <X className="h-3 w-3" />
-        </button>
-      </div>
-    );
-  }
-
-  // unsupported-browser
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <Puzzle className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="font-medium text-foreground">Use Chrome, Edge, or Brave</span>
-      <span className="text-muted-foreground hidden sm:inline">
-        — The extension is available for Chromium-based browsers.
-      </span>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="ml-1 text-muted-foreground hover:text-foreground"
-        aria-label="Dismiss"
-      >
-        <X className="h-3 w-3" />
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Dismiss"
+      className="rounded-lg p-1 text-ink-4 transition-colors hover:bg-paper-sunken hover:text-ink"
+    >
+      <X className="size-3.5" />
+    </button>
   );
 }
 
@@ -329,6 +71,10 @@ export interface ExtensionCTAProps {
   className?: string;
 }
 
+/**
+ * A small note about the browser extension. It reads like a margin note,
+ * not an ad, and stays out of the way once dismissed or installed.
+ */
 export function ExtensionCTA({
   variant = 'card',
   className,
@@ -368,19 +114,92 @@ export function ExtensionCTA({
     setState('dismissed');
   }, []);
 
-  if (state === 'dismissed') return null;
+  if (state === 'dismissed' || state === 'checking') return null;
 
-  const ctaProps = { state: state as Exclude<CtaState, 'dismissed'>, browser, onDismiss: handleDismiss };
+  const storeUrl = getStoreUrl(browser);
+  const href = storeUrl ?? INSTALL_INSTRUCTIONS_URL;
+  const label = storeUrl ? getCtaLabel(browser) : 'How to install';
 
-  const wrapperCn = className ?? '';
-
-  switch (variant) {
-    case 'banner':
-      return <div className={wrapperCn}><BannerCta {...ctaProps} /></div>;
-    case 'inline':
-      return <div className={wrapperCn}><InlineCta {...ctaProps} /></div>;
-    case 'card':
-    default:
-      return <div className={wrapperCn}><CardCta {...ctaProps} /></div>;
+  if (variant === 'inline') {
+    if (state === 'installed') {
+      return (
+        <p className={cn('text-xs text-ink-3', className)}>
+          <span className="font-medium text-moss">✓ Extension connected.</span> Save programs from any page.
+        </p>
+      );
+    }
+    return (
+      <p className={cn('flex flex-wrap items-center gap-x-2 text-xs text-ink-3', className)}>
+        {state === 'not-installed' ? (
+          <>
+            Save programs straight from university websites with the browser extension.
+            <a href={href} target="_blank" rel="noopener noreferrer" className="link-ink">
+              {label}
+            </a>
+          </>
+        ) : (
+          <>The browser extension works in Chrome, Edge and Brave.</>
+        )}
+        <DismissButton onClick={handleDismiss} />
+      </p>
+    );
   }
+
+  const shell = cn(
+    'relative rounded-[1.25rem] bg-paper-sunken',
+    variant === 'banner' ? 'flex flex-wrap items-center justify-between gap-3 px-5 py-4' : 'p-5',
+    className,
+  );
+
+  if (state === 'installed') {
+    return (
+      <div className={shell}>
+        <p className="text-sm font-bold text-moss">Extension connected</p>
+        <p className={cn('text-[13px] leading-relaxed text-ink-2', variant === 'card' && 'mt-1.5')}>
+          When you find a program on a university website, save it from the toolbar and it lands here.
+        </p>
+      </div>
+    );
+  }
+
+  if (state === 'unsupported-browser') {
+    return (
+      <div className={shell}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-ink">Browser extension</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+              Available for Chrome, Edge and Brave. Open Suhayl in one of those to install it.
+            </p>
+          </div>
+          <DismissButton onClick={handleDismiss} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={shell}>
+      <div className={cn('flex items-start justify-between gap-3', variant === 'banner' && 'flex-1')}>
+        <div>
+          <p className="text-sm font-bold text-ink">Browser extension</p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">
+            Found a program on a university site? Save it to Suhayl in one click instead of copying details by hand.
+          </p>
+        </div>
+        {variant === 'card' && <DismissButton onClick={handleDismiss} />}
+      </div>
+      <div className={cn('flex items-center gap-2', variant === 'card' && 'mt-3')}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-8 items-center rounded-full bg-paper-raised px-3.5 text-[13px] font-semibold text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08)] transition-colors hover:text-brand-ink"
+        >
+          {label}
+        </a>
+        {variant === 'banner' && <DismissButton onClick={handleDismiss} />}
+      </div>
+    </div>
+  );
 }

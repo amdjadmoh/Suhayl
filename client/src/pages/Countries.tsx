@@ -1,30 +1,13 @@
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { AlertCircle, Globe, Lock, Unlock, Plus, ArrowRight, Star } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
 import { useCountries, useFavorites, useAddFavorite, useRemoveFavorite } from "@/lib/api"
 import { useAuth } from "@/lib/authContext"
-import { COUNTRY_FLAGS } from "@/lib/constants"
-
-const verificationStyles: Record<string, string> = {
-  manual: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 rounded-full",
-  ai: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 rounded-full",
-  none: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30 rounded-full",
-};
-const verificationLabels: Record<string, string> = {
-  manual: "✓ Verified",
-  ai: "⚠ AI-Verified",
-  none: "⚠ Unverified",
-};
+import { formatMoney, plural } from "@/lib/format"
+import { CountryPlate, ErrorState, LoadingRows, PageHeader, VerificationTag } from "@/components/kit"
+import { SaveToggle } from "@/components/SaveToggle"
 
 export default function Countries(): React.ReactElement {
   const { data: countries, isLoading, isError } = useCountries()
@@ -32,214 +15,114 @@ export default function Countries(): React.ReactElement {
   const addFav = useAddFavorite()
   const removeFav = useRemoveFavorite()
   const { user } = useAuth()
-  const isLoggedIn = !!user
+  const isAdmin = user?.role === "admin"
+  const [query, setQuery] = useState("")
 
   const favoritesMap: Record<string, boolean> = {}
-  if (favorites) {
-    favorites.forEach((f) => { favoritesMap[f.itemId] = true })
+  favorites?.forEach((f) => {
+    favoritesMap[f.itemId] = true
+  })
+
+  function handleToggleFavorite(itemId: string, isFav: boolean): void {
+    if (isFav) removeFav.mutate({ type: "country", itemId })
+    else addFav.mutate({ type: "country", itemId })
   }
 
-  function handleToggleFavorite(type: string, itemId: string, isFav: boolean): void {
-    if (isFav) {
-      removeFav.mutate({ type, itemId })
-    } else {
-      addFav.mutate({ type, itemId })
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 text-white">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-            <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-emerald-400 blur-3xl" />
-          </div>
-          <div className="relative flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Countries</h1>
-              <p className="mt-2 text-emerald-100">Explore study destinations and visa requirements</p>
-            </div>
-            <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-              <Link to="/countries/new">
-                <Plus className="mr-2 h-4 w-4" /> Add Country
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted">
-                {["Country", "Bank Account Required", "Processing", ""].map((h) => (
-                  <TableHead key={h} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    {h}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 4 }).map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    )
-  }
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const list = (countries ?? []).slice().sort((a, b) => a.name.localeCompare(b.name))
+    return q ? list.filter((c) => c.name.toLowerCase().includes(q)) : list
+  }, [countries, query])
 
   if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Failed to load countries</h2>
-        <p className="text-sm text-muted-foreground">Please try again later</p>
-      </div>
-    )
-  }
-
-  function formatCurrency(amount: number, currency: string): string {
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(amount)
-    } catch {
-      return `${amount} ${currency}`
-    }
+    return <ErrorState title="Countries didn't load">Please try again in a moment.</ErrorState>
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 text-white">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-emerald-400 blur-3xl" />
-        </div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Countries</h1>
-            <p className="mt-2 text-emerald-100">Explore study destinations and visa requirements</p>
-          </div>
-          <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-            <Link to="/countries/new">
-              <Plus className="mr-2 h-4 w-4" /> Add Country
-            </Link>
-          </Button>
+    <>
+      <PageHeader
+        kicker={isLoading ? "Destinations" : `Destinations · ${plural(countries?.length ?? 0, "country", "countries")}`}
+        title="Countries"
+        actions={
+          isAdmin && (
+            <Button variant="outline" asChild>
+              <Link to="/countries/new">Add a country</Link>
+            </Button>
+          )
+        }
+      >
+        What each country asks of a student visa: the money you have to show, whether it has to sit in a blocked
+        account, and how long the embassy usually takes.
+      </PageHeader>
+
+      <div className="mb-4 flex justify-end">
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-4" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find a country" className="pl-8" aria-label="Find a country" />
         </div>
       </div>
 
-      {/* Countries Table */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted hover:bg-muted">
-              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Country</TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bank Account Required</TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Processing</TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Visa Docs</TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {countries?.map((country) => {
-              const isFav = favoritesMap[country._id] ?? false
-              return (
-              <TableRow key={country._id} className="group hover:bg-muted transition-colors">
-                {/* Country */}
-                <TableCell>
-                  <Link
-                    to={`/countries/${country._id}`}
-                    className="flex items-center gap-3"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-muted to-muted text-lg shrink-0">
-                      {COUNTRY_FLAGS[country.name] ?? <Globe className="h-4 w-4 text-muted-foreground" />}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {country.name}
-                      </span>
-                      <Badge className={`text-[10px] px-1.5 py-0 ${verificationStyles[country.verificationStatus || "ai"]}`}>
-                        {verificationLabels[country.verificationStatus || "ai"]}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">{country.currency}</Badge>
-                      {isLoggedIn && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleFavorite("country", country._id, isFav); }}
-                          className="ml-1"
-                          title={isFav ? "Remove from saved" : "Save"}
-                        >
-                          <Star className={`h-4 w-4 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"}`} />
-                        </button>
+      {isLoading ? (
+        <LoadingRows rows={8} />
+      ) : (
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-rule bg-paper-sunken/60">
+                <th className="kicker py-3 pr-3 pl-5 text-left">Country</th>
+                <th className="kicker px-3 py-3 text-right">Funds to show</th>
+                <th className="kicker px-3 py-3 text-left">Account</th>
+                <th className="kicker px-3 py-3 text-left">Processing</th>
+                <th className="kicker px-3 py-3 text-right">Visa docs</th>
+                <th className="w-8 py-3 pr-5 pl-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((country) => {
+                const isFav = favoritesMap[country._id] ?? false
+                return (
+                  <tr key={country._id} className="group border-b border-rule-soft transition-colors last:border-0 hover:bg-paper-hover">
+                    <td className="py-3.5 pr-3 pl-5">
+                      <Link to={`/countries/${country._id}`} className="flex items-center gap-3">
+                        <CountryPlate country={country.name} />
+                        <span>
+                          <span className="block text-[15px] leading-tight font-semibold group-hover:text-brand-ink">
+                            {country.name}
+                          </span>
+                          <VerificationTag status={country.verificationStatus} className="text-[11px]" />
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="px-3 py-3.5 text-right text-[13px] whitespace-nowrap tnum">
+                      {formatMoney(country.visaBankAccountAmount, country.currency)}
+                      <span className="text-ink-4"> /yr</span>
+                    </td>
+                    <td className="px-3 py-3.5">
+                      {country.visaBankAccountLocked ? (
+                        <span className="rounded-full bg-ochre-soft px-2.5 py-0.5 text-xs font-semibold text-ochre">Blocked</span>
+                      ) : (
+                        <span className="rounded-full bg-paper-sunken px-2.5 py-0.5 text-xs font-semibold text-ink-3">Regular</span>
                       )}
-                    </div>
-                  </Link>
-                </TableCell>
-
-                {/* Bank Account Required */}
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                      {formatCurrency(country.visaBankAccountAmount, country.currency)}
-                      <span className="text-xs text-muted-foreground font-normal">/year</span>
-                    </span>
-                    {country.visaBankAccountLocked ? (
-                      <Badge className="bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 w-fit text-xs">
-                        <Lock className="mr-1 h-3 w-3" /> Blocked
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 w-fit text-xs">
-                        <Unlock className="mr-1 h-3 w-3" /> Regular
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-
-                {/* Processing */}
-                <TableCell>
-                  {country.processingTime ? (
-                    <span className="text-sm text-foreground/70 whitespace-nowrap">{country.processingTime}</span>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-
-                {/* Visa Docs */}
-                <TableCell>
-                  {country.requiredDocuments?.length > 0 ? (
-                    <Badge variant="outline" className="text-xs rounded-full">
-                      {country.requiredDocuments.length} doc{country.requiredDocuments.length !== 1 ? "s" : ""}
-                    </Badge>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-
-                {/* Actions */}
-                <TableCell>
-                  <Link
-                    to={`/countries/${country._id}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted hover:border-border transition-colors"
-                  >
-                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                  </Link>
-                </TableCell>
-              </TableRow>
-            )})}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+                    </td>
+                    <td className="px-3 py-3.5 whitespace-nowrap text-ink-2">
+                      {country.processingTime || <span className="text-ink-4">—</span>}
+                    </td>
+                    <td className="px-3 py-3.5 text-right text-[13px] text-ink-2 tnum">
+                      {country.requiredDocuments?.length || <span className="text-ink-4">—</span>}
+                    </td>
+                    <td className="py-3.5 pr-5 pl-3 text-right">
+                      <SaveToggle saved={isFav} onToggle={() => handleToggleFavorite(country._id, isFav)} />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          {visible.length === 0 && (
+            <p className="py-10 text-center text-sm text-ink-3">No country called “{query}”.</p>
+          )}
+        </div>
+      )}
+    </>
   )
 }

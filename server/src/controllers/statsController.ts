@@ -16,7 +16,7 @@ const POPULATE_PROGRAM_UNI = {
 function applicationScope(req: Request): Record<string, unknown> {
   const filter: Record<string, unknown> = {}
   if (req.user?.role === "agency") {
-    filter["agencyId"] = new Types.ObjectId(req.user._id)
+    filter["agencyId"] = new Types.ObjectId(req.user.agencyId ?? req.user._id)
   } else if (req.user?.role === "student") {
     filter["createdBy"] = req.user._id
   }

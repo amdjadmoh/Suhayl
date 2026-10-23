@@ -1,18 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useApplication, useUpdateApplication } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/lib/utils";
-import {
-  ArrowLeft,
-  Save,
-  FileText,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { useApplication, useUpdateApplication } from "@/lib/api";
+import { cn, getErrorMessage } from "@/lib/utils";
 import type { Program } from "@/types/program";
+import { Button } from "@/components/ui/button";
+import { BackLink, ErrorState, LoadingPage } from "@/components/kit";
 
 export default function StatementEditor(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +15,7 @@ export default function StatementEditor(): React.ReactElement {
   const updateMutation = useUpdateApplication();
 
   const [text, setText] = useState("");
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "dirty" | "saving" | "saved">("idle");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadDone = useRef(false);
 
@@ -42,12 +35,12 @@ export default function StatementEditor(): React.ReactElement {
       try {
         await updateMutation.mutateAsync({
           id,
-          data: { personalStatement: content } as any,
+          data: { personalStatement: content } as never,
         });
         setSaveStatus("saved");
       } catch (err: unknown) {
         toast.error(getErrorMessage(err, "Failed to save"));
-        setSaveStatus("idle");
+        setSaveStatus("dirty");
       }
     },
     [id, updateMutation],
@@ -55,7 +48,7 @@ export default function StatementEditor(): React.ReactElement {
 
   function handleChange(value: string): void {
     setText(value);
-    setSaveStatus("idle");
+    setSaveStatus("dirty");
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -79,141 +72,80 @@ export default function StatementEditor(): React.ReactElement {
   const charCount = text.length;
 
   const prog =
-    application &&
-    typeof application.programId === "object"
+    application && typeof application.programId === "object"
       ? (application.programId as unknown as Program)
       : null;
-  const wordLimit = (prog as any)?.sopWordLimit ?? 1000;
+  const wordLimit = (prog as (Program & { sopWordLimit?: number }) | null)?.sopWordLimit ?? 1000;
   const wordPercent = wordLimit > 0 ? (wordCount / wordLimit) * 100 : 0;
 
-  const wordColor =
-    wordPercent > 100
-      ? "text-red-600 dark:text-red-400"
-      : wordPercent > 90
-      ? "text-amber-600 dark:text-amber-400"
-      : "text-emerald-600 dark:text-emerald-400";
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-96 w-full rounded-xl" />
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingPage />;
 
   if (isError || !application) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Application not found</h2>
-        <button
-          onClick={() => navigate("/applications")}
-          className="mt-4 inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Back
-        </button>
-      </div>
+      <ErrorState
+        title="Application not found"
+        action={<Button variant="outline" onClick={() => navigate("/applications")}>Back to applications</Button>}
+      />
     );
   }
 
+  const statusText =
+    saveStatus === "saving"
+      ? "Saving…"
+      : saveStatus === "saved"
+        ? "Saved"
+        : saveStatus === "dirty"
+          ? "Unsaved"
+          : "Saves as you type";
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            to={`/applications/${id}`}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Statement of Purpose
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {prog?.name ?? "Application"} · {application.studentName}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Save status indicator */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {saveStatus === "saving" && (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                <span className="text-primary">Saving...</span>
-              </>
-            )}
-            {saveStatus === "saved" && (
-              <>
-                <Save className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="text-emerald-600 dark:text-emerald-400">All changes saved</span>
-              </>
-            )}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="rounded-lg border-border"
-          >
-            <Link to={`/applications/${id}`}>Back to Application</Link>
-          </Button>
-        </div>
+    <div className="mx-auto max-w-[46rem]">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <BackLink to={`/applications/${id}`}>Application</BackLink>
+        <span
+          className={cn("text-xs tnum",
+            saveStatus === "saved" ? "text-moss" : saveStatus === "dirty" ? "text-ochre" : "text-ink-3",
+          )}
+          aria-live="polite"
+        >
+          {statusText}
+        </span>
       </div>
 
-      {/* Word count bar */}
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">
-              Word Count
-            </span>
-          </div>
-          <span className={`text-sm font-medium ${wordColor}`}>
-            {wordCount} / {wordLimit} words
-          </span>
-        </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
+      <p className="kicker">Statement of purpose</p>
+      <h1 className="mt-1 text-2xl leading-tight font-bold tracking-[-0.01em]">
+        {prog?.name ?? "Application"}
+      </h1>
+      <p className="mt-1 text-sm text-ink-3">For {application.studentName}</p>
+
+      <div className="card mt-6 transition-shadow focus-within:border-brand focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--brand)_16%,transparent)]">
+        <textarea
+          value={text}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Start with why. Why this program, why now, and what you'll bring to it…"
+          className="block min-h-[60vh] w-full resize-none bg-transparent px-6 py-8 text-[16px] leading-[1.75] text-ink outline-none [field-sizing:content] placeholder:text-ink-4 sm:px-10 sm:py-10"
+          spellCheck
+          aria-label="Statement of purpose"
+        />
+      </div>
+
+      <div className="sticky bottom-0 mt-4 flex items-center gap-4 bg-paper/95 py-3 backdrop-blur-[2px]">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-paper-sunken">
           <div
-            className={`h-full rounded-full transition-all duration-300 ${
-              wordPercent > 100
-                ? "bg-red-500"
-                : wordPercent > 90
-                ? "bg-amber-500"
-                : "bg-emerald-500"
-            }`}
+            className={cn("h-full transition-[width] duration-300",
+              wordPercent > 100 ? "bg-stamp" : wordPercent > 90 ? "bg-ochre" : "bg-ink",
+            )}
             style={{ width: `${Math.min(wordPercent, 100)}%` }}
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          {charCount} character{charCount !== 1 ? "s" : ""}
-        </p>
-      </div>
-
-      {/* Editor */}
-      <div className="rounded-xl border border-border bg-card shadow-sm">
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <FileText className="h-5 w-5 text-muted-foreground" />
-            Personal Statement
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Write your statement of purpose below. It auto-saves as you type.
-          </p>
-        </div>
-        <div className="p-6">
-          <textarea
-            value={text}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder="Start writing your statement of purpose..."
-            className="w-full min-h-[400px] rounded-xl border border-border bg-card p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y transition-colors"
-            spellCheck
-          />
-        </div>
+        <span
+          className={cn("text-xs tnum",
+            wordPercent > 100 ? "font-semibold text-stamp" : wordPercent > 90 ? "text-ochre" : "text-ink-2",
+          )}
+        >
+          {wordCount.toLocaleString()} / {wordLimit.toLocaleString()} words
+        </span>
+        <span className="hidden text-xs text-ink-4 tnum sm:inline">{charCount.toLocaleString()} chars</span>
       </div>
     </div>
   );

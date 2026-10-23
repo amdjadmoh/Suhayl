@@ -1,47 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import {
-  useUsers,
-  useDeleteUser,
-  useCreateUserByAdmin,
-  useUpdateUserByAdmin,
-} from "@/lib/api";
+import { toast } from "sonner";
+import { Loader2, Search } from "lucide-react";
+import { useUsers, useDeleteUser, useCreateUserByAdmin, useUpdateUserByAdmin } from "@/lib/api";
 import type { User } from "@/types/auth";
 import { useAuth } from "@/lib/authContext";
+import { cn, getErrorMessage } from "@/lib/utils";
+import { initials, plural } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import {
-   Users as UsersIcon,
-   Trash2,
-   Pencil,
-   Plus,
-   Loader2,
-   AlertCircle,
-   Mail,
-   Shield,
-   Building2,
-   GraduationCap,
- } from "lucide-react";
-import { getErrorMessage } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ErrorState, Field, FilterTabs, LoadingRows, PageHeader } from "@/components/kit";
 
 type UserFormData = {
   name: string;
@@ -49,6 +27,14 @@ type UserFormData = {
   password: string;
   role: string;
 };
+
+const ROLE_TONE: Record<string, string> = {
+  admin: "bg-stamp-soft text-stamp",
+  agency: "bg-sea-soft text-sea",
+  student: "bg-paper-sunken text-ink-2",
+};
+
+type RoleFilter = "all" | "student" | "agency" | "admin";
 
 export default function UsersPage(): React.ReactElement {
   const { data: users, isLoading, isError, error } = useUsers();
@@ -59,6 +45,9 @@ export default function UsersPage(): React.ReactElement {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [toDelete, setToDelete] = useState<User | null>(null);
+  const [role, setRole] = useState<RoleFilter>("all");
+  const [query, setQuery] = useState("");
 
   const {
     register,
@@ -71,6 +60,20 @@ export default function UsersPage(): React.ReactElement {
     defaultValues: { name: "", email: "", password: "", role: "student" },
   });
 
+  const counts = useMemo(() => {
+    const c = { all: users?.length ?? 0, student: 0, agency: 0, admin: 0 };
+    for (const u of users ?? []) c[u.role] += 1;
+    return c;
+  }, [users]);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (users ?? [])
+      .filter((u) => role === "all" || u.role === role)
+      .filter((u) => !q || `${u.name} ${u.email}`.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [users, role, query]);
+
   function openCreateDialog(): void {
     setEditingUser(null);
     reset({ name: "", email: "", password: "", role: "student" });
@@ -79,12 +82,7 @@ export default function UsersPage(): React.ReactElement {
 
   function openEditDialog(user: User): void {
     setEditingUser(user);
-    reset({
-      name: user.name,
-      email: user.email,
-      password: "",
-      role: user.role,
-    });
+    reset({ name: user.name, email: user.email, password: "", role: user.role });
     setDialogOpen(true);
   }
 
@@ -93,13 +91,9 @@ export default function UsersPage(): React.ReactElement {
       if (editingUser) {
         await updateMutation.mutateAsync({
           id: editingUser._id,
-          data: {
-            name: data.name,
-            email: data.email,
-            role: data.role,
-          },
+          data: { name: data.name, email: data.email, role: data.role },
         });
-        toast.success("User updated");
+        toast.success("Account updated");
       } else {
         await createMutation.mutateAsync({
           name: data.name,
@@ -107,7 +101,7 @@ export default function UsersPage(): React.ReactElement {
           password: data.password,
           role: data.role,
         });
-        toast.success("User created");
+        toast.success("Account created");
       }
       setDialogOpen(false);
     } catch (err: unknown) {
@@ -115,268 +109,167 @@ export default function UsersPage(): React.ReactElement {
     }
   }
 
-  async function handleDelete(userId: string, userName: string): Promise<void> {
-    if (!window.confirm(`Delete user "${userName}"? This cannot be undone.`))
-      return;
+  async function handleDelete(): Promise<void> {
+    if (!toDelete) return;
     try {
-      await deleteMutation.mutateAsync(userId);
-      toast.success("User deleted");
+      await deleteMutation.mutateAsync(toDelete._id);
+      toast.success("Account deleted");
+      setToDelete(null);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to delete user"));
     }
   }
 
   if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Failed to load users</h2>
-        <p className="text-sm text-muted-foreground">
-          {error instanceof Error ? error.message : "Unknown error"}
-        </p>
-      </div>
-    );
+    return <ErrorState title="Accounts didn't load">{error instanceof Error ? error.message : "Unknown error"}</ErrorState>;
   }
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "admin": return <Shield className="h-4 w-4" />;
-      case "agency": return <Building2 className="h-4 w-4" />;
-      default: return <GraduationCap className="h-4 w-4" />;
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "admin": return "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30";
-      case "agency": return "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30";
-      default: return "bg-muted text-foreground border-border";
-    }
-  };
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-600 via-pink-600 to-red-700 p-8 text-white">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-rose-400 blur-3xl" />
+    <>
+      <PageHeader
+        kicker={isLoading ? "People" : `People · ${plural(users?.length ?? 0, "account")}`}
+        title="Accounts"
+        actions={
+          <Button variant="primary" onClick={openCreateDialog}>
+            Create an account
+          </Button>
+        }
+      >
+        Everyone who can sign in. Open an account to see what they've added to the catalogue.
+      </PageHeader>
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <FilterTabs<RoleFilter>
+          value={role}
+          onChange={setRole}
+          options={[
+            { value: "all", label: "All", count: counts.all },
+            { value: "student", label: "Students", count: counts.student },
+            { value: "agency", label: "Agencies", count: counts.agency },
+            { value: "admin", label: "Admins", count: counts.admin },
+          ]}
+        />
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-ink-4" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name or email" className="pl-10" aria-label="Find an account" />
         </div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Users</h1>
-            <p className="mt-2 text-rose-100">Manage all registered users</p>
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog} className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-                <Plus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-xl">
-                  {editingUser ? "Edit User" : "Add User"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="u-name" className="text-sm font-medium text-foreground">
-                    Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="u-name"
-                    {...register("name", { required: "Name is required" })}
-                    placeholder="John Doe"
-                    className="rounded-xl border-border"
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500">
-                      {errors.name.message}
-                    </p>
-                  )}
+      </div>
+
+      {isLoading ? (
+        <LoadingRows rows={6} />
+      ) : (
+        <ul className="card divide-y divide-rule-soft overflow-hidden">
+          {visible.map((user) => {
+            const isSelf = user._id === currentUser?._id;
+            return (
+              <li key={user._id} className="flex flex-wrap items-center gap-x-5 gap-y-2 py-3.5 px-5">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand-ink tnum">
+                  {initials(user.name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Link to={`/users/${user._id}`} className="font-semibold text-ink hover:text-brand-ink">
+                    {user.name}
+                  </Link>
+                  {isSelf && <span className="ml-2 rounded-full bg-paper-sunken px-2 py-0.5 text-[11px] font-medium text-ink-3">you</span>}
+                  <p className="truncate text-[13px] text-ink-3">{user.email}</p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="u-email" className="text-sm font-medium text-foreground">
-                    Email <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="u-email"
-                    type="email"
-                    {...register("email", { required: "Email is required" })}
-                    placeholder="john@example.com"
-                    className="rounded-xl border-border"
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                {!editingUser && (
-                  <div className="space-y-2">
-                    <Label htmlFor="u-password" className="text-sm font-medium text-foreground">
-                      Password <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="u-password"
-                      type="password"
-                      {...register("password", {
-                        required: !editingUser ? "Password is required" : false,
-                      })}
-                      placeholder="Enter password"
-                      className="rounded-xl border-border"
-                    />
-                    {errors.password && (
-                      <p className="text-sm text-red-500">
-                        {errors.password.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="u-role" className="text-sm font-medium text-foreground">
-                    Role <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={watch("role")}
-                    onValueChange={(v: string) => setValue("role", v)}
-                  >
-                    <SelectTrigger className="rounded-xl border-border">
-                      <SelectValue placeholder="Select a role..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="agency">Agency</SelectItem>
-                      <SelectItem value="student">Student</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <input type="hidden" {...register("role")} />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
+                <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize", ROLE_TONE[user.role])}>
+                  {user.role}
+                </span>
+                <span className="flex">
+                  <Button variant="ghost" size="xs" onClick={() => openEditDialog(user)}>
+                    Edit
+                  </Button>
                   <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                    className="rounded-xl"
+                    variant="ghost"
+                    size="xs"
+                    className="text-stamp hover:bg-stamp-soft hover:text-stamp"
+                    disabled={isSelf}
+                    title={isSelf ? "You can't delete your own account" : undefined}
+                    onClick={() => setToDelete(user)}
                   >
-                    Cancel
+                    Delete
                   </Button>
-                  <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl shadow-lg shadow-rose-500/20">
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : editingUser ? (
-                      "Update"
-                    ) : (
-                      "Create"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+                </span>
+              </li>
+            );
+          })}
+          {visible.length === 0 && (
+            <li className="py-10 text-center text-sm text-ink-3">No accounts match.</li>
+          )}
+        </ul>
+      )}
 
-      {/* Users List */}
-      <div className="rounded-2xl bg-card shadow-sm border border-border overflow-hidden">
-        {isLoading ? (
-          <div className="p-6">
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-xl" />
-              ))}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5">
+            <DialogHeader>
+              <DialogTitle>{editingUser ? `Edit ${editingUser.name}` : "Create an account"}</DialogTitle>
+              {!editingUser && (
+                <DialogDescription>Send them the password privately — or let them use “Forgot password” to set their own.</DialogDescription>
+              )}
+            </DialogHeader>
+            <div className="grid gap-4">
+              <Field label="Name" htmlFor="u-name" required error={errors.name?.message}>
+                <Input id="u-name" {...register("name", { required: "Name is required" })} placeholder="Full name" />
+              </Field>
+              <Field label="Email" htmlFor="u-email" required error={errors.email?.message}>
+                <Input id="u-email" type="email" {...register("email", { required: "Email is required" })} placeholder="name@example.com" />
+              </Field>
+              {!editingUser && (
+                <Field label="Password" htmlFor="u-password" required error={errors.password?.message}>
+                  <Input
+                    id="u-password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...register("password", { required: !editingUser ? "Password is required" : false })}
+                  />
+                </Field>
+              )}
+              <Field label="Role" required>
+                <Select value={watch("role")} onValueChange={(v: string) => setValue("role", v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="agency">Agency</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <input type="hidden" {...register("role")} />
+              </Field>
             </div>
-          </div>
-        ) : users && users.length > 0 ? (
-          <>
-            <div className="border-b border-border px-6 py-4">
-              <h3 className="text-lg font-semibold text-foreground">
-                {users.length} user{users.length !== 1 ? "s" : ""}
-              </h3>
-            </div>
-            <div className="divide-y divide-border">
-              {users.map((user) => (
-                <div
-                  key={user._id}
-                  className="flex items-center justify-between px-6 py-5 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-muted to-muted flex-shrink-0">
-                      <span className="text-lg font-bold text-foreground">
-                        {user.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <Link to={`/users/${user._id}`} className="font-semibold text-foreground truncate hover:text-primary transition-colors">
-                        {user.name}
-                      </Link>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-3.5 w-3.5" />
-                        {user.email}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      className={`${getRoleColor(user.role)} border rounded-full px-3 py-1`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        {getRoleIcon(user.role)}
-                        {user.role}
-                      </span>
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 hover:bg-muted rounded-lg"
-                      onClick={() => openEditDialog(user)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg"
-                      disabled={
-                        user._id === currentUser?._id ||
-                        deleteMutation.isPending
-                      }
-                      onClick={() => handleDelete(user._id, user.name)}
-                      title={
-                        user._id === currentUser?._id
-                          ? "Cannot delete yourself"
-                          : "Delete user"
-                      }
-                    >
-                      {deleteMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 mb-4">
-              <UsersIcon className="h-10 w-10 text-rose-500" />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">No users found</h2>
-          </div>
-        )}
-      </div>
-    </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="animate-spin" />}
+                {editingUser ? "Save" : "Create account"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {toDelete?.name}'s account?</DialogTitle>
+            <DialogDescription>They won't be able to sign in again. This can't be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setToDelete(null)}>
+              Keep
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending && <Loader2 className="animate-spin" />}
+              Delete account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

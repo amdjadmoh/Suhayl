@@ -1,42 +1,42 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import {
-  useStudent,
-  useUpdateStudent,
-  useDeleteStudent,
-  useAgencyApplications,
-} from "@/lib/api";
+import { toast } from "sonner";
+import { Loader2, Sparkles } from "lucide-react";
+import { useStudent, useUpdateStudent, useDeleteStudent, useAgencyApplications } from "@/lib/api";
 import type { Application } from "@/types/application";
-import { STATUS_COLORS } from "@/lib/constants";
+import { getErrorMessage } from "@/lib/utils";
+import { formatDate, formatMoney, listJoin } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { BackLink, EmptyState, ErrorState, Fact, Facts, Field, LoadingPage, PageHeader, Section } from "@/components/kit";
+import { ApplicationList, StatusBreakdown } from "@/components/ledger";
+import { countByStatus } from "@/lib/applications";
+import { StudentProfileFields } from "@/components/StudentProfileFields";
+import { StudentDocuments } from "@/components/StudentDocuments";
+import { FamilyLink } from "@/components/FamilyLink";
+import { FollowUps, Payments } from "@/components/StudentWork";
+import { CounsellorPicker } from "@/components/CounsellorPicker";
 import {
-   ArrowLeft,
-   User,
-   Mail,
-   Phone,
-   FileText,
-   Pencil,
-   Trash2,
-   PlusCircle,
-   GraduationCap,
-   Loader2,
-   AlertCircle,
- } from "lucide-react";
-import { getErrorMessage } from "@/lib/utils";
+  EMPTY_PROFILE,
+  belongsTo,
+  hasProfile,
+  matchesHref,
+  profileToForm,
+  profileToPayload,
+  type StudentProfileForm,
+} from "@/lib/studentProfile";
+
+type StudentForm = { name: string; email: string; phone: string; notes: string };
 
 export default function AgencyStudentDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -48,41 +48,30 @@ export default function AgencyStudentDetail(): React.ReactElement {
   const deleteMutation = useDeleteStudent();
 
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [profile, setProfile] = useState<StudentProfileForm>(EMPTY_PROFILE);
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<{ name: string; email: string; phone: string; notes: string }>();
+  } = useForm<StudentForm>();
 
   function openEdit(): void {
     if (!student) return;
-    reset({
-      name: student.name,
-      email: student.email,
-      phone: student.phone ?? "",
-      notes: student.notes ?? "",
-    });
+    reset({ name: student.name, email: student.email, phone: student.phone ?? "", notes: student.notes ?? "" });
+    setProfile(profileToForm(student));
     setEditOpen(true);
   }
 
-  async function handleEditSubmit(data: {
-    name: string;
-    email: string;
-    phone: string;
-    notes: string;
-  }): Promise<void> {
+  async function handleEditSubmit(data: StudentForm): Promise<void> {
     if (!student) return;
     try {
       await updateMutation.mutateAsync({
         id: student._id,
-        data: {
-          name: data.name,
-          email: data.email,
-          phone: data.phone || undefined,
-          notes: data.notes || undefined,
-        },
+        // Empty strings clear a field; undefined would leave the old value in place
+        data: { name: data.name, email: data.email, phone: data.phone.trim(), notes: data.notes.trim(), ...profileToPayload(profile) },
       });
       toast.success("Student updated");
       setEditOpen(false);
@@ -93,12 +82,6 @@ export default function AgencyStudentDetail(): React.ReactElement {
 
   async function handleDelete(): Promise<void> {
     if (!student) return;
-    if (
-      !window.confirm(
-        `Delete student "${student.name}"? This will also delete all their university applications.`,
-      )
-    )
-      return;
     try {
       await deleteMutation.mutateAsync(student._id);
       toast.success("Student deleted");
@@ -108,242 +91,179 @@ export default function AgencyStudentDetail(): React.ReactElement {
     }
   }
 
-  // Filter applications for this student
-  const studentApplications: Application[] = (applications ?? []).filter((a) => {
-    if (!student) return false;
-    return a.studentEmail === student.email;
-  });
+  const studentApplications: Application[] = student ? (applications ?? []).filter((a) => belongsTo(a, student)) : [];
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingPage />;
 
   if (isError || !student) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold text-foreground">Student not found</h2>
-        <p className="text-sm text-muted-foreground">
-          {error instanceof Error ? error.message : ""}
-        </p>
-        <Button variant="outline" className="mt-4" asChild>
-          <Link to="/agency/students">Back to Students</Link>
-        </Button>
-      </div>
+      <ErrorState title="Student not found" action={<Button variant="outline" asChild><Link to="/agency/students">All students</Link></Button>}>
+        {error instanceof Error ? error.message : undefined}
+      </ErrorState>
     );
   }
 
+  const newAppHref = `/applications/new?studentEmail=${encodeURIComponent(student.email)}&studentName=${encodeURIComponent(student.name)}`;
+  const firstName = student.name.split(" ")[0] ?? student.name;
+  const aiming = [student.degreeLevel, student.targetIntake].filter(Boolean).join(" · ");
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/agency/students">
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{student.name}</h1>
-            <p className="text-sm text-muted-foreground">Student Details</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" onClick={openEdit}>
-                <Pencil className="mr-1 h-4 w-4" /> Edit
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Edit Student</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit(handleEditSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="e-name">
-                    Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="e-name"
-                    className="rounded-xl"
-                    {...register("name", { required: "Name is required" })}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="e-email">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="e-email"
-                    type="email"
-                    className="rounded-xl"
-                    {...register("email", { required: "Email is required" })}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="e-phone">Phone</Label>
-                  <Input id="e-phone" className="rounded-xl" {...register("phone")} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="e-notes">Notes</Label>
-                  <Textarea id="e-notes" className="rounded-xl" {...register("notes")} rows={3} />
-                </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+    <>
+      <PageHeader
+        back={<BackLink to="/agency/students">Students</BackLink>}
+        kicker="Student file"
+        title={student.name}
+        actions={
+          <>
+            <Button variant="ghost" size="sm" onClick={openEdit}>
+              Edit
+            </Button>
+            <Button variant="ghost" size="sm" className="text-stamp hover:bg-stamp-soft hover:text-stamp" onClick={() => setDeleteOpen(true)}>
+              Delete
+            </Button>
+            <Button variant="primary" size="sm" asChild>
+              <Link to={newAppHref}>Start an application</Link>
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="min-w-0 space-y-10">
+          <FollowUps student={student} />
+          <Section title="Applications" count={studentApplications.length}>
+            {studentApplications.length > 0 ? (
+              <ApplicationList applications={studentApplications} />
             ) : (
-              <Trash2 className="mr-1 h-4 w-4 text-destructive" />
+              <EmptyState
+                title={`No applications for ${student.name.split(" ")[0]} yet`}
+                action={
+                  <Button variant="primary" asChild>
+                    <Link to={newAppHref}>Start an application</Link>
+                  </Button>
+                }
+              />
             )}
-            Delete
-          </Button>
-          <Button size="sm" asChild>
-            <Link to={`/applications/new?studentEmail=${encodeURIComponent(student.email)}&studentName=${encodeURIComponent(student.name)}`}>
-              <PlusCircle className="mr-1 h-4 w-4" />
-              Add Application
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* Student info card */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-6 py-4">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <User className="h-5 w-5 text-muted-foreground" />
-            Contact Information
-          </h3>
-        </div>
-        <div className="p-6">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <Mail className="h-4 w-4 text-primary" />
+          </Section>
+          <StudentDocuments studentId={student._id} firstName={firstName} />
+          {studentApplications.length > 1 && (
+            <Section title="Where things stand">
+              <div className="pt-2">
+                <StatusBreakdown counts={countByStatus(studentApplications)} />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Email</p>
-                <p className="text-sm font-medium text-foreground">{student.email}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <Phone className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Phone</p>
-                <p className="text-sm font-medium text-foreground">
-                  {student.phone ?? "Not provided"}
-                </p>
-              </div>
-            </div>
-            {student.notes && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Notes</p>
-                  <p className="whitespace-pre-wrap text-sm font-medium text-foreground">{student.notes}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Applications */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-6 py-4">
-          <h3 className="text-base font-semibold text-foreground">
-            Applications ({studentApplications.length})
-          </h3>
-        </div>
-        <div className="p-6">
-          {studentApplications.length > 0 ? (
-            <div className="space-y-2">
-              {studentApplications.map((a) => {
-                const progName = typeof a.programId === "object" ? a.programId?.name : "Program";
-                return (
-                  <Link
-                    key={a._id}
-                    to={`/applications/${a._id}`}
-                    className="flex items-center justify-between rounded-lg border border-border p-3 transition-all hover:border-border hover:bg-muted/50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-foreground">
-                        {progName}
-                      </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {a.applicationDeadline && (
-                          <>
-                            <span>Deadline: {new Date(a.applicationDeadline).toLocaleDateString()}</span>
-                            <span>·</span>
-                          </>
-                        )}
-                        <span className="truncate">{a.studentName}</span>
-                      </div>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className={`ml-3 flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[a.applicationStatus]}`}
-                    >
-                      {a.applicationStatus}
-                    </Badge>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10">
-              <GraduationCap className="mb-3 h-12 w-12 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                No applications yet
-              </p>
-              <Button variant="outline" size="sm" className="mt-3" asChild>
-                <Link to={`/applications/new?studentEmail=${encodeURIComponent(student.email)}&studentName=${encodeURIComponent(student.name)}`}>
-                  <PlusCircle className="mr-1 h-4 w-4" />
-                  Add Application
-                </Link>
-              </Button>
-            </div>
+            </Section>
           )}
         </div>
+
+        <aside>
+          <CounsellorPicker student={student} />
+          <div className="mb-8">
+            <FamilyLink student={student} />
+          </div>
+          <div className="mb-8">
+            <Payments key={student._id} student={student} />
+          </div>
+          <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">Profile</p>
+          {hasProfile(student) || aiming ? (
+            <Facts className="card px-5 py-1">
+              {aiming && <Fact label="Aiming for">{aiming}</Fact>}
+              <Fact label="GPA">{student.gpa ?? <span className="text-ink-4">not given</span>}</Fact>
+              <Fact label="IELTS">{student.ieltsScore ?? <span className="text-ink-4">not given</span>}</Fact>
+              <Fact label="Budget">
+                {student.monthlyBudget != null ? `${formatMoney(student.monthlyBudget, "EUR")} / month` : <span className="text-ink-4">not given</span>}
+              </Fact>
+              {!!student.preferredCountries?.length && <Fact label="Countries">{listJoin(student.preferredCountries)}</Fact>}
+            </Facts>
+          ) : (
+            <div className="card-soft px-5 py-4 text-[13px] leading-relaxed text-ink-3">
+              Add {firstName}'s GPA, IELTS, budget and countries to match programs to them.{" "}
+              <button type="button" onClick={openEdit} className="link-ink font-semibold">
+                Add profile
+              </button>
+            </div>
+          )}
+          <Button variant="secondary" className="mt-3 w-full" asChild>
+            <Link to={matchesHref(student)}>
+              <Sparkles />
+              Find programs for {firstName}
+            </Link>
+          </Button>
+
+          <p className="mt-8 mb-3 text-[17px] font-bold tracking-[-0.01em]">Contact</p>
+          <Facts className="card px-5 py-1">
+            <Fact label="Email">
+              <a href={`mailto:${student.email}`} className="link-ink break-all">
+                {student.email}
+              </a>
+            </Fact>
+            <Fact label="Phone">{student.phone ? <span className="text-[13px] tnum">{student.phone}</span> : <span className="text-ink-4">not given</span>}</Fact>
+            <Fact label="On file since">{formatDate(student.createdAt)}</Fact>
+          </Facts>
+          {student.notes && (
+            <>
+              <p className="mt-8 mb-3 text-[17px] font-bold tracking-[-0.01em]">Notes</p>
+              <p className="card-soft px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-ink-2">
+                {student.notes}
+              </p>
+            </>
+          )}
+        </aside>
       </div>
-    </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+          <form onSubmit={handleSubmit(handleEditSubmit)} className="grid gap-5">
+            <DialogHeader>
+              <DialogTitle>Edit {student.name}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <Field label="Name" htmlFor="e-name" required error={errors.name?.message}>
+                <Input id="e-name" {...register("name", { required: "Name is required" })} />
+              </Field>
+              <Field label="Email" htmlFor="e-email" required error={errors.email?.message}>
+                <Input id="e-email" type="email" {...register("email", { required: "Email is required" })} />
+              </Field>
+              <Field label="Phone" htmlFor="e-phone">
+                <Input id="e-phone" className="tnum" {...register("phone")} />
+              </Field>
+              <Field label="Notes" htmlFor="e-notes">
+                <Textarea id="e-notes" {...register("notes")} rows={3} />
+              </Field>
+              <div className="border-t border-rule-soft pt-4">
+                <p className="mb-3 text-[15px] font-bold text-ink">Academic profile</p>
+                <StudentProfileFields idPrefix="e" value={profile} onChange={setProfile} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="animate-spin" />}
+                Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {student.name}?</DialogTitle>
+            <DialogDescription>All of their applications are deleted with them. This can't be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Keep
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending && <Loader2 className="animate-spin" />}
+              Delete student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

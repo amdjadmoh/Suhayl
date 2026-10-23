@@ -1,57 +1,214 @@
+import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Check, Loader2, X } from "lucide-react";
 import { useApplication, useDeleteApplication, useUpdateApplication, useCountries } from "@/lib/api";
-import { STATUS_COLORS } from "@/lib/constants";
+import type { Program } from "@/types/program";
+import type { ApplicationFormData, ApplicationProgress } from "@/types/application";
+import { cn, getErrorMessage } from "@/lib/utils";
+import { formatDate, formatDateLong, formatMoney, formatTuition } from "@/lib/format";
+import { STATUS_META, type ApplicationStatus } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import {
-  ArrowLeft, Trash2, AlertCircle, Loader2, ClipboardList, User, Mail,
-  GraduationCap, Send, Check, Pencil, X, CheckCircle2, XCircle, RotateCcw,
-  CalendarClock,
-} from "lucide-react";
-import { useState } from "react";
-import type { Program } from "@/types/program";
-import type { ApplicationProgress } from "@/types/application";
-import { getErrorMessage } from "@/lib/utils";
+  BackLink, CountryPlate, DaysLeft, ErrorState, Fact, Facts, LoadingPage, Stamp, VerificationNote,
+} from "@/components/kit";
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "Not set";
-  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-}
+/* ---------- Pieces ---------- */
 
-function CheckItem({
-  done, label, detail, onClick, loading,
+/** A paper checklist line. Done items get struck through, like a to-do list. */
+function CheckRow({
+  done,
+  label,
+  detail,
+  onClick,
+  loading,
+  disabled,
+  trailing,
 }: {
-  done: boolean; label: string; detail?: string; onClick: () => void; loading?: boolean;
+  done: boolean;
+  label: string;
+  detail?: string;
+  onClick?: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+  trailing?: React.ReactNode;
 }): React.ReactElement {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={loading}
-      className="flex items-center gap-3 text-sm w-full text-left hover:bg-muted rounded-lg px-2 py-1.5 -mx-2 transition-colors disabled:opacity-60"
-    >
-      {loading ? (
-        <Loader2 className="h-5 w-5 text-muted-foreground animate-spin shrink-0" />
-      ) : done ? (
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 shrink-0">
-          <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-        </div>
-      ) : (
-        <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-border shrink-0 hover:border-primary transition-colors" />
-      )}
-      <span className={done ? "text-foreground font-medium" : "text-muted-foreground"}>
-        {label}
-      </span>
-      {detail && <span className="text-xs text-muted-foreground ml-auto">{detail}</span>}
-    </button>
+    <li className="flex items-center gap-3 py-2.5">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={loading || disabled || !onClick}
+        aria-pressed={done}
+        className={cn("group flex min-w-0 flex-1 items-start gap-3 text-left text-sm",
+          !disabled && onClick && "cursor-pointer",
+          disabled && "cursor-default",
+        )}
+      >
+        <span
+          className={cn("flex size-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+            done ? "border-moss-solid bg-moss-solid text-white dark:text-paper" : "border-input bg-paper-raised",
+            !done && !disabled && onClick && "group-hover:border-brand",
+          )}
+        >
+          {loading ? (
+            <Loader2 className="size-3 animate-spin text-ink-3" />
+          ) : done ? (
+            <Check className="size-3" strokeWidth={3.5} />
+          ) : null}
+        </span>
+        <span
+          className={cn("min-w-0 flex-1 pt-0.5 leading-snug",
+            done ? "text-ink-3" : "font-medium text-ink",
+          )}
+        >
+          {label}
+        </span>
+        {detail && <span className="shrink-0 text-xs text-ink-3 tnum">{detail}</span>}
+      </button>
+      {trailing}
+    </li>
   );
 }
+
+function ChecklistGroup({ title, children }: { title: string; children: React.ReactNode }): React.ReactElement {
+  return (
+    <div className="py-4 first:pt-0 last:pb-0">
+      <p className="mb-1 text-sm font-bold text-ink">{title}</p>
+      <ul className="divide-y divide-rule-soft">{children}</ul>
+    </div>
+  );
+}
+
+function AddLine({
+  value,
+  onChange,
+  onAdd,
+  placeholder,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onAdd: () => void;
+  placeholder: string;
+  disabled?: boolean;
+}): React.ReactElement {
+  return (
+    <div className="mt-2 flex gap-2">
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onAdd();
+          }
+        }}
+        className="h-9 flex-1 text-sm"
+        placeholder={placeholder}
+      />
+      <Button type="button" size="sm" variant="outline" onClick={onAdd} disabled={!value.trim() || disabled}>
+        Add
+      </Button>
+    </div>
+  );
+}
+
+type Step = { label: string; done: boolean; date?: string | null; failed?: boolean };
+
+/** The application's route, drawn like a line on a transit map. */
+function Journey({ steps }: { steps: Step[] }): React.ReactElement {
+  const current = steps.findIndex((s) => !s.done);
+  return (
+    <ol className="relative grid gap-0 sm:grid-cols-7">
+      {steps.map((s, i) => {
+        const isCurrent = i === current;
+        return (
+          <li key={s.label} className="relative flex gap-3 pb-5 sm:block sm:pb-0">
+            {/* connecting line */}
+            {i < steps.length - 1 && (
+              <span
+                aria-hidden="true"
+                className={cn("absolute top-5 left-[9px] h-full w-[2px] sm:top-[9px] sm:left-[calc(50%+11px)] sm:h-[2px] sm:w-[calc(100%-22px)]",
+                  s.done && steps[i + 1]?.done ? "bg-brand" : "bg-rule",
+                )}
+              />
+            )}
+            <span
+              className={cn("relative z-10 flex size-5 shrink-0 items-center justify-center rounded-full border-2 bg-paper-raised sm:mx-auto",
+                s.failed
+                  ? "border-stamp bg-stamp text-white"
+                  : s.done
+                    ? "border-brand bg-brand text-on-brand"
+                    : isCurrent
+                      ? "border-brand"
+                      : "border-rule",
+              )}
+            >
+              {s.failed ? (
+                <X className="size-3" strokeWidth={3} />
+              ) : s.done ? (
+                <Check className="size-3" strokeWidth={3} />
+              ) : isCurrent ? (
+                <span className="size-2 rounded-full bg-brand" />
+              ) : null}
+            </span>
+            <span className="block sm:mt-2.5 sm:text-center">
+              <span
+                className={cn("block text-[13px] leading-snug",
+                  s.failed ? "font-semibold text-stamp" : s.done || isCurrent ? "font-semibold text-ink" : "text-ink-3",
+                )}
+              >
+                {s.label}
+              </span>
+              <span className="mt-0.5 block text-xs text-ink-4 tnum">
+                {s.failed ? "refused" : s.done ? (s.date ? formatDate(s.date) : "done") : isCurrent ? "next" : ""}
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function Panel({
+  title,
+  description,
+  tone = "ink",
+  children,
+}: {
+  title: string;
+  description?: React.ReactNode;
+  tone?: "ink" | "moss" | "stamp";
+  children?: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <div
+      className={cn("rounded-[1.25rem] p-5",
+        tone === "moss" && "bg-moss-soft",
+        tone === "stamp" && "bg-stamp-soft",
+        tone === "ink" && "bg-paper-sunken",
+      )}
+    >
+      <p
+        className={cn("text-base leading-tight font-bold",
+          tone === "moss" ? "text-moss" : tone === "stamp" ? "text-stamp" : "text-ink",
+        )}
+      >
+        {title}
+      </p>
+      {description && <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{description}</p>}
+      {children && <div className="mt-3">{children}</div>}
+    </div>
+  );
+}
+
+/* ---------- Page ---------- */
 
 export default function ApplicationDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -66,22 +223,34 @@ export default function ApplicationDetail(): React.ReactElement {
   const updateMutation = useUpdateApplication();
   const { data: countries } = useCountries();
 
+  const status = application?.applicationStatus;
+  // Once submitted (or closed), the preparation checklist is a record, not a to-do list.
+  const isReadOnly = !application || status === "Applied" || status === "Waitlisted" || status === "Rejected" || status === "Enrolled";
+
+  function basePayload(overrides: Partial<ApplicationFormData> = {}): Partial<ApplicationFormData> {
+    const a = application!;
+    return {
+      programId: typeof a.programId === "string" ? a.programId : a.programId?._id ?? "",
+      studentName: a.studentName,
+      studentEmail: a.studentEmail,
+      applicationStatus: a.applicationStatus,
+      applicationDeadline: a.applicationDeadline,
+      notes: a.notes,
+      applicationProgress: { ...a.applicationProgress },
+      ...overrides,
+    };
+  }
+
   async function toggleProgress(update: Partial<ApplicationProgress>): Promise<boolean> {
     if (isReadOnly) return false;
     if (!application || !id) return false;
     const key = Object.keys(update)[0] ?? null;
     setUpdating(key);
-    const payload: any = {
-      programId: typeof application.programId === "string" ? application.programId : application.programId?._id ?? "",
-      studentName: application.studentName,
-      studentEmail: application.studentEmail,
-      applicationStatus: application.applicationStatus,
-      applicationDeadline: application.applicationDeadline,
-      notes: application.notes,
-      applicationProgress: { ...application.applicationProgress, ...update },
-    };
     try {
-      await updateMutation.mutateAsync({ id, data: payload });
+      await updateMutation.mutateAsync({
+        id,
+        data: basePayload({ applicationProgress: { ...application.applicationProgress, ...update } }),
+      });
       return true;
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to update"));
@@ -94,21 +263,18 @@ export default function ApplicationDetail(): React.ReactElement {
   async function submitApplication(): Promise<void> {
     if (!application || !id) return;
     setUpdating("submit");
-    const payload: any = {
-      programId: typeof application.programId === "string" ? application.programId : application.programId?._id ?? "",
-      studentName: application.studentName,
-      studentEmail: application.studentEmail,
-      applicationStatus: "Applied",
-      applicationDeadline: application.applicationDeadline,
-      notes: application.notes,
-      applicationProgress: {
-        ...application.applicationProgress,
-        applicationSubmittedDate: new Date().toISOString(),
-      },
-    };
     try {
-      await updateMutation.mutateAsync({ id, data: payload });
-      toast.success("Application submitted!");
+      await updateMutation.mutateAsync({
+        id,
+        data: basePayload({
+          applicationStatus: "Applied",
+          applicationProgress: {
+            ...application.applicationProgress,
+            applicationSubmittedDate: new Date().toISOString(),
+          },
+        }),
+      });
+      toast.success("Submitted. Fingers crossed.");
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to submit"));
     } finally {
@@ -116,21 +282,12 @@ export default function ApplicationDetail(): React.ReactElement {
     }
   }
 
-  async function updateStatus(newStatus: string): Promise<void> {
+  async function updateStatus(newStatus: ApplicationStatus, message?: string): Promise<void> {
     if (!application || !id) return;
     setUpdating("status");
-    const payload: any = {
-      programId: typeof application.programId === "string" ? application.programId : application.programId?._id ?? "",
-      studentName: application.studentName,
-      studentEmail: application.studentEmail,
-      applicationStatus: newStatus,
-      applicationDeadline: application.applicationDeadline,
-      notes: application.notes,
-      applicationProgress: { ...application.applicationProgress },
-    };
     try {
-      await updateMutation.mutateAsync({ id, data: payload });
-      toast.success(`Application marked as ${newStatus}`);
+      await updateMutation.mutateAsync({ id, data: basePayload({ applicationStatus: newStatus }) });
+      toast.success(message ?? `Marked as ${newStatus.toLowerCase()}`);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to update status"));
     } finally {
@@ -139,49 +296,18 @@ export default function ApplicationDetail(): React.ReactElement {
   }
 
   async function decideVisa(approved: boolean): Promise<void> {
-    if (!application) return;
     const ok = await toggleProgress({ visaApproved: approved });
-    if (ok) {
-      toast.success(
-        approved
-          ? "Visa approved — you can now enroll"
-          : "Visa marked as rejected",
-      );
-    }
+    if (ok) toast.success(approved ? "Visa approved — you can enroll now" : "Visa marked as refused");
   }
 
   async function resetVisaDecision(): Promise<void> {
-    if (!application) return;
     const ok = await toggleProgress({ visaApproved: null });
     if (ok) toast.success("Visa decision cleared");
   }
 
   async function restartVisaApplication(): Promise<void> {
-    if (!application) return;
     const ok = await toggleProgress({ visaApplied: false, visaApproved: null });
-    if (ok) toast.success("Visa process restarted — mark 'Visa Applied' when you re-apply");
-  }
-
-  async function enroll(): Promise<void> {
-    if (!application || !id) return;
-    setUpdating("status");
-    const payload: any = {
-      programId: typeof application.programId === "string" ? application.programId : application.programId?._id ?? "",
-      studentName: application.studentName,
-      studentEmail: application.studentEmail,
-      applicationStatus: "Enrolled",
-      applicationDeadline: application.applicationDeadline,
-      notes: application.notes,
-      applicationProgress: { ...application.applicationProgress },
-    };
-    try {
-      await updateMutation.mutateAsync({ id, data: payload });
-      toast.success("Congratulations — officially enrolled!");
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to enroll"));
-    } finally {
-      setUpdating(null);
-    }
+    if (ok) toast.success("Visa process restarted — tick “Visa applied” when you re-apply");
   }
 
   async function handleDelete(): Promise<void> {
@@ -221,24 +347,20 @@ export default function ApplicationDetail(): React.ReactElement {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="rounded-xl border border-border bg-card p-6">
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingPage />;
 
   if (isError || !application) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Application not found</h2>
-        <button onClick={() => navigate("/applications")} className="mt-4 inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Back</button>
-      </div>
+      <ErrorState
+        title="Application not found"
+        action={
+          <Button variant="outline" onClick={() => navigate("/applications")}>
+            Back to applications
+          </Button>
+        }
+      >
+        It may have been deleted, or the link is wrong.
+      </ErrorState>
     );
   }
 
@@ -247,878 +369,678 @@ export default function ApplicationDetail(): React.ReactElement {
   const uni = prog?.universityId && typeof prog.universityId === "object" ? prog.universityId : null;
   const p = a.applicationProgress;
   const country = countries?.find((c) => c.name === uni?.country);
-  const isReadOnly = a.applicationStatus === "Applied" || a.applicationStatus === "Waitlisted" || a.applicationStatus === "Rejected" || a.applicationStatus === "Enrolled";
+  const stageIsPrep = a.applicationStatus === "Preparing" || a.applicationStatus === "Applied";
+  const stageIsVisa = a.applicationStatus === "Accepted" || a.applicationStatus === "Enrolled" || a.applicationStatus === "Waitlisted";
 
-  // Compute all required documents obtained (or no required documents)
   const allRequiredDocsObtained =
-    !prog?.requiredDocuments?.length ||
-    prog.requiredDocuments.every((doc) => p.documentsObtained.includes(doc));
+    !prog?.requiredDocuments?.length || prog.requiredDocuments.every((doc) => p.documentsObtained.includes(doc));
 
-  // Compute checklist missing items for the submit warning dialog
+  // What's still open, for the submit warning
   const missingItems: string[] = [];
   prog?.requiredDocuments?.forEach((doc) => {
-    if (!p.documentsObtained.includes(doc)) missingItems.push(`Document: ${doc}`);
+    if (!p.documentsObtained.includes(doc)) missingItems.push(doc);
   });
   p.testScores.forEach((ts) => {
-    if (!ts.taken) missingItems.push(`Test: ${ts.name}`);
+    if (!ts.taken) missingItems.push(`${ts.name} not taken`);
   });
-  if (prog?.requiresSOP && p.sopStatus !== "final") {
-    missingItems.push("Statement of Purpose not finalized");
-  }
+  if (prog?.requiresSOP && p.sopStatus !== "final") missingItems.push("Statement of purpose not final");
   const recsNeeded = prog?.recommendationLetters ?? p.recommendationsRequested;
   if (recsNeeded > 0 && p.recommendationsReceived < recsNeeded) {
-    missingItems.push(
-      `Recommendation Letters: ${p.recommendationsReceived}/${recsNeeded} received`,
-    );
+    missingItems.push(`Recommendation letters: ${p.recommendationsReceived} of ${recsNeeded}`);
   }
   if (prog?.applicationFee && prog.applicationFee > 0 && !p.applicationFeePaid) {
-    missingItems.push(`Application Fee (€${prog.applicationFee}) not paid`);
+    missingItems.push(`Application fee (${formatMoney(prog.applicationFee)}) unpaid`);
   }
 
+  // Checklist progress for the preparation stage
+  const extraDocs = p.documentsObtained.filter((d) => !prog?.requiredDocuments.includes(d));
+  const prepTotal =
+    p.testScores.length +
+    (prog?.requiredDocuments.length ?? 0) +
+    (prog?.requiresSOP ? 1 : 0) +
+    (recsNeeded > 0 ? 1 : 0) +
+    1;
+  const prepDone =
+    p.testScores.filter((t) => t.taken).length +
+    (prog?.requiredDocuments.filter((d) => p.documentsObtained.includes(d)).length ?? 0) +
+    (prog?.requiresSOP && p.sopStatus === "final" ? 1 : 0) +
+    (recsNeeded > 0 && p.recommendationsReceived >= recsNeeded ? 1 : 0) +
+    (p.applicationFeePaid ? 1 : 0);
+
+  const steps: Step[] = [
+    { label: "Started", date: a.createdAt, done: true },
+    { label: "Documents ready", date: allRequiredDocsObtained ? a.updatedAt : undefined, done: allRequiredDocsObtained },
+    { label: "Submitted", date: p.applicationSubmittedDate, done: !!p.applicationSubmittedDate },
+    { label: "Interview", done: p.interviewCompleted, date: p.interviewScheduled },
+    { label: "Visa applied", done: p.visaApplied },
+    p.visaApproved === false
+      ? { label: "Visa decision", done: true, failed: true }
+      : { label: "Visa approved", done: p.visaApproved === true },
+    { label: "Enrolled", done: a.applicationStatus === "Enrolled", date: a.applicationStatus === "Enrolled" ? a.updatedAt : undefined },
+  ];
+
+  const tone = STATUS_META[a.applicationStatus].tone;
+  const stampSub =
+    a.applicationStatus === "Applied" && p.applicationSubmittedDate
+      ? formatDate(p.applicationSubmittedDate)
+      : formatDate(a.updatedAt);
+
+  const visaExtrasPending = p.visaDocumentsPending?.filter((d) => !country?.requiredDocuments?.includes(d)) ?? [];
+  const visaExtrasObtained = p.visaDocumentsObtained?.filter((d) => !country?.requiredDocuments?.includes(d)) ?? [];
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/applications")} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{prog?.name ?? "Application"}</h1>
-            <p className="text-sm text-muted-foreground">for {a.studentName}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>{a.applicationStatus}</Badge>
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <DialogTrigger asChild>
-              <button className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /> Delete</button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Application</DialogTitle>
-                <DialogDescription>This action cannot be undone.</DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
-                  {deleteMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : "Delete"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+    <>
+      <div className="mb-5">
+        <BackLink to="/applications">Applications</BackLink>
       </div>
 
-      {/* Enrolled success banner */}
-      {a.applicationStatus === "Enrolled" && (
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-teal-500/10 p-6 animate-fade-up">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25">
-              <GraduationCap className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <p className="font-display text-xl font-bold text-foreground">
-                Enrolled — congratulations!
+      {/* Masthead */}
+      <header className="mb-8">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="min-w-0 max-w-3xl">
+            <p className="kicker mb-1">
+              Application · {a.studentName}
+            </p>
+            <h1 className="text-[28px] leading-[1.12] font-bold tracking-[-0.025em] sm:text-[36px]">
+              {prog?.name ?? "Application"}
+            </h1>
+            {uni && (
+              <p className="mt-2.5 flex flex-wrap items-center gap-2 text-[15px] text-ink-3">
+                <CountryPlate country={uni.country} />
+                <Link to={`/universities/${uni._id}`} className="link-ink">
+                  {uni.name}
+                </Link>
+                <span className="hidden text-ink-4 sm:inline">·</span>
+                <span className="w-full sm:w-auto">
+                  {uni.city}, {uni.country}
+                </span>
               </p>
-              <p className="text-sm text-muted-foreground">
-                The journey is complete: {a.studentName} is officially enrolled
-                {prog?.name ? ` in ${prog.name}` : ""}.
-              </p>
+            )}
+          </div>
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <Stamp tone={tone} sub={stampSub}>
+              {a.applicationStatus}
+            </Stamp>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to={`/applications/${a._id}/edit`}>Edit details</Link>
+              </Button>
+              <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-stamp hover:bg-stamp-soft hover:text-stamp">
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete this application?</DialogTitle>
+                    <DialogDescription>
+                      Its checklist, statement and recommender invitations go with it. This can't be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                      Keep it
+                    </Button>
+                    <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+                      {deleteMutation.isPending ? <Loader2 className="animate-spin" /> : null}
+                      Delete application
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
+        </div>
+
+        <div className="card mt-6 p-5 sm:px-6 sm:py-6">
+          <Journey steps={steps} />
+        </div>
+      </header>
+
+      {a.applicationStatus === "Enrolled" && (
+        <div className="mb-8 rounded-3xl bg-moss-soft px-6 py-5 text-center">
+          <p className="text-xl font-bold tracking-[-0.02em] text-moss">Enrolled — that's the whole journey</p>
+          <p className="mt-1 text-sm text-ink-2">
+            {a.studentName} is officially in {prog?.name ?? "the program"}. Safe travels.
+          </p>
         </div>
       )}
 
-      {/* Submit Application Confirmation Dialog */}
+      {/* Submit confirmation */}
       <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {missingItems.length > 0 ? (
-                <>
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                  Submit with incomplete items?
-                </>
-              ) : (
-                <>Submit Application</>
-              )}
-            </DialogTitle>
+            <DialogTitle>{missingItems.length > 0 ? "A few things are still open" : "Ready to submit?"}</DialogTitle>
             <DialogDescription>
               {missingItems.length > 0
-                ? "The following items in your checklist are still incomplete. You can still submit, but consider completing them first."
-                : "All checklist items are complete. Ready to submit your application?"}
+                ? "You can still mark it as submitted — just make sure you meant to."
+                : "Everything on the checklist is ticked. This marks the application as sent."}
             </DialogDescription>
           </DialogHeader>
           {missingItems.length > 0 && (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 max-h-64 overflow-y-auto">
-              <p className="text-sm font-semibold text-amber-800 mb-2">Missing items:</p>
-              <ul className="space-y-1.5">
-                {missingItems.map((item, i) => (
-                  <li key={i} className="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="max-h-60 list-disc space-y-1.5 overflow-y-auto rounded-2xl bg-ochre-soft py-3 pr-4 pl-8 text-sm text-ink-2">
+              {missingItems.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSubmitDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSubmitDialogOpen(false)}>
+              Not yet
+            </Button>
             <Button
-              onClick={() => { setSubmitDialogOpen(false); submitApplication(); }}
+              variant="primary"
+              onClick={() => {
+                setSubmitDialogOpen(false);
+                submitApplication();
+              }}
               disabled={updating === "submit"}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {updating === "submit" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit Application"}
+              {updating === "submit" && <Loader2 className="animate-spin" />}
+              Mark as submitted
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Program + University Info */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <GraduationCap className="h-5 w-5 text-muted-foreground" /> Program
-            </h3>
-          </div>
-          <div className="p-6">
-            {prog && (
-              <div className="space-y-3">
-                <p className="font-semibold text-foreground">
-                  <Link to={`/programs/${prog._id}`} className="hover:text-primary">{prog.name}</Link>
-                </p>
-                <p className="text-sm text-muted-foreground">{prog.degreeLevel} · {prog.languageOfInstruction}</p>
-                {prog.tuitionFee && <p className="text-sm text-muted-foreground">€{prog.tuitionFee.toLocaleString()}/{prog.tuitionPeriod?.toLowerCase()}</p>}
+      <div className="grid gap-x-8 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        {/* ── Main column: what needs doing ── */}
+        <div className="min-w-0 space-y-8">
+          {stageIsPrep && (
+            <section>
+              <div className="mb-3 flex items-end justify-between gap-4">
+                <h2 className="text-[17px] font-bold tracking-[-0.01em]">Checklist</h2>
+                <span className="text-[13px] font-semibold text-ink-3 tnum">
+                  {prepDone} of {prepTotal} done
+                </span>
               </div>
-            )}
-            <div className="border-t border-border my-3" />
-            {uni && (
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <Link to={`/universities/${uni._id}`} className="text-primary hover:underline font-medium">{uni.name}</Link>
-                </p>
-                <p className="text-sm text-muted-foreground">{uni.city}, {uni.country}</p>
+              <div className="mb-5 h-2 overflow-hidden rounded-full bg-paper-sunken">
+                <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${(prepDone / prepTotal) * 100}%` }} />
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Application Info */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <ClipboardList className="h-5 w-5 text-muted-foreground" /> Details
-            </h3>
-          </div>
-          <div className="p-6 space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-foreground">{a.studentName}</span>
-              <span className="text-muted-foreground">·</span>
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground">{a.studentEmail}</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-muted-foreground">Status:</span>
-              <Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>{a.applicationStatus}</Badge>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-muted-foreground">Deadline:</span>
-              <span className="font-medium text-foreground">{formatDate(a.applicationDeadline)}</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-muted-foreground">Application Fee:</span>
-              <span className="font-medium text-foreground">
-                {prog?.applicationFee != null && prog.applicationFee > 0
-                  ? `€${prog.applicationFee.toLocaleString()}`
-                  : prog?.applicationFee === 0
-                  ? "Free"
-                  : "Not set"}
-              </span>
-              {prog?.applicationFee != null && prog.applicationFee > 0 && (
-                <Badge
-                  variant="secondary"
-                  className={
-                    p.applicationFeePaid
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
-                  }
-                >
-                  {p.applicationFeePaid ? "Paid" : "Unpaid"}
-                </Badge>
+              {prog && <VerificationNote status={prog.verificationStatus} subject="program" className="mb-6" />}
+
+              {isReadOnly && (
+                <p className="mb-4 rounded-2xl bg-paper-sunken px-4 py-3 text-[13.5px] text-ink-2">
+                  Submitted, so the checklist is locked as a record of what was sent.
+                </p>
               )}
-            </div>
-            {p.visaDeadline && (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-muted-foreground">Visa Deadline:</span>
-                <span className="font-medium text-foreground">{formatDate(p.visaDeadline)}</span>
-              </div>
-            )}
-            {a.notes && (
-              <div className="border-t border-border pt-3">
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
-              </div>
-            )}
-            {/* Edit link — small pencil at bottom */}
-            <div className="border-t border-border pt-3">
-              <Link to={`/applications/${a._id}/edit`} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-                <Pencil className="h-3 w-3" /> Edit status, deadline & notes
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Timeline + Checklist */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Timeline */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <ClipboardList className="h-5 w-5 text-muted-foreground" /> Timeline
-            </h3>
-          </div>
-          <div className="p-6">
-            {(() => {
-              const steps: { label: string; done: boolean; date?: string; rejected?: boolean }[] = [
-                { label: "Application Created", date: a.createdAt, done: true },
-                { label: "Documents Prepared", date: allRequiredDocsObtained ? a.updatedAt : undefined, done: allRequiredDocsObtained },
-                { label: "Submitted", date: p.applicationSubmittedDate, done: !!p.applicationSubmittedDate },
-                { label: "Interview", done: p.interviewCompleted, date: p.interviewScheduled },
-                { label: "Visa Applied", done: p.visaApplied },
-                p.visaApproved === false
-                  ? { label: "Visa Decision", done: true, rejected: true }
-                  : { label: "Visa Approved", done: p.visaApproved === true },
-                { label: "Enrolled", done: a.applicationStatus === "Enrolled", date: a.applicationStatus === "Enrolled" ? a.updatedAt : undefined },
-              ];
-              return (
-                <div className="relative pl-8">
-                  <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-muted" />
-                  {steps.map((step, i) => (
-                    <div key={i} className="relative pb-6 last:pb-0">
-                      <div className={`absolute -left-[17px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                        step.rejected
-                          ? "bg-red-500 border-red-500 text-white"
-                          : step.done
-                          ? "bg-emerald-500 border-emerald-500 text-white"
-                          : "bg-card border-border text-muted-foreground"
-                      }`}>
-                        {step.rejected ? (
-                          <X className="h-3 w-3" />
-                        ) : step.done ? (
-                          <Check className="h-3 w-3" />
-                        ) : (
-                          <div className="h-2 w-2 rounded-full bg-muted" />
-                        )}
-                      </div>
-                      <div className="ml-2">
-                        <p className={`text-sm font-medium ${
-                          step.rejected ? "text-red-500" : step.done ? "text-foreground" : "text-muted-foreground"
-                        }`}>{step.label}</p>
-                        <p className={`text-xs ${step.rejected ? "text-red-500/80" : "text-muted-foreground"}`}>
-                          {step.rejected
-                            ? "Rejected"
-                            : step.done && step.date
-                            ? formatDate(step.date)
-                            : step.done
-                            ? "✓"
-                            : "Pending"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Checklist — interactive */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-6 py-4">
-            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <ClipboardList className="h-5 w-5 text-muted-foreground" /> Checklist
-            </h3>
-          </div>
-          <div className="p-6 space-y-4">
-            {prog && (
-              <div className={`rounded-lg p-3 text-sm border ${
-                prog.verificationStatus === "manual"
-                  ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800"
-                  : prog.verificationStatus === "ai"
-                  ? "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-800"
-                  : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-800"
-              }`}>
-                <p className="font-semibold">
-                  {prog.verificationStatus === "manual"
-                    ? "✓ User-Verified — Manually added"
-                    : prog.verificationStatus === "ai"
-                    ? "⚠ AI-Verified Program Info"
-                    : "⚠ Unverified Program Info"}
-                </p>
-                <p className="text-xs mt-1">
-                  {prog.verificationStatus === "manual"
-                    ? "This program was manually added by a user and its details have been verified."
-                    : prog.verificationStatus === "ai"
-                    ? "This program's requirements were compiled using AI. Verify tuition, deadlines, and documents directly with the university before applying."
-                    : "This program has not been verified. Confirm all details with the university. Use at your own risk."}
-                </p>
-              </div>
-            )}
-            {(a.applicationStatus === "Preparing" || a.applicationStatus === "Applied") && (
-            <>
-            {/* Test Scores */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Tests</p>
-              <div className="space-y-1">
-                {p.testScores.map((ts, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <CheckItem
-                      done={ts.taken}
-                      label={ts.name}
-                      loading={updating === `testScores.${i}.taken`}
-                      onClick={() => {
-                        const newScores = [...p.testScores];
-                        newScores[i] = { ...ts, taken: !ts.taken };
-                        toggleProgress({ testScores: newScores });
-                      }}
-                    />
-                    {ts.taken && (
-                      <Input type="number" step="0.5" className="w-20 h-8 text-sm rounded-lg border-border" placeholder="Score"
-                        value={ts.score ?? ""}
-                        onChange={(e) => {
+              <div className="card divide-y divide-rule-soft px-5 py-4">
+                {p.testScores.length > 0 && (
+                  <ChecklistGroup title="Tests">
+                    {p.testScores.map((ts, i) => (
+                      <CheckRow
+                        key={i}
+                        done={ts.taken}
+                        label={ts.name}
+                        disabled={isReadOnly}
+                        loading={updating === "testScores"}
+                        onClick={() => {
                           const newScores = [...p.testScores];
-                          newScores[i] = { ...ts, score: e.target.value ? parseFloat(e.target.value) : undefined };
+                          newScores[i] = { ...ts, taken: !ts.taken };
                           toggleProgress({ testScores: newScores });
                         }}
+                        trailing={
+                          ts.taken && (
+                            <Input
+                              type="number"
+                              step="0.5"
+                              className="h-7 w-20 text-right text-xs tnum"
+                              placeholder="Score"
+                              disabled={isReadOnly}
+                              value={ts.score ?? ""}
+                              onChange={(e) => {
+                                const newScores = [...p.testScores];
+                                newScores[i] = { ...ts, score: e.target.value ? parseFloat(e.target.value) : undefined };
+                                toggleProgress({ testScores: newScores });
+                              }}
+                            />
+                          )
+                        }
                       />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+                    ))}
+                  </ChecklistGroup>
+                )}
 
-            <div className="border-t border-border" />
-
-            {/* Documents */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Documents</p>
-              <div className="space-y-1">
-                {/* Required Documents checklist */}
-                {prog?.requiredDocuments.map((doc, i) => {
-                  const done = p.documentsObtained.includes(doc);
-                  return (
-                    <CheckItem
-                      key={i}
-                      done={done}
+                <ChecklistGroup title="Documents">
+                  {prog?.requiredDocuments.map((doc, i) => {
+                    const done = p.documentsObtained.includes(doc);
+                    return (
+                      <CheckRow
+                        key={i}
+                        done={done}
+                        label={doc}
+                        disabled={isReadOnly}
+                        loading={updating === "documentsObtained"}
+                        onClick={() => {
+                          const docs = done ? p.documentsObtained.filter((d) => d !== doc) : [...p.documentsObtained, doc];
+                          toggleProgress({ documentsObtained: docs });
+                        }}
+                      />
+                    );
+                  })}
+                  {extraDocs.map((doc, i) => (
+                    <CheckRow
+                      key={`extra-${i}`}
+                      done
                       label={doc}
-                      loading={updating === "documentsObtained"}
-                      onClick={() => {
-                        const docs = done
-                          ? p.documentsObtained.filter((d) => d !== doc)
-                          : [...p.documentsObtained, doc];
-                        toggleProgress({ documentsObtained: docs });
-                      }}
-                    />
-                  );
-                })}
-
-                {/* Extra Documents — items in documentsObtained that are NOT in requiredDocuments */}
-                {p.documentsObtained.filter((d) => !prog?.requiredDocuments.includes(d)).length > 0 && (
-                  <>
-                    <div className="border-t border-border my-2" />
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Extra Documents</p>
-                    {p.documentsObtained
-                      .filter((d) => !prog?.requiredDocuments.includes(d))
-                      .map((doc, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm px-2 py-1.5 group">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 shrink-0">
-                            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                          </div>
-                          <span className="text-foreground font-medium flex-1">{doc}</span>
+                      detail="added"
+                      disabled
+                      trailing={
+                        !isReadOnly && (
                           <button
+                            type="button"
                             onClick={() => removeDocument(doc)}
                             disabled={updating === "documentsObtained"}
-                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity disabled:opacity-40"
+                            className="rounded-lg px-1.5 text-ink-4 hover:bg-stamp-soft hover:text-stamp"
+                            aria-label={`Remove ${doc}`}
                           >
-                            <X className="h-3.5 w-3.5" />
+                            ×
                           </button>
-                        </div>
-                      ))}
-                  </>
+                        )
+                      }
+                    />
+                  ))}
+                  {!prog?.requiredDocuments.length && extraDocs.length === 0 && (
+                    <li className="py-2 text-sm text-ink-3">The program doesn't list any documents.</li>
+                  )}
+                  {!isReadOnly && (
+                    <li className="pt-1">
+                      <AddLine
+                        value={docInput}
+                        onChange={setDocInput}
+                        onAdd={addDocument}
+                        placeholder="Something else you need to send…"
+                        disabled={updating === "documentsObtained"}
+                      />
+                    </li>
+                  )}
+                </ChecklistGroup>
+
+                {(prog?.requiresSOP || (prog?.recommendationLetters ?? 0) > 0 || p.recommendationsRequested > 0) && (
+                  <ChecklistGroup title="Writing">
+                    {prog?.requiresSOP && (
+                      <CheckRow
+                        done={p.sopStatus === "final"}
+                        label="Statement of purpose"
+                        detail={p.sopStatus === "draft" ? "draft" : undefined}
+                        disabled={isReadOnly}
+                        loading={updating === "sopStatus"}
+                        onClick={() => toggleProgress({ sopStatus: p.sopStatus === "final" ? "not_started" : "final" })}
+                        trailing={
+                          <Link to={`/applications/${a._id}/statement`} className="link-ink shrink-0 text-[13px]">
+                            Write
+                          </Link>
+                        }
+                      />
+                    )}
+                    {((prog?.recommendationLetters ?? 0) > 0 || p.recommendationsRequested > 0) && (
+                      <CheckRow
+                        done={p.recommendationsReceived >= p.recommendationsRequested && p.recommendationsRequested > 0}
+                        label="Letters of recommendation"
+                        detail={p.recommendationsRequested > 0 ? `${p.recommendationsReceived}/${p.recommendationsRequested}` : undefined}
+                        disabled={isReadOnly}
+                        loading={updating === "recommendationsReceived"}
+                        onClick={() =>
+                          toggleProgress({
+                            recommendationsReceived: Math.min(
+                              p.recommendationsReceived + 1,
+                              p.recommendationsRequested || prog?.recommendationLetters || 2,
+                            ),
+                            recommendationsRequested: p.recommendationsRequested || prog?.recommendationLetters || 2,
+                          })
+                        }
+                        trailing={
+                          <Link to={`/applications/${a._id}/recommenders`} className="link-ink shrink-0 text-[13px]">
+                            Recommenders
+                          </Link>
+                        }
+                      />
+                    )}
+                  </ChecklistGroup>
+                )}
+
+                <ChecklistGroup title="Fees">
+                  <CheckRow
+                    done={p.applicationFeePaid}
+                    label="Application fee paid"
+                    detail={
+                      prog?.applicationFee != null && prog.applicationFee > 0
+                        ? formatMoney(prog.applicationFee)
+                        : prog?.applicationFee === 0
+                          ? "free"
+                          : undefined
+                    }
+                    disabled={isReadOnly}
+                    loading={updating === "applicationFeePaid"}
+                    onClick={() => toggleProgress({ applicationFeePaid: !p.applicationFeePaid })}
+                  />
+                </ChecklistGroup>
+              </div>
+            </section>
+          )}
+
+          {stageIsVisa && (
+            <section>
+              <div className="mb-3 flex items-end justify-between gap-4">
+                <h2 className="text-[17px] font-bold tracking-[-0.01em]">Visa{uni?.country ? ` for ${uni.country}` : ""}</h2>
+                {country && (
+                  <Link to={`/countries/${country._id}`} className="link-ink text-[13px]">
+                    Country notes
+                  </Link>
                 )}
               </div>
-              {/* Inline document adder */}
-              {!isReadOnly && (
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={docInput}
-                    onChange={(e) => setDocInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDocument(); } }}
-                    className="h-8 text-sm rounded-lg border-border flex-1"
-                    placeholder="Add a document..."
+
+              {country && <VerificationNote status={country.verificationStatus} subject="visa" className="mb-6" />}
+
+              <div className="card divide-y divide-rule-soft px-5 py-4">
+                <ChecklistGroup title="Visa documents">
+                  {country?.requiredDocuments?.length ? (
+                    country.requiredDocuments.map((doc, i) => {
+                      const done = !!p.visaDocumentsObtained?.includes(doc);
+                      return (
+                        <CheckRow
+                          key={i}
+                          done={done}
+                          label={doc}
+                          disabled={isReadOnly}
+                          loading={updating === "visaDocumentsObtained"}
+                          onClick={() => {
+                            const docs = done
+                              ? (p.visaDocumentsObtained || []).filter((d) => d !== doc)
+                              : [...(p.visaDocumentsObtained || []), doc];
+                            toggleProgress({ visaDocumentsObtained: docs });
+                          }}
+                        />
+                      );
+                    })
+                  ) : (
+                    <li className="py-2 text-sm text-ink-3">No visa documents on file for {uni?.country ?? "this country"}.</li>
+                  )}
+                  {visaExtrasPending.map((doc, i) => (
+                    <CheckRow
+                      key={`pending-${i}`}
+                      done={false}
+                      label={doc}
+                      detail="added"
+                      disabled={isReadOnly}
+                      loading={updating === "visaDocumentsPending"}
+                      onClick={() => {
+                        const pending = (p.visaDocumentsPending || []).filter((d) => d !== doc);
+                        const obtained = [...(p.visaDocumentsObtained || []), doc];
+                        toggleProgress({ visaDocumentsPending: pending, visaDocumentsObtained: obtained });
+                      }}
+                    />
+                  ))}
+                  {visaExtrasObtained.map((doc, i) => (
+                    <CheckRow
+                      key={`obtained-${i}`}
+                      done
+                      label={doc}
+                      detail="added"
+                      disabled={isReadOnly}
+                      loading={updating === "visaDocumentsObtained"}
+                      onClick={() => {
+                        const docs = (p.visaDocumentsObtained || []).filter((d) => d !== doc);
+                        const pending = [...(p.visaDocumentsPending || []), doc];
+                        toggleProgress({ visaDocumentsObtained: docs, visaDocumentsPending: pending });
+                      }}
+                    />
+                  ))}
+                  {!isReadOnly && (
+                    <li className="pt-1">
+                      <AddLine
+                        value={docInput}
+                        onChange={setDocInput}
+                        onAdd={addVisaDocument}
+                        placeholder="Another document the embassy asked for…"
+                        disabled={updating === "visaDocumentsPending"}
+                      />
+                    </li>
+                  )}
+                </ChecklistGroup>
+
+                <ChecklistGroup title="Visa & interview">
+                  <CheckRow
+                    done={p.visaApplied}
+                    label="Visa applied"
+                    disabled={isReadOnly}
+                    loading={updating === "visaApplied"}
+                    onClick={() => toggleProgress({ visaApplied: !p.visaApplied })}
                   />
-                  <Button type="button" size="sm" variant="outline" className="h-8 border-border rounded-lg" onClick={addDocument} disabled={!docInput.trim() || updating === "documentsObtained"}>
-                    Add
+                  <CheckRow
+                    done={p.interviewCompleted}
+                    label="Interview done"
+                    detail={p.interviewScheduled ? formatDate(p.interviewScheduled) : undefined}
+                    disabled={isReadOnly}
+                    loading={updating === "interviewCompleted"}
+                    onClick={() => toggleProgress({ interviewCompleted: !p.interviewCompleted })}
+                  />
+                  <li className="flex flex-wrap items-center gap-3 py-2">
+                    <span className="flex-1 text-sm text-ink-2">Visa deadline</span>
+                    {p.visaDeadline && !isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => toggleProgress({ visaDeadline: null })}
+                        disabled={updating === "visaDeadline"}
+                        className="text-[13px] font-semibold text-ink-3 hover:text-stamp"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <Input
+                      type="date"
+                      value={p.visaDeadline ? String(p.visaDeadline).slice(0, 10) : ""}
+                      onChange={(e) => toggleProgress({ visaDeadline: e.target.value ? e.target.value : null })}
+                      disabled={isReadOnly || updating === "visaDeadline"}
+                      className="h-9 w-40 text-sm tnum"
+                    />
+                  </li>
+                </ChecklistGroup>
+              </div>
+
+              {p.visaApplied && a.applicationStatus !== "Enrolled" && (
+                <div className="mt-6">
+                  {p.visaApproved == null && (
+                    <Panel title="Has the embassy decided?" description="Record the outcome once the letter arrives.">
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="primary" size="sm" onClick={() => decideVisa(true)} disabled={isReadOnly || updating === "visaApproved"}>
+                          {updating === "visaApproved" ? <Loader2 className="animate-spin" /> : <Check />}
+                          Approved
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => decideVisa(false)} disabled={isReadOnly || updating === "visaApproved"}>
+                          <X />
+                          Refused
+                        </Button>
+                      </div>
+                    </Panel>
+                  )}
+                  {p.visaApproved === false && (
+                    <Panel
+                      tone="stamp"
+                      title="The visa was refused"
+                      description="That's hard news. The documents you gathered are kept — you can apply again when you're ready."
+                    >
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Button variant="outline" size="sm" onClick={restartVisaApplication} disabled={isReadOnly || updating === "visaApplied"}>
+                          {updating === "visaApplied" && <Loader2 className="animate-spin" />}
+                          Start the visa again
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={resetVisaDecision}
+                          disabled={isReadOnly || updating === "visaApproved"}
+                          className="link-ink text-[13px] disabled:opacity-50"
+                        >
+                          Undo decision
+                        </button>
+                      </div>
+                    </Panel>
+                  )}
+                  {p.visaApproved === true && (
+                    <Panel tone="moss" title="Visa approved" description="The stamp is in the passport.">
+                      {a.applicationStatus === "Accepted" && (
+                        <button
+                          type="button"
+                          onClick={resetVisaDecision}
+                          disabled={updating === "visaApproved"}
+                          className="link-ink text-[13px] disabled:opacity-50"
+                        >
+                          Undo decision
+                        </button>
+                      )}
+                    </Panel>
+                  )}
+                </div>
+              )}
+
+              {p.visaApproved === true && a.applicationStatus === "Accepted" && (
+                <div className="mt-6 rounded-3xl bg-brand-soft p-6">
+                  <p className="text-xl leading-tight font-bold tracking-[-0.02em]">One step left</p>
+                  <p className="mt-1 text-sm text-ink-2">
+                    Offer accepted, visa approved. Mark the enrollment when the university confirms it.
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="mt-4"
+                    onClick={() => updateStatus("Enrolled", "Enrolled — congratulations!")}
+                    disabled={updating === "status"}
+                  >
+                    {updating === "status" && <Loader2 className="animate-spin" />}
+                    Mark as enrolled
                   </Button>
                 </div>
               )}
+            </section>
+          )}
+
+          {a.applicationStatus === "Rejected" && (
+            <Panel
+              tone="stamp"
+              title="Not this time"
+              description="It stings, but it's one door. The program details are kept here in case you want to try again next intake."
+            >
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/programs">Look at other programs</Link>
+              </Button>
+            </Panel>
+          )}
+
+          {/* Decisions */}
+          {a.applicationStatus === "Preparing" && (
+            <div className="rounded-3xl bg-brand-soft p-6">
+              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">Sent it off?</p>
+              <p className="mt-1 text-sm text-ink-2">
+                Once you've submitted on the university's portal, mark it here. The deadline stops counting down.
+              </p>
+              <Button variant="primary" size="lg" className="mt-4" onClick={() => setSubmitDialogOpen(true)} disabled={updating === "submit"}>
+                {updating === "submit" && <Loader2 className="animate-spin" />}
+                Mark as submitted
+              </Button>
             </div>
+          )}
 
-            <div className="border-t border-border" />
-
-            {/* SOP & Recommendations */}
-            {(prog?.requiresSOP || (prog?.recommendationLetters ?? 0) > 0) && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Writing</p>
-                <div className="space-y-1">
-                  {prog?.requiresSOP && (
-                    <div className="flex items-center justify-between">
-                      <CheckItem
-                        done={p.sopStatus === "final"}
-                        label="Statement of Purpose"
-                        detail={p.sopStatus === "draft" ? "draft" : p.sopStatus === "final" ? "done" : undefined}
-                        loading={updating === "sopStatus"}
-                        onClick={() => toggleProgress({ sopStatus: p.sopStatus === "final" ? "not_started" : "final" })}
-                      />
-                      <Link
-                        to={`/applications/${a._id}/statement`}
-                        className="text-xs text-primary hover:underline shrink-0 ml-2"
-                      >
-                        Edit Statement
-                      </Link>
-                    </div>
-                  )}
-                  {((prog?.recommendationLetters ?? 0) > 0 || p.recommendationsRequested > 0) && (
-                    <div className="flex items-center justify-between">
-                      <CheckItem
-                        done={p.recommendationsReceived >= p.recommendationsRequested && p.recommendationsRequested > 0}
-                        label="Letters of Recommendation"
-                        detail={p.recommendationsRequested > 0 ? `${p.recommendationsReceived}/${p.recommendationsRequested}` : undefined}
-                        loading={updating === "recommendationsReceived"}
-                        onClick={() => toggleProgress({ recommendationsReceived: Math.min(p.recommendationsReceived + 1, p.recommendationsRequested || prog?.recommendationLetters || 2), recommendationsRequested: p.recommendationsRequested || prog?.recommendationLetters || 2 })}
-                      />
-                      <Link
-                        to={`/applications/${a._id}/recommenders`}
-                        className="text-xs text-primary hover:underline shrink-0 ml-2"
-                      >
-                        Manage Recommenders
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="border-t border-border" />
-
-            {/* Submission */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Submission</p>
-              <div className="space-y-1">
-                <CheckItem
-                  done={p.applicationFeePaid}
-                  label="Application Fee Paid"
-                  detail={
-                    prog?.applicationFee != null && prog.applicationFee > 0
-                      ? `€${prog.applicationFee.toLocaleString()}`
-                      : prog?.applicationFee === 0
-                      ? "Free"
-                      : undefined
-                  }
-                  loading={updating === "applicationFeePaid"}
-                  onClick={() => toggleProgress({ applicationFeePaid: !p.applicationFeePaid })}
-                />
+          {a.applicationStatus === "Applied" && (
+            <div className="rounded-3xl bg-brand-soft p-6">
+              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">Heard back?</p>
+              <p className="mt-1 text-sm text-ink-2">Record the university's answer when it comes.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="primary" onClick={() => updateStatus("Accepted", "Accepted! Well done.")} disabled={updating === "status"}>
+                  Accepted
+                </Button>
+                <Button variant="outline" onClick={() => updateStatus("Waitlisted")} disabled={updating === "status"}>
+                  Waitlisted
+                </Button>
+                <Button variant="outline" onClick={() => updateStatus("Rejected")} disabled={updating === "status"}>
+                  Rejected
+                </Button>
               </div>
             </div>
+          )}
 
-            </>)}
-            {(a.applicationStatus === "Accepted" || a.applicationStatus === "Enrolled" || a.applicationStatus === "Waitlisted") && (
-              <>
-                {country && (
-                  <div className={`rounded-lg p-3 text-sm border ${
-                    country.verificationStatus === "manual"
-                      ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800"
-                      : country.verificationStatus === "ai"
-                      ? "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-800"
-                      : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-800"
-                  }`}>
-                    <p className="font-semibold">
-                      {country.verificationStatus === "manual"
-                        ? "✓ Manually Verified Visa Info"
-                        : country.verificationStatus === "ai"
-                        ? "⚠ AI-Verified Visa Info"
-                        : "⚠ Unverified Visa Info"}
-                    </p>
-                    <p className="text-xs mt-1">
-                      {country.verificationStatus === "manual"
-                        ? "This country's visa information has been manually verified."
-                        : country.verificationStatus === "ai"
-                        ? "Visa information was compiled using AI. Always confirm requirements, fees, and documents with the official embassy."
-                        : "Visa information has not been verified. Always check the latest requirements on the official embassy website."}
-                    </p>
-                  </div>
-                )}
-                <div className="border-t border-border" />
-                {/* Visa Documents Checklist */}
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Visa Documents</p>
-                  <div className="space-y-1">
-                    {country?.requiredDocuments?.length ? (
-                      country.requiredDocuments.map((doc, i) => {
-                        const done = p.visaDocumentsObtained?.includes(doc);
-                        return (
-                          <CheckItem
-                            key={i}
-                            done={done}
-                            label={doc}
-                            loading={updating === "visaDocumentsObtained"}
-                            onClick={() => {
-                              const docs = done
-                                ? (p.visaDocumentsObtained || []).filter((d) => d !== doc)
-                                : [...(p.visaDocumentsObtained || []), doc];
-                              toggleProgress({ visaDocumentsObtained: docs });
-                            }}
-                          />
-                        );
-                      })
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No visa documents configured for {uni?.country}</p>
-                    )}
-                    {/* Extra visa docs — pending & obtained not in country requiredDocuments */}
-                    {(p.visaDocumentsPending?.filter((d) => !country?.requiredDocuments?.includes(d)).length > 0 ||
-                      p.visaDocumentsObtained?.filter((d) => !country?.requiredDocuments?.includes(d)).length > 0) && (
-                      <>
-                        <div className="border-t border-border my-2" />
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Extra Documents</p>
-                        {/* Pending — not yet obtained */}
-                        {p.visaDocumentsPending
-                          ?.filter((d) => !country?.requiredDocuments?.includes(d))
-                          .map((doc, i) => (
-                            <CheckItem
-                              key={`pending-${i}`}
-                              done={false}
-                              label={doc}
-                              loading={updating === "visaDocumentsPending"}
-                              onClick={() => {
-                                const pending = (p.visaDocumentsPending || []).filter((d) => d !== doc);
-                                const obtained = [...(p.visaDocumentsObtained || []), doc];
-                                toggleProgress({ visaDocumentsPending: pending, visaDocumentsObtained: obtained });
-                              }}
-                            />
-                          ))}
-                        {/* Obtained extras — already checked */}
-                        {p.visaDocumentsObtained
-                          ?.filter((d) => !country?.requiredDocuments?.includes(d))
-                          .map((doc, i) => (
-                            <div key={`obtained-${i}`} className="flex items-center gap-2 text-sm px-2 py-1.5 group">
-                              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 shrink-0">
-                                <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                              </div>
-                              <span className="text-foreground font-medium flex-1">{doc}</span>
-                              <button
-                                onClick={() => {
-                                  const docs = (p.visaDocumentsObtained || []).filter((d) => d !== doc);
-                                  const pending = [...(p.visaDocumentsPending || []), doc];
-                                  toggleProgress({ visaDocumentsObtained: docs, visaDocumentsPending: pending });
-                                }}
-                                disabled={updating === "visaDocumentsObtained"}
-                                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity disabled:opacity-40"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                      </>
-                    )}
-                  </div>
-                  {/* Inline document adder for extra visa docs */}
-                  {!isReadOnly && (
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        value={docInput}
-                        onChange={(e) => setDocInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addVisaDocument(); } }}
-                        className="h-8 text-sm rounded-lg border-border flex-1"
-                        placeholder="Add extra visa document..."
-                      />
-                      <Button type="button" size="sm" variant="outline" className="h-8 border-border rounded-lg" onClick={addVisaDocument} disabled={!docInput.trim() || updating === "visaDocumentsObtained"}>
-                        Add
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-border" />
-
-                {/* Visa & Interview */}
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Visa & Interview</p>
-                  <div className="space-y-1">
-                    <CheckItem done={p.visaApplied} label="Visa Applied" loading={updating === "visaApplied"} onClick={() => toggleProgress({ visaApplied: !p.visaApplied })} />
-                    <CheckItem done={p.interviewCompleted} label="Interview Completed" detail={p.interviewScheduled ? formatDate(p.interviewScheduled) : undefined} loading={updating === "interviewCompleted"} onClick={() => toggleProgress({ interviewCompleted: !p.interviewCompleted })} />
-                    {/* Visa deadline */}
-                    <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
-                      <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Visa deadline</span>
-                      <div className="ml-auto flex items-center gap-2">
-                        {p.visaDeadline && (
-                          <button
-                            type="button"
-                            onClick={() => toggleProgress({ visaDeadline: null })}
-                            disabled={isReadOnly || updating === "visaDeadline"}
-                            className="text-xs text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
-                            title="Clear visa deadline"
-                          >
-                            Clear
-                          </button>
-                        )}
-                        <Input
-                          type="date"
-                          value={p.visaDeadline ? String(p.visaDeadline).slice(0, 10) : ""}
-                          onChange={(e) =>
-                            toggleProgress({ visaDeadline: e.target.value ? e.target.value : null })
-                          }
-                          disabled={isReadOnly || updating === "visaDeadline"}
-                          className="h-8 w-40 text-sm rounded-lg border-border"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Visa decision flow */}
-                  {p.visaApplied && a.applicationStatus !== "Enrolled" && (
-                    <div className="mt-3">
-                      {/* Pending decision */}
-                      {p.visaApproved == null && (
-                        <div className="rounded-xl border border-border bg-muted/40 p-4">
-                          <p className="text-sm font-semibold text-foreground">Visa decision</p>
-                          <p className="text-xs text-muted-foreground mb-3">
-                            Record the embassy's decision on your visa application
-                          </p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Button
-                              variant="outline"
-                              onClick={() => decideVisa(true)}
-                              disabled={updating === "visaApproved"}
-                              className="border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
-                            >
-                              {updating === "visaApproved" ? (
-                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Check className="mr-1.5 h-4 w-4" />
-                              )}
-                              Approved
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => decideVisa(false)}
-                              disabled={updating === "visaApproved"}
-                              className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 hover:border-red-300 rounded-xl"
-                            >
-                              {updating === "visaApproved" ? (
-                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                              ) : (
-                                <X className="mr-1.5 h-4 w-4" />
-                              )}
-                              Rejected
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Rejected state */}
-                      {p.visaApproved === false && (
-                        <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4">
-                          <div className="flex items-start gap-3">
-                            <XCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-red-700 dark:text-red-400">
-                                Visa rejected
-                              </p>
-                              <p className="text-xs text-red-600/90 dark:text-red-400/80 mt-1 leading-relaxed">
-                                The visa application was not approved. You can
-                                restart the visa process when ready — your
-                                obtained visa documents are kept.
-                              </p>
-                              <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={restartVisaApplication}
-                                  disabled={updating === "visaApplied"}
-                                  className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl"
-                                >
-                                  {updating === "visaApplied" ? (
-                                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <RotateCcw className="mr-1.5 h-4 w-4" />
-                                  )}
-                                  Restart visa application
-                                </Button>
-                                <button
-                                  onClick={resetVisaDecision}
-                                  disabled={updating === "visaApproved"}
-                                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                                >
-                                  Undo decision
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Approved state */}
-                      {p.visaApproved === true && (
-                        <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 p-4">
-                          <div className="flex items-start gap-3">
-                            <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                                Visa approved
-                              </p>
-                              <p className="text-xs text-emerald-600/90 dark:text-emerald-400/80 mt-1">
-                                Congratulations — your visa was approved.
-                              </p>
-                              {a.applicationStatus === "Accepted" && (
-                                <button
-                                  onClick={resetVisaDecision}
-                                  disabled={updating === "visaApproved"}
-                                  className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-50"
-                                >
-                                  Undo decision
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Enroll CTA — visa approved, not yet enrolled */}
-                {p.visaApproved === true && a.applicationStatus === "Accepted" && (
-                  <>
-                    <div className="border-t border-border" />
-                    <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-cyan-500/10 p-5 text-center animate-fade-up">
-                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-cyan-500 shadow-lg shadow-primary/25">
-                        <GraduationCap className="h-6 w-6 text-white" />
-                      </div>
-                      <p className="font-display text-lg font-semibold text-foreground">
-                        You're all set!
-                      </p>
-                      <p className="mt-1 mb-4 text-sm text-muted-foreground">
-                        Visa approved — complete the enrollment to finish the
-                        journey.
-                      </p>
-                      <Button
-                        onClick={enroll}
-                        disabled={updating === "status"}
-                        className="w-full rounded-xl bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-600 text-white shadow-lg shadow-primary/25"
-                      >
-                        {updating === "status" ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Enrolling...
-                          </>
-                        ) : (
-                          <>
-                            <GraduationCap className="mr-2 h-4 w-4" />
-                            Enroll Now
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
-            {a.applicationStatus === "Preparing" && (
-              <div className="pt-2">
-                <div className="border-t border-border pt-4">
-                  <Button
-                    onClick={() => setSubmitDialogOpen(true)}
-                    disabled={updating === "submit"}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
-                  >
-                    {updating === "submit" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : <><Send className="mr-2 h-4 w-4" /> Submit Application</>}
-                  </Button>
-                </div>
+          {a.applicationStatus === "Waitlisted" && (
+            <div className="rounded-3xl bg-brand-soft p-6">
+              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">Off the waiting list?</p>
+              <p className="mt-1 text-sm text-ink-2">When the university decides, record it here.</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="primary" onClick={() => updateStatus("Accepted", "Accepted! Well done.")} disabled={updating === "status"}>
+                  Accepted
+                </Button>
+                <Button variant="outline" onClick={() => updateStatus("Rejected")} disabled={updating === "status"}>
+                  Rejected
+                </Button>
               </div>
-            )}
-            {a.applicationStatus === "Applied" && (
-              <div className="pt-2">
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm font-semibold text-foreground mb-1">Admission Decision</p>
-                  <p className="text-xs text-muted-foreground mb-3">Record the result of your application</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => updateStatus("Accepted")}
-                      disabled={updating === "status"}
-                      className="border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
-                    >
-                      <Check className="mr-1.5 h-4 w-4" /> Accepted
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => updateStatus("Waitlisted")}
-                      disabled={updating === "status"}
-                      className="border-orange-200 dark:border-orange-500/30 text-orange-700 dark:text-orange-400 hover:bg-orange-50 hover:border-orange-300 rounded-xl"
-                    >
-                      ⏳ Waitlisted
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => updateStatus("Rejected")}
-                      disabled={updating === "status"}
-                      className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 hover:border-red-300 rounded-xl"
-                    >
-                      <X className="mr-1.5 h-4 w-4" /> Rejected
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {a.applicationStatus === "Waitlisted" && (
-              <div className="pt-2">
-                <div className="border-t border-border pt-4">
-                  <p className="text-sm font-semibold text-foreground mb-1">Waitlist Outcome</p>
-                  <p className="text-xs text-muted-foreground mb-3">Was your waitlist resolved?</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => updateStatus("Accepted")}
-                      disabled={updating === "status"}
-                      className="border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
-                    >
-                      <Check className="mr-1.5 h-4 w-4" /> Accepted
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => updateStatus("Rejected")}
-                      disabled={updating === "status"}
-                      className="border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 hover:bg-red-50 hover:border-red-300 rounded-xl"
-                    >
-                      <X className="mr-1.5 h-4 w-4" /> Rejected
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Created {formatDate(a.createdAt)} · Updated {formatDate(a.updatedAt)}
-      </p>
-    </div>
+        {/* ── Aside: the facts ── */}
+        <aside className="space-y-8">
+          <div>
+            <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">Details</p>
+            <Facts className="card px-5 py-1">
+              <Fact label="Student">{a.studentName}</Fact>
+              <Fact label="Email">
+                <span className="break-all">{a.studentEmail}</span>
+              </Fact>
+              <Fact label="Deadline">
+                {a.applicationDeadline ? (
+                  <span className="flex flex-col items-end">
+                    <span>{formatDateLong(a.applicationDeadline)}</span>
+                    {stageIsPrep && <DaysLeft date={a.applicationDeadline} />}
+                  </span>
+                ) : (
+                  <span className="text-ink-4">not set</span>
+                )}
+              </Fact>
+              <Fact label="Application fee">
+                {prog?.applicationFee != null && prog.applicationFee > 0 ? (
+                  <span>
+                    {formatMoney(prog.applicationFee)}{" "}
+                    <span className={cn("text-xs tnum", p.applicationFeePaid ? "text-moss" : "text-ochre")}>
+                      {p.applicationFeePaid ? "paid" : "unpaid"}
+                    </span>
+                  </span>
+                ) : prog?.applicationFee === 0 ? (
+                  "Free"
+                ) : (
+                  <span className="text-ink-4">not set</span>
+                )}
+              </Fact>
+              {p.visaDeadline && <Fact label="Visa deadline">{formatDateLong(p.visaDeadline)}</Fact>}
+              <Fact label="Started">{formatDate(a.createdAt)}</Fact>
+              <Fact label="Last change">{formatDate(a.updatedAt)}</Fact>
+            </Facts>
+            {a.notes && (
+              <p className="mt-3 rounded-2xl bg-paper-sunken px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-ink-2">
+                {a.notes}
+              </p>
+            )}
+            <Link to={`/applications/${a._id}/edit`} className="link-ink mt-3 inline-block px-1 text-sm">
+              Edit status, deadline and notes
+            </Link>
+          </div>
+
+          {prog && (
+            <div>
+              <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">The program</p>
+              <Facts className="card px-5 py-1">
+                <Fact label="Degree">{prog.degreeLevel}</Fact>
+                <Fact label="Taught in">{prog.languageOfInstruction}</Fact>
+                {prog.tuitionFee != null && (
+                  <Fact label="Tuition">{formatTuition(prog.tuitionFee, prog.tuitionCurrency || "EUR", prog.tuitionPeriod)}</Fact>
+                )}
+              </Facts>
+              <Link to={`/programs/${prog._id}`} className="link-ink mt-3 inline-block px-1 text-sm">
+                Full program page
+              </Link>
+            </div>
+          )}
+        </aside>
+      </div>
+    </>
   );
 }

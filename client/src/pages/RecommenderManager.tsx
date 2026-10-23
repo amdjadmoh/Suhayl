@@ -1,9 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { toast } from "sonner"
+import { Check, Link2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog,
   DialogContent,
@@ -11,43 +11,34 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { toast } from "sonner"
-import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Eye,
-  Loader2,
-  Mail,
-  User,
-  Check,
-  X,
-  Clock,
-  AlertCircle,
-} from "lucide-react"
 import {
   useRecommendations,
   useInviteRecommender,
   useDeleteRecommendation,
 } from "@/lib/api-recommender"
 import type { Recommendation } from "@/lib/api-recommender"
-import { getErrorMessage } from "@/lib/utils"
+import { cn, getErrorMessage } from "@/lib/utils"
+import { formatDate, plural } from "@/lib/format"
+import { BackLink, EmptyState, ErrorState, Field, LoadingPage, PageHeader } from "@/components/kit"
 
-const STATUS_BADGE: Record<
-  Recommendation["status"],
-  { label: string; className: string }
-> = {
-  invited: { label: "Invited", className: "bg-amber-100 dark:bg-amber-500/15 text-amber-800 border-amber-200 dark:border-amber-500/30" },
-  submitted: { label: "Submitted", className: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 border-emerald-200 dark:border-emerald-500/30" },
-  declined: { label: "Declined", className: "bg-red-100 dark:bg-red-500/15 text-red-800 border-red-200 dark:border-red-500/30" },
+const STATUS_LABEL: Record<Recommendation["status"], { label: string; tone: string }> = {
+  invited: { label: "Waiting", tone: "bg-ochre-soft text-ochre" },
+  submitted: { label: "Letter in", tone: "bg-moss-soft text-moss" },
+  declined: { label: "Declined", tone: "bg-stamp-soft text-stamp" },
 }
 
-const STATUS_ICON: Record<Recommendation["status"], React.ReactNode> = {
-  invited: <Clock className="h-4 w-4 text-amber-500" />,
-  submitted: <Check className="h-4 w-4 text-emerald-500" />,
-  declined: <X className="h-4 w-4 text-red-500" />,
+function letterLink(rec: Recommendation): string {
+  return `${window.location.origin}/recommendation/${rec.token}`
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export default function RecommenderManager(): React.ReactElement {
@@ -61,23 +52,34 @@ export default function RecommenderManager(): React.ReactElement {
 
   // View letter dialog state
   const [letterOpen, setLetterOpen] = useState(false)
-  const [selectedLetter, setSelectedLetter] = useState("")
+  const [selected, setSelected] = useState<Recommendation | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useRecommendations(applicationId ?? "")
   const inviteMutation = useInviteRecommender()
   const deleteMutation = useDeleteRecommendation()
 
   const recommendations = data?.recommendations ?? []
+  const received = recommendations.filter((r) => r.status === "submitted").length
 
-  async function handleInvite(): Promise<void> {
+  async function handleInvite(e?: React.FormEvent): Promise<void> {
+    e?.preventDefault()
     if (!applicationId || !name.trim() || !email.trim()) return
     try {
-      await inviteMutation.mutateAsync({
+      const rec = await inviteMutation.mutateAsync({
         applicationId,
         recommenderName: name.trim(),
         recommenderEmail: email.trim(),
       })
-      toast.success("Recommender invited")
+      if (rec.emailSent) {
+        toast.success(`Invitation emailed to ${name.trim()}`)
+      } else {
+        // No email on this server: hand the student the link to send themselves
+        const copied = await copyText(letterLink(rec))
+        toast.success(copied ? `Link copied — send it to ${name.trim()}` : `Invitation ready — copy the link and send it to ${name.trim()}`, {
+          description: "They write the letter there, no account needed.",
+        })
+      }
       setInviteOpen(false)
       setName("")
       setEmail("")
@@ -89,102 +91,85 @@ export default function RecommenderManager(): React.ReactElement {
   async function handleDelete(id: string): Promise<void> {
     try {
       await deleteMutation.mutateAsync(id)
-      toast.success("Recommendation cancelled")
+      toast.success("Invitation withdrawn")
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to cancel recommendation"))
     }
   }
 
-  function viewLetter(letterText: string): void {
-    setSelectedLetter(letterText)
+  async function handleCopy(rec: Recommendation): Promise<void> {
+    if (await copyText(letterLink(rec))) {
+      setCopiedId(rec._id)
+      toast.success("Link copied")
+      window.setTimeout(() => setCopiedId((id) => (id === rec._id ? null : id)), 2000)
+    } else {
+      window.prompt("Copy this link and send it to them:", letterLink(rec))
+    }
+  }
+
+  function viewLetter(rec: Recommendation): void {
+    setSelected(rec)
     setLetterOpen(true)
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingPage />
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Error loading recommenders</h2>
-        <button
-          onClick={() => navigate(`/applications/${applicationId ?? ""}`)}
-          className="mt-4 inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Back to Application
-        </button>
-      </div>
+      <ErrorState
+        title="Recommenders didn't load"
+        action={
+          <Button variant="outline" onClick={() => navigate(`/applications/${applicationId ?? ""}`)}>
+            Back to the application
+          </Button>
+        }
+      />
     )
   }
 
+  const inviteButton = (
+    <Button variant="primary" onClick={() => setInviteOpen(true)}>
+      Invite a recommender
+    </Button>
+  )
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(`/applications/${applicationId ?? ""}`)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Recommenders
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Manage letters of recommendation for this application
-            </p>
-          </div>
-        </div>
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
-              <Plus className="mr-1.5 h-4 w-4" /> Invite Recommender
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+    <>
+      <PageHeader
+        back={<BackLink to={`/applications/${applicationId ?? ""}`}>Application</BackLink>}
+        kicker={recommendations.length ? `${received} of ${plural(recommendations.length, "letter")} received` : "Letters of recommendation"}
+        title="Recommenders"
+        actions={inviteButton}
+      >
+        Each person gets a private link. They write the letter there, with no account needed, and you can read it here once it's in.
+      </PageHeader>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <form onSubmit={handleInvite} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>Invite Recommender</DialogTitle>
+              <DialogTitle>Invite a recommender</DialogTitle>
               <DialogDescription>
-                Send an email invitation to a professor, employer, or other
-                recommender.
+                A professor, a manager, someone who knows your work. They'll get a private link to write the letter.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Recommender Name
-                </label>
+            <div className="grid gap-4">
+              <Field label="Their name" htmlFor="rec-name">
+                <Input id="rec-name" placeholder="Dr. Amina Benali" value={name} onChange={(e) => setName(e.target.value)} />
+              </Field>
+              <Field label="Their email" htmlFor="rec-email">
                 <Input
-                  placeholder="e.g. Dr. Jane Smith"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="rounded-lg border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Recommender Email
-                </label>
-                <Input
+                  id="rec-email"
                   type="email"
-                  placeholder="e.g. jane.smith@university.edu"
+                  placeholder="a.benali@university.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="rounded-lg border-border"
                 />
-              </div>
+              </Field>
             </div>
             <DialogFooter>
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => {
                   setInviteOpen(false)
@@ -194,123 +179,84 @@ export default function RecommenderManager(): React.ReactElement {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleInvite}
-                disabled={
-                  inviteMutation.isPending ||
-                  !name.trim() ||
-                  !email.trim()
-                }
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                {inviteMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-                    Sending...
-                  </>
-                ) : (
-                  "Send Invitation"
-                )}
+              <Button type="submit" variant="primary" disabled={inviteMutation.isPending || !name.trim() || !email.trim()}>
+                {inviteMutation.isPending && <Loader2 className="animate-spin" />}
+                Send invitation
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Recommendations List */}
-      {recommendations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16">
-          <Mail className="mb-4 h-12 w-12 text-muted-foreground/40" />
-          <h3 className="text-lg font-semibold text-foreground">
-            No recommenders yet
-          </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Invite your first recommender to get started.
-          </p>
-          <Button
-            onClick={() => setInviteOpen(true)}
-            className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
-          >
-            <Plus className="mr-1.5 h-4 w-4" /> Invite Recommender
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {recommendations.map((rec) => (
-            <div
-              key={rec._id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card px-6 py-4"
-            >
-              <div className="flex items-center gap-4 min-w-0 flex-1">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-foreground truncate">
-                    {rec.recommenderName}
-                  </p>
-                  <p className="flex items-center gap-1 text-sm text-muted-foreground truncate">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    {rec.recommenderEmail}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <Badge
-                  variant="outline"
-                  className={STATUS_BADGE[rec.status].className}
-                >
-                  <span className="flex items-center gap-1">
-                    {STATUS_ICON[rec.status]}
-                    {STATUS_BADGE[rec.status].label}
-                  </span>
-                </Badge>
-                {rec.status === "submitted" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => viewLetter(rec.letterText)}
-                    className="border-border rounded-lg"
-                  >
-                    <Eye className="mr-1.5 h-4 w-4" /> View Letter
-                  </Button>
-                )}
-                {rec.status === "invited" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(rec._id)}
-                    disabled={deleteMutation.isPending}
-                    className="border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="mr-1.5 h-4 w-4" /> Cancel
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* View Letter Dialog */}
-      <Dialog open={letterOpen} onOpenChange={setLetterOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Recommendation Letter</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-muted p-4 text-sm text-foreground leading-relaxed">
-            {selectedLetter || "No letter text available."}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setLetterOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {recommendations.length === 0 ? (
+        <EmptyState title="Invite your first recommender" action={inviteButton}>
+          Ask early — people are busy, and a good letter takes a week or two to write.
+        </EmptyState>
+      ) : (
+        <ul className="card divide-y divide-rule-soft overflow-hidden">
+          {recommendations.map((rec) => {
+            const st = STATUS_LABEL[rec.status]
+            return (
+              <li key={rec._id} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4 px-5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-base leading-tight font-semibold">{rec.recommenderName}</p>
+                  <p className="truncate text-[13px] text-ink-3">{rec.recommenderEmail}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", st.tone)}>{st.label}</span>
+                  <p className="text-xs text-ink-4 tnum">
+                    {rec.status === "submitted" && rec.submittedAt
+                      ? `received ${formatDate(rec.submittedAt)}`
+                      : `asked ${formatDate(rec.createdAt)}`}
+                  </p>
+                </div>
+                <div className="flex w-full justify-end gap-2 sm:w-auto">
+                  {rec.status === "submitted" && (
+                    <Button variant="outline" size="sm" onClick={() => viewLetter(rec)}>
+                      Read letter
+                    </Button>
+                  )}
+                  {rec.status === "invited" && (
+                    <Button variant="outline" size="sm" onClick={() => handleCopy(rec)}>
+                      {copiedId === rec._id ? <Check /> : <Link2 />}
+                      {copiedId === rec._id ? "Copied" : "Copy link"}
+                    </Button>
+                  )}
+                  {rec.status === "invited" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(rec._id)}
+                      disabled={deleteMutation.isPending}
+                      className="text-stamp hover:bg-stamp-soft hover:text-stamp"
+                    >
+                      Withdraw
+                    </Button>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {/* View letter dialog */}
+      <Dialog open={letterOpen} onOpenChange={setLetterOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <p className="kicker">Letter of recommendation</p>
+            <DialogTitle>From {selected?.recommenderName}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto rounded-2xl bg-paper-sunken px-5 py-5 text-[15px] leading-[1.7] whitespace-pre-wrap text-ink">
+            {selected?.letterText || "No letter text available."}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setLetterOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

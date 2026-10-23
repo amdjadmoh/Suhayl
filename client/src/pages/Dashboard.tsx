@@ -1,772 +1,357 @@
-import { useAdminStats, useAgencyApplications, useStudents, useApplications } from "@/lib/api";
+import { Link } from "react-router-dom";
+import { ArrowRight, CalendarPlus, UserRound } from "lucide-react";
+import { useAdminStats, useApplications, usePreferences } from "@/lib/api";
 import { useAuth } from "@/lib/authContext";
-import { STATUS_COLORS } from "@/lib/constants";
+import { useCompare } from "@/lib/compareContext";
 import type { Application } from "@/types/application";
-import {
-  GraduationCap,
-  Globe,
-  MapPin,
-  Building2,
-  Users,
-  Award,
-  CalendarClock,
-  Clock,
-  AlertCircle,
-  FileText,
-  UserPlus,
-  BookOpen,
-  TrendingUp,
-  CheckCircle2,
-  ArrowRight,
-  Plus,
-  Compass,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { daysUntil, formatDate, plural } from "@/lib/format";
+import { downloadDeadlinesCalendar } from "@/lib/downloads";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
+import { EmptyState, ErrorState, LoadingRows, PageHeader, Section } from "@/components/kit";
+import { ApplicationList, Figures, Shortcuts, StatusBreakdown } from "@/components/ledger";
+import { appProgram, appUniversity, countByStatus, missedDeadlines, upcomingDeadlines } from "@/lib/applications";
 import { ExtensionCTA } from "@/components/ExtensionCTA";
+import AgencyDashboard from "@/pages/AgencyDashboard";
 
-function daysUntil(dateStr: string): number {
-  const now = new Date();
-  const target = new Date(dateStr);
-  const diff = target.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+/* ---------- Student ---------- */
+
+/** One short line that says what matters most right now. */
+function headline(applications: Application[]): string {
+  if (applications.length === 0) return "Let's find your first program";
+  const thisMonth = upcomingDeadlines(applications, 30).length;
+  if (thisMonth > 0) return `You have ${plural(thisMonth, "deadline")} this month`;
+  const counts = countByStatus(applications);
+  const offers = counts.Accepted + counts.Enrolled;
+  if (offers > 0) return `${plural(offers, "offer")} in hand — nice work`;
+  return `${plural(applications.length, "application")} on the go`;
 }
 
-function todayLabel(): string {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-/* ---------- Shared building blocks ---------- */
-
-function PageHero({
-  title,
-  subtitle,
-  actions,
-}: {
-  title: string;
-  subtitle: string;
-  actions?: React.ReactNode;
-}): React.ReactElement {
+/** Asks a new student for the numbers Matches and the program filters run on. */
+function ProfileNudge(): React.ReactElement | null {
+  const { data: prefs, isLoading } = usePreferences();
+  if (isLoading || !prefs || prefs.gpa != null || prefs.ieltsScore != null || prefs.preferredMonthlyBudget != null) return null;
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8">
-      <div className="absolute inset-0 bg-mesh" />
-      <div className="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_60%_80%_at_80%_20%,black,transparent)]" />
-      <div className="relative flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{todayLabel()}</p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-foreground">
-            {title}
-          </h1>
-          <p className="mt-1.5 text-muted-foreground">{subtitle}</p>
-        </div>
-        {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  tint,
-  sub,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon: React.ComponentType<{ className?: string }>;
-  tint: string;
-  sub?: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 card-hover">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tint}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-      <p className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground">
-        {value}
+    <div className="rounded-[1.25rem] bg-brand-soft p-5">
+      <span className="flex size-9 items-center justify-center rounded-xl bg-paper-raised text-brand-ink">
+        <UserRound className="size-[18px]" />
+      </span>
+      <p className="mt-3 text-[15px] font-bold text-ink">Add your grades and budget</p>
+      <p className="mt-1 text-[13px] leading-relaxed text-ink-2">
+        Your GPA, IELTS and monthly budget let Matches rank programs for you and flag the ones you don't qualify for yet.
       </p>
-      {sub && <div className="mt-1.5 flex items-center gap-1 text-xs">{sub}</div>}
+      <Button variant="primary" size="sm" className="mt-4" asChild>
+        <Link to="/settings#profile">Add my profile</Link>
+      </Button>
     </div>
   );
 }
 
-function SectionCard({
-  title,
-  subtitle,
-  icon: Icon,
-  tint,
-  action,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tint: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tint}`}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-display text-lg font-semibold text-foreground">{title}</h3>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
-          </div>
+/** The big blue card: the next thing that's due. */
+function NextUpCard({ next, hasApplications }: { next?: Application; hasApplications: boolean }): React.ReactElement {
+  if (!next) {
+    return (
+      <div className="flex flex-col justify-between rounded-3xl bg-brand p-6 text-on-brand">
+        <div>
+          <p className="text-sm font-medium opacity-80">Next deadline</p>
+          <p className="mt-2 text-xl leading-snug font-bold">Nothing due soon</p>
+          <p className="mt-1 text-sm opacity-80">
+            {hasApplications
+              ? "None of your applications are due in the next three months."
+              : "Add a program you like and its deadline shows up here."}
+          </p>
         </div>
-        {action}
+        <Link
+          to="/programs"
+          className="mt-6 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold transition-colors hover:bg-white/25"
+        >
+          Browse programs <ArrowRight className="size-4" />
+        </Link>
       </div>
-      {children}
-    </div>
-  );
-}
-
-function StatCardSkeleton(): React.ReactElement {
+    );
+  }
+  const days = daysUntil(next.applicationDeadline) ?? 0;
+  const prog = appProgram(next);
+  const uni = appUniversity(next);
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-10 w-10 rounded-xl" />
-      </div>
-      <Skeleton className="h-8 w-16" />
-    </div>
-  );
-}
-
-/* ---------- Student dashboard ---------- */
-
-function StatusBreakdown({
-  byStatus,
-}: {
-  byStatus: { status: string; count: number }[];
-}): React.ReactElement {
-  const total = byStatus.reduce((sum, s) => sum + s.count, 0);
-
-  return (
-    <SectionCard
-      title="Application Status"
-      subtitle="Overview of all applications"
-      icon={Award}
-      tint="bg-violet-500/10 text-violet-500"
+    <Link
+      to={`/applications/${next._id}`}
+      className="group flex flex-col justify-between rounded-3xl bg-brand p-6 text-on-brand transition-transform hover:-translate-y-0.5"
     >
-      <div className="space-y-4">
-        {byStatus.map((item) => {
-          const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-          return (
-            <div key={item.status} className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className={STATUS_COLORS[item.status]}>
-                    {item.status}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">{item.count}</span>
-                </div>
-                <span className="text-sm font-medium text-foreground">{pct}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-500 transition-all duration-500"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-        {byStatus.length === 0 && (
-          <div className="py-8 text-center">
-            <FileText className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No applications yet</p>
-          </div>
+      <div>
+        <p className="text-sm font-medium opacity-80">
+          {days <= 0 ? "Due today" : `Due in ${plural(days, "day")}`} · {formatDate(next.applicationDeadline)}
+        </p>
+        <p className="mt-2 text-xl leading-snug font-bold">{prog?.name ?? "Your next application"}</p>
+        {uni && (
+          <p className="mt-0.5 text-sm opacity-80">
+            {uni.name}, {uni.city}
+          </p>
         )}
       </div>
-    </SectionCard>
+      <span className="mt-6 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold transition-colors group-hover:bg-white/25">
+        Open checklist <ArrowRight className="size-4" />
+      </span>
+    </Link>
   );
 }
 
-function UpcomingDeadlines({
-  applications,
-}: {
-  applications: Application[];
-}): React.ReactElement {
-  const now = new Date();
-  const ninetyDays = new Date();
-  ninetyDays.setDate(ninetyDays.getDate() + 90);
-
-  const upcoming = applications
-    .filter((a) => {
-      if (!a.applicationDeadline) return false;
-      const d = new Date(a.applicationDeadline);
-      return d >= now && d <= ninetyDays;
-    })
-    .sort(
-      (a, b) =>
-        new Date(a.applicationDeadline!).getTime() -
-        new Date(b.applicationDeadline!).getTime(),
-    );
-
+function StatTile({ label, value, note, tone }: { label: string; value: number; note?: string; tone?: "moss" }): React.ReactElement {
   return (
-    <SectionCard
-      title="Upcoming Deadlines"
-      subtitle="Next 90 days"
-      icon={CalendarClock}
-      tint="bg-amber-500/10 text-amber-500"
-    >
-      {upcoming.length === 0 ? (
-        <div className="py-8 text-center">
-          <CalendarClock className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No deadlines in the next 90 days</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {upcoming.map((a) => {
-            const days = daysUntil(a.applicationDeadline!);
-            const isUrgent = days <= 14;
-            const progObj = typeof a.programId === "object" ? a.programId : null;
-            const uniName = progObj?.universityId?.name ?? "University";
-            return (
-              <Link
-                key={a._id}
-                to={`/applications/${a._id}`}
-                className="group flex items-center justify-between rounded-xl border border-border p-4 card-hover"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-foreground transition-colors group-hover:text-primary">
-                    {uniName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{a.studentName}</p>
-                </div>
-                <div className="ml-3 flex items-center gap-2">
-                  {isUrgent && <AlertCircle className="h-4 w-4 text-red-500" />}
-                  <span className={`text-sm font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}>
-                    {days}d left
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </SectionCard>
+    <div className="card-soft flex flex-col justify-between p-5 sm:p-6">
+      <p className="text-sm font-medium text-ink-3">{label}</p>
+      <div>
+        <p className="mt-3 text-[34px] leading-none sm:text-[40px] font-bold tracking-[-0.03em] text-ink tnum">{value}</p>
+        {note && <p className={tone === "moss" ? "mt-2 text-[13px] font-semibold text-moss" : "mt-2 text-[13px] text-ink-3"}>{note}</p>}
+      </div>
+    </div>
   );
 }
 
-function RecentlyAdded({
-  applications,
-}: {
-  applications: Application[];
-}): React.ReactElement {
+function StudentDashboard(): React.ReactElement {
+  const { data, isLoading } = useApplications();
+  const { user } = useAuth();
+  const { compareIds } = useCompare();
+
+  const applications = data?.applications ?? [];
+  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const upcoming = upcomingDeadlines(applications, 90);
+  const missed = missedDeadlines(applications);
+  const counts = countByStatus(applications);
+  const offers = counts.Accepted + counts.Enrolled;
+  const inProgress = counts.Preparing + counts.Applied + counts.Waitlisted;
+  const countries = new Set(applications.map((a) => appUniversity(a)?.country).filter(Boolean)).size;
   const recent = applications
     .slice()
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
   return (
-    <SectionCard
-      title="Recently Added"
-      subtitle="Latest applications"
-      icon={Clock}
-      tint="bg-emerald-500/10 text-emerald-500"
-    >
-      {recent.length === 0 ? (
-        <div className="py-8 text-center">
-          <Clock className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No applications yet</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {recent.map((a) => {
-            const progObj = typeof a.programId === "object" ? a.programId : null;
-            const uniName = progObj?.universityId?.name ?? "University";
-            return (
-              <Link
-                key={a._id}
-                to={`/applications/${a._id}`}
-                className="group flex items-center gap-4 rounded-xl border border-border p-4 card-hover"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-cyan-500/10">
-                  <GraduationCap className="h-6 w-6 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-foreground transition-colors group-hover:text-primary">
-                    {uniName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{a.studentName}</p>
-                </div>
-                <Badge variant="secondary" className={STATUS_COLORS[a.applicationStatus]}>
-                  {a.applicationStatus}
-                </Badge>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </SectionCard>
-  );
-}
-
-function StudentDashboard(): React.ReactElement {
-  const { data: appsData, isLoading: appsLoading } = useApplications();
-  const { user } = useAuth();
-
-  const applications = appsData?.applications ?? [];
-  const isLoading = appsLoading;
-
-  const byStatus: { status: string; count: number }[] = [];
-  const statusMap = new Map<string, number>();
-  const countries = new Set<string>();
-  for (const a of applications) {
-    statusMap.set(a.applicationStatus, (statusMap.get(a.applicationStatus) ?? 0) + 1);
-    const progObj = typeof a.programId === "object" ? a.programId : null;
-    const country = progObj?.universityId?.country;
-    if (country) countries.add(country);
-  }
-  for (const [status, count] of statusMap.entries()) {
-    byStatus.push({ status, count });
-  }
-
-  const acceptedCount = statusMap.get("Accepted") ?? 0;
-  const enrolledCount = statusMap.get("Enrolled") ?? 0;
-
-  // Find closest upcoming deadline
-  const now = new Date();
-  const upcoming = applications
-    .filter((a) => {
-      if (!a.applicationDeadline) return false;
-      return new Date(a.applicationDeadline) >= now;
-    })
-    .sort((a, b) => new Date(a.applicationDeadline!).getTime() - new Date(b.applicationDeadline!).getTime());
-  const nextDeadlineDays = upcoming.length > 0 ? daysUntil(upcoming[0]!.applicationDeadline!) : null;
-
-  return (
-    <div className="space-y-8">
-      <PageHero
-        title={`Welcome back, ${user?.name?.split(" ")[0] ?? "there"}`}
-        subtitle="Here's what's happening with your applications"
+    <>
+      <PageHeader
+        kicker={`Hi ${firstName}`}
+        title={isLoading ? "Loading your applications…" : headline(applications)}
         actions={
           <>
-            <Button variant="outline" asChild className="rounded-xl">
-              <Link to="/programs">
-                <Compass className="mr-2 h-4 w-4" />
-                Explore programs
-              </Link>
+            <Button variant="outline" asChild>
+              <Link to="/programs">Find programs</Link>
             </Button>
-            <Button asChild className="rounded-xl">
-              <Link to="/applications/new">
-                <Plus className="mr-2 h-4 w-4" />
-                New application
-              </Link>
+            <Button variant="primary" asChild>
+              <Link to="/applications/new">New application</Link>
             </Button>
           </>
         }
       />
 
-      <ExtensionCTA variant="card" />
-
-      {/* Stat cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <StatCard
-              label="Total Applications"
-              value={applications.length}
-              icon={FileText}
-              tint="bg-primary/10 text-primary"
-              sub={
-                <span className="text-muted-foreground">
-                  {byStatus.length} status{byStatus.length !== 1 ? "es" : ""}
-                </span>
-              }
-            />
-            <StatCard
-              label="Countries Exploring"
-              value={countries.size}
-              icon={Globe}
-              tint="bg-emerald-500/10 text-emerald-500"
-              sub={
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  <MapPin className="h-3 w-3" />
-                  {countries.size > 0
-                    ? [...countries].slice(0, 2).join(", ") + (countries.size > 2 ? "…" : "")
-                    : "Add your first"}
-                </span>
-              }
-            />
-            <StatCard
-              label="Accepted"
-              value={acceptedCount + enrolledCount}
-              icon={CheckCircle2}
-              tint="bg-emerald-500/10 text-emerald-500"
-              sub={
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  {enrolledCount > 0 && (
-                    <>
-                      <CheckCircle2 className="h-3 w-3" /> {enrolledCount} enrolled
-                    </>
-                  )}
-                  {acceptedCount > 0 && !enrolledCount && (
-                    <>
-                      <CheckCircle2 className="h-3 w-3" /> Offers in hand
-                    </>
-                  )}
-                  {acceptedCount === 0 && enrolledCount === 0 && (
-                    <span className="text-muted-foreground">Keep applying</span>
-                  )}
-                </span>
-              }
-            />
-            <StatCard
-              label="Next Deadline"
-              value={nextDeadlineDays !== null ? nextDeadlineDays : "—"}
-              icon={CalendarClock}
-              tint="bg-amber-500/10 text-amber-500"
-              sub={
-                nextDeadlineDays !== null ? (
-                  nextDeadlineDays <= 7 ? (
-                    <span className="flex items-center gap-1 text-red-500">
-                      <AlertCircle className="h-3 w-3" />
-                      Urgent — {nextDeadlineDays} day{nextDeadlineDays !== 1 ? "s" : ""}
-                    </span>
-                  ) : nextDeadlineDays <= 30 ? (
-                    <span className="text-amber-600 dark:text-amber-400">{nextDeadlineDays} days away</span>
-                  ) : (
-                    <span className="text-muted-foreground">{nextDeadlineDays} days away</span>
-                  )
-                ) : (
-                  <span className="text-muted-foreground">No deadlines set</span>
-                )
-              }
-            />
-          </>
-        )}
-      </div>
-
-      {/* Status breakdown + Deadlines */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {isLoading ? (
-          <>
-            <div className="rounded-2xl border border-border bg-card p-6">
-              <Skeleton className="mb-4 h-6 w-40" />
-              <Skeleton className="h-40 w-full" />
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-6">
-              <Skeleton className="mb-4 h-6 w-40" />
-              <Skeleton className="h-40 w-full" />
-            </div>
-          </>
-        ) : (
-          <>
-            <StatusBreakdown byStatus={byStatus} />
-            <UpcomingDeadlines applications={applications} />
-          </>
-        )}
-      </div>
-
-      {/* Recently Added */}
       {isLoading ? (
-        <div className="rounded-2xl border border-border bg-card p-6">
-          <Skeleton className="mb-4 h-6 w-40" />
-          <Skeleton className="h-32 w-full" />
+        <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr]">
+          <Skeleton className="h-48 rounded-3xl" />
+          <Skeleton className="h-48 rounded-[1.25rem]" />
+          <Skeleton className="h-48 rounded-[1.25rem]" />
         </div>
       ) : (
-        <RecentlyAdded applications={applications} />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div className="col-span-2 md:col-span-1">
+            <NextUpCard next={upcoming[0]} hasApplications={applications.length > 0} />
+          </div>
+          <StatTile
+            label="Offers"
+            value={offers}
+            note={counts.Enrolled ? `${counts.Enrolled} enrolled` : offers ? "Waiting on your visa" : "None yet — keep going"}
+            tone={offers ? "moss" : undefined}
+          />
+          <StatTile
+            label="In progress"
+            value={inProgress}
+            note={countries ? `Across ${plural(countries, "country", "countries")}` : "Nothing started yet"}
+          />
+        </div>
       )}
-    </div>
+
+      <div className="mt-10 grid gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-10">
+          <Section
+            title="Coming up"
+            count={isLoading ? undefined : upcoming.length}
+            action={
+              upcoming.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={downloadDeadlinesCalendar}>
+                  <CalendarPlus />
+                  Add to calendar
+                </Button>
+              )
+            }
+          >
+            {isLoading ? (
+              <LoadingRows rows={3} />
+            ) : upcoming.length === 0 ? (
+              <div className="card-soft px-5 py-6 text-sm text-ink-3">No deadlines in the next three months.</div>
+            ) : (
+              <ApplicationList applications={upcoming} />
+            )}
+          </Section>
+
+          {missed.length > 0 && (
+            <Section title="Past the deadline" count={missed.length}>
+              <p className="-mt-1 mb-3 px-1 text-[13px] text-ink-3">
+                Still marked as preparing. Check whether there's a later intake and update the date, or mark them submitted if
+                you sent them.
+              </p>
+              <ApplicationList applications={missed} />
+            </Section>
+          )}
+
+          <Section
+            title="Recently added"
+            action={
+              applications.length > 0 && (
+                <Link to="/applications" className="link-ink">
+                  See all
+                </Link>
+              )
+            }
+          >
+            {isLoading ? (
+              <LoadingRows rows={3} />
+            ) : recent.length === 0 ? (
+              <EmptyState
+                title="Start your first application"
+                action={
+                  <Button variant="primary" asChild>
+                    <Link to="/programs">Browse programs</Link>
+                  </Button>
+                }
+              >
+                Pick a program and press “Start an application”. Its documents, tests and deadline come along with it.
+              </EmptyState>
+            ) : (
+              <ApplicationList applications={recent} dateMode="added" />
+            )}
+          </Section>
+        </div>
+
+        <aside className="space-y-8">
+          <ProfileNudge />
+          {!isLoading && applications.length > 0 && (
+            <Section title="Where things stand">
+              <StatusBreakdown counts={counts} />
+            </Section>
+          )}
+          <Section title="Shortcuts">
+            <Shortcuts
+              items={[
+                {
+                  label: "Compare programs",
+                  hint: compareIds.length ? `${plural(compareIds.length, "program")} picked` : "Up to three, side by side",
+                  to: "/compare",
+                },
+                { label: "Find matches", hint: "From your budget, GPA and IELTS", to: "/matches" },
+                { label: "Estimate costs", hint: "Tuition, rent, visa, insurance", to: "/budget-calculator" },
+                { label: "Visa rules by country", hint: "Blocked accounts, processing times", to: "/countries" },
+              ]}
+            />
+          </Section>
+          <ExtensionCTA variant="card" />
+        </aside>
+      </div>
+    </>
   );
 }
 
-/* ---------- Admin dashboard ---------- */
+/* ---------- Admin ---------- */
 
 function AdminDashboard(): React.ReactElement {
   const { data: stats, isLoading, isError, error } = useAdminStats();
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
-        <h2 className="text-lg font-semibold text-foreground">Failed to load platform stats</h2>
-        <p className="text-sm text-muted-foreground">
-          {error instanceof Error ? error.message : "Unknown error"}
-        </p>
-      </div>
+      <ErrorState title="Platform numbers are unavailable">
+        {error instanceof Error ? error.message : "Unknown error"}
+      </ErrorState>
     );
   }
 
-  return (
-    <div className="space-y-8">
-      <PageHero
-        title="Platform Overview"
-        subtitle="Key metrics across the entire platform"
-      />
-
-      <ExtensionCTA variant="card" />
-
-      {/* Stat cards */}
-      {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <StatCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Total Users"
-            value={stats?.totalUsers ?? 0}
-            icon={Users}
-            tint="bg-rose-500/10 text-rose-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <TrendingUp className="h-3 w-3" /> Active accounts
-              </span>
-            }
-          />
-          <StatCard
-            label="Universities"
-            value={stats?.totalUniversities ?? 0}
-            icon={GraduationCap}
-            tint="bg-violet-500/10 text-violet-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-3 w-3" /> Registered
-              </span>
-            }
-          />
-          <StatCard
-            label="Programs"
-            value={stats?.totalPrograms ?? 0}
-            icon={BookOpen}
-            tint="bg-indigo-500/10 text-indigo-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <BookOpen className="h-3 w-3" /> Available
-              </span>
-            }
-          />
-          <StatCard
-            label="Countries"
-            value={stats?.totalCountries ?? 0}
-            icon={Globe}
-            tint="bg-emerald-500/10 text-emerald-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <Globe className="h-3 w-3" /> Worldwide
-              </span>
-            }
-          />
-          <StatCard
-            label="Cities"
-            value={stats?.totalCities ?? 0}
-            icon={MapPin}
-            tint="bg-cyan-500/10 text-cyan-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <MapPin className="h-3 w-3" /> Tracked
-              </span>
-            }
-          />
-          <StatCard
-            label="Agencies"
-            value={stats?.totalAgencies ?? 0}
-            icon={Building2}
-            tint="bg-orange-500/10 text-orange-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <Building2 className="h-3 w-3" /> Active
-              </span>
-            }
-          />
-          <StatCard
-            label="Students Managed"
-            value={stats?.totalStudentsManaged ?? 0}
-            icon={Users}
-            tint="bg-rose-500/10 text-rose-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <Users className="h-3 w-3" /> Under guidance
-              </span>
-            }
-          />
-        </div>
-      )}
-
-      {/* Role Breakdown */}
-      {!isLoading && stats && (
-        <SectionCard
-          title="Users by Role"
-          subtitle="Distribution across user types"
-          icon={Users}
-          tint="bg-primary/10 text-primary"
-        >
-          <div className="space-y-4">
-            {(stats.byRole ?? []).map((item) => {
-              const total = stats.totalUsers || 1;
-              const pct = Math.round((item.count / total) * 100);
-              return (
-                <div key={item.role} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium capitalize text-foreground">{item.role}</span>
-                    <span className="text-muted-foreground">
-                      {item.count} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-500 transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            {(!stats.byRole || stats.byRole.length === 0) && (
-              <div className="py-8 text-center">
-                <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">No user data available</p>
-              </div>
-            )}
-          </div>
-        </SectionCard>
-      )}
-    </div>
-  );
-}
-
-/* ---------- Agency dashboard ---------- */
-
-function AgencyOverview(): React.ReactElement {
-  const { data: applications, isLoading: appLoading } = useAgencyApplications();
-  const { data: students, isLoading: studentsLoading } = useStudents();
-
-  const isLoading = appLoading || studentsLoading;
-  const totalApplications = applications?.length ?? 0;
-  const totalStudents = students?.length ?? 0;
+  const roleCounts = stats?.byRole ?? [];
+  const totalUsers = stats?.totalUsers || 1;
 
   return (
-    <div className="space-y-8">
-      <PageHero
-        title="Agency Dashboard"
-        subtitle="Manage your students and track their progress"
+    <>
+      <PageHeader
+        kicker="Admin"
+        title="Your catalogue at a glance"
         actions={
-          <Button asChild className="rounded-xl">
-            <Link to="/agency/students">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Student
-            </Link>
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link to="/users">Manage users</Link>
+            </Button>
+            <Button variant="primary" asChild>
+              <Link to="/universities/new">Add university</Link>
+            </Button>
+          </>
         }
-      />
-
-      <ExtensionCTA variant="card" />
+      >
+        Everything students can browse comes from here. Entries people add for themselves stay private until you make
+        them official.
+      </PageHeader>
 
       {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2">
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-        </div>
+        <LoadingRows rows={2} />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2">
-          <StatCard
-            label="Total Students"
-            value={totalStudents}
-            icon={Users}
-            tint="bg-rose-500/10 text-rose-500"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <Users className="h-3 w-3" /> Under your guidance
-              </span>
-            }
-          />
-          <StatCard
-            label="Total Applications"
-            value={totalApplications}
-            icon={FileText}
-            tint="bg-primary/10 text-primary"
-            sub={
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <FileText className="h-3 w-3" /> Being tracked
-              </span>
-            }
-          />
-        </div>
+        <Figures
+          items={[
+            { label: "Universities", value: stats?.totalUniversities ?? 0 },
+            { label: "Programs", value: stats?.totalPrograms ?? 0 },
+            { label: "Countries", value: stats?.totalCountries ?? 0 },
+            { label: "Cities", value: stats?.totalCities ?? 0 },
+            { label: "Accounts", value: stats?.totalUsers ?? 0 },
+            { label: "Agencies", value: stats?.totalAgencies ?? 0 },
+            { label: "Students on agencies", value: stats?.totalStudentsManaged ?? 0 },
+            { label: "Student accounts", value: stats?.totalStudents ?? 0 },
+          ]}
+        />
       )}
 
-      {/* Recent Applications */}
-      {!isLoading && applications && applications.length > 0 && (
-        <SectionCard
-          title="Recent Applications"
-          subtitle="Latest student applications"
-          icon={Clock}
-          tint="bg-emerald-500/10 text-emerald-500"
-          action={
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/applications" className="text-primary hover:text-primary/90">
-                View All <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          }
-        >
-          <div className="space-y-3">
-            {applications.slice(0, 5).map((a) => {
-              const progObj = typeof a.programId === "object" ? a.programId : null;
-              const uniName = progObj?.universityId?.name ?? "University";
-              return (
-                <Link
-                  key={a._id}
-                  to={`/applications/${a._id}`}
-                  className="group flex items-center justify-between rounded-xl border border-border p-4 card-hover"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground transition-colors group-hover:text-primary">
-                      {uniName}
-                    </p>
-                    <p className="truncate text-sm text-muted-foreground">{a.studentName}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                </Link>
-              );
-            })}
-          </div>
-        </SectionCard>
-      )}
+      <div className="mt-10 grid gap-x-8 gap-y-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <Section title="Who signs in">
+          {isLoading ? (
+            <LoadingRows rows={3} />
+          ) : roleCounts.length === 0 ? (
+            <div className="card-soft px-5 py-6 text-sm text-ink-3">No accounts yet.</div>
+          ) : (
+            <ul className="card divide-y divide-rule-soft px-5">
+              {roleCounts.map((r) => {
+                const pct = Math.round((r.count / totalUsers) * 100);
+                return (
+                  <li key={r.role} className="grid grid-cols-[6rem_minmax(0,1fr)_5rem] items-center gap-4 py-4">
+                    <span className="text-sm font-semibold text-ink capitalize">{r.role}</span>
+                    <span className="h-2.5 overflow-hidden rounded-full bg-paper-sunken">
+                      <span className="block h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
+                    </span>
+                    <span className="text-right text-[13px] font-medium text-ink-3 tnum">
+                      {r.count} · {pct}%
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Section>
 
-      {!isLoading && applications?.length === 0 && (
-        <div className="rounded-2xl border border-border bg-card p-12 text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-cyan-500/10">
-            <GraduationCap className="h-10 w-10 text-primary" />
-          </div>
-          <h2 className="mb-2 font-display text-xl font-semibold text-foreground">No applications yet</h2>
-          <p className="mb-6 text-muted-foreground">
-            Start by adding a student and a university application
-          </p>
-          <Button asChild className="rounded-xl">
-            <Link to="/agency/students">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Student
-            </Link>
-          </Button>
-        </div>
-      )}
-    </div>
+        <aside className="space-y-8">
+          <Section title="Catalogue">
+            <Shortcuts
+              items={[
+                { label: "Countries and visa rules", to: "/countries" },
+                { label: "Cities and living costs", to: "/cities" },
+                { label: "Review custom programs", hint: "Make them official", to: "/programs?customOnly=true" },
+                { label: "Review custom universities", to: "/universities?customOnly=true" },
+              ]}
+            />
+          </Section>
+          <ExtensionCTA variant="card" />
+        </aside>
+      </div>
+    </>
   );
 }
 
@@ -774,6 +359,6 @@ export default function Dashboard(): React.ReactElement {
   const { user } = useAuth();
 
   if (user?.role === "admin") return <AdminDashboard />;
-  if (user?.role === "agency") return <AgencyOverview />;
+  if (user?.role === "agency") return <AgencyDashboard />;
   return <StudentDashboard />;
 }

@@ -71,3 +71,8 @@ export function useCompare(): CompareContextValue {
   if (!ctx) throw new Error("useCompare must be used within CompareProvider");
   return ctx;
 }
+
+/** Same as useCompare, but returns null outside a provider (e.g. in isolated tests). */
+export function useCompareOptional(): CompareContextValue | null {
+  return useContext(CompareContext);
+}

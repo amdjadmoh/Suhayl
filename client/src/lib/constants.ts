@@ -18,67 +18,81 @@ export const APPLICATION_STATUSES = [
   "Enrolled",
 ] as const;
 
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
 export const TUITION_PERIODS = ["Year", "Semester", "Total"] as const;
 
-export const STATUS_COLORS: Record<string, string> = {
-  Preparing:
-    "bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/15",
-  Applied:
-    "bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/15",
-  Accepted:
-    "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400 dark:hover:bg-emerald-500/15",
-  Rejected:
-    "bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/15",
-  Waitlisted:
-    "bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-500/15 dark:text-orange-400 dark:hover:bg-orange-500/15",
-  Enrolled:
-    "bg-violet-100 text-violet-700 hover:bg-violet-100 dark:bg-violet-500/15 dark:text-violet-400 dark:hover:bg-violet-500/15",
+/**
+ * Colour + wording for each application status. `tone` maps to the
+ * paper/ink palette in index.css; `note` is the plain-language meaning.
+ */
+export const STATUS_META: Record<
+  ApplicationStatus,
+  { tone: "ink" | "sea" | "moss" | "stamp" | "ochre"; dot: string; text: string; note: string }
+> = {
+  Preparing: { tone: "ink", dot: "bg-ink-3", text: "text-ink-2", note: "Still gathering documents" },
+  Applied: { tone: "sea", dot: "bg-sea", text: "text-sea", note: "Submitted, waiting to hear back" },
+  Waitlisted: { tone: "ochre", dot: "bg-ochre", text: "text-ochre", note: "On the waiting list" },
+  Accepted: { tone: "moss", dot: "bg-moss", text: "text-moss", note: "Offer received" },
+  Rejected: { tone: "stamp", dot: "bg-stamp", text: "text-stamp", note: "Not this time" },
+  Enrolled: { tone: "moss", dot: "bg-moss", text: "text-moss", note: "Enrolled — done" },
 };
 
-export const COUNTRY_FLAGS: Record<string, string> = {
-  Germany: "🇩🇪",
-  France: "🇫🇷",
-  Italy: "🇮🇹",
-  Spain: "🇪🇸",
-  Netherlands: "🇳🇱",
-  Belgium: "🇧🇪",
-  Sweden: "🇸🇪",
-  Norway: "🇳🇴",
-  Denmark: "🇩🇰",
-  Finland: "🇫🇮",
-  Switzerland: "🇨🇭",
-  Austria: "🇦🇹",
-  "United Kingdom": "🇬🇧",
-  Ireland: "🇮🇪",
-  Portugal: "🇵🇹",
-  Poland: "🇵🇱",
-  "Czech Republic": "🇨🇿",
-  Hungary: "🇭🇺",
-  Romania: "🇷🇴",
-  Bulgaria: "🇧🇬",
-  Greece: "🇬🇷",
-  Turkey: "🇹🇷",
-  Russia: "🇷🇺",
-  Ukraine: "🇺🇦",
-  "United States": "🇺🇸",
-  Canada: "🇨🇦",
-  Australia: "🇦🇺",
-  "New Zealand": "🇳🇿",
-  Japan: "🇯🇵",
-  "South Korea": "🇰🇷",
-  China: "🇨🇳",
-  Singapore: "🇸🇬",
-  Malaysia: "🇲🇾",
-  "United Arab Emirates": "🇦🇪",
-  "Saudi Arabia": "🇸🇦",
-  Morocco: "🇲🇦",
-  Algeria: "🇩🇿",
-  Egypt: "🇪🇬",
-  "South Africa": "🇿🇦",
-  Brazil: "🇧🇷",
-  Argentina: "🇦🇷",
-  Mexico: "🇲🇽",
+/** ISO 3166-1 alpha-2 codes, shown as small oval plates instead of emoji flags. */
+export const COUNTRY_CODES: Record<string, string> = {
+  Germany: "DE",
+  France: "FR",
+  Italy: "IT",
+  Spain: "ES",
+  Netherlands: "NL",
+  Belgium: "BE",
+  Sweden: "SE",
+  Norway: "NO",
+  Denmark: "DK",
+  Finland: "FI",
+  Switzerland: "CH",
+  Austria: "AT",
+  "United Kingdom": "GB",
+  Ireland: "IE",
+  Portugal: "PT",
+  Poland: "PL",
+  "Czech Republic": "CZ",
+  Hungary: "HU",
+  Romania: "RO",
+  Bulgaria: "BG",
+  Greece: "GR",
+  Turkey: "TR",
+  Russia: "RU",
+  Ukraine: "UA",
+  Estonia: "EE",
+  Croatia: "HR",
+  Slovakia: "SK",
+  Luxembourg: "LU",
+  "United States": "US",
+  Canada: "CA",
+  Australia: "AU",
+  "New Zealand": "NZ",
+  Japan: "JP",
+  "South Korea": "KR",
+  China: "CN",
+  Singapore: "SG",
+  Malaysia: "MY",
+  "United Arab Emirates": "AE",
+  "Saudi Arabia": "SA",
+  Morocco: "MA",
+  Algeria: "DZ",
+  Tunisia: "TN",
+  Egypt: "EG",
+  "South Africa": "ZA",
+  Brazil: "BR",
+  Argentina: "AR",
+  Mexico: "MX",
 };
+
+export function countryCode(name?: string): string {
+  if (!name) return "··";
+  return COUNTRY_CODES[name] ?? name.slice(0, 2).toUpperCase();
+}
 
 export const SORT_OPTIONS = [
   { value: "name", label: "Name" },

@@ -1,139 +1,110 @@
+import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { AlertCircle, Globe, MapPin, Plus, ArrowRight } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
 import { useCities } from "@/lib/api"
-import { COUNTRY_FLAGS } from "@/lib/constants"
-
-function ScoreBar({ value, label }: { value: number; label: string }): React.ReactElement {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-xs mb-1.5">
-        <span className="text-foreground/70 font-medium">{label}</span>
-        <span className="font-bold text-foreground">{value}/10</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-500 transition-all duration-500"
-          style={{ width: `${(value / 10) * 100}%` }}
-        />
-      </div>
-    </div>
-  )
-}
+import { useAuth } from "@/lib/authContext"
+import { formatMoney, plural } from "@/lib/format"
+import { CountryPlate, ErrorState, LoadingRows, Meter, PageHeader } from "@/components/kit"
 
 export default function Cities(): React.ReactElement {
   const { data: cities, isLoading, isError } = useCities()
+  const { user } = useAuth()
+  const isAdmin = user?.role === "admin"
+  const [query, setQuery] = useState("")
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Cities</h1>
-          <p className="mt-2 text-muted-foreground">Loading cities...</p>
-        </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-72 w-full rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    )
-  }
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const list = (cities ?? []).slice().sort((a, b) => a.country.localeCompare(b.country) || a.name.localeCompare(b.name))
+    return q ? list.filter((c) => `${c.name} ${c.country}`.toLowerCase().includes(q)) : list
+  }, [cities, query])
 
   if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h2 className="text-lg font-semibold text-foreground">Failed to load cities</h2>
-        <p className="text-sm text-muted-foreground">Please try again later</p>
-      </div>
-    )
+    return <ErrorState title="Cities didn't load">Please try again in a moment.</ErrorState>
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 p-8 text-white">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-card blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-cyan-400 blur-3xl" />
-        </div>
-        <div className="relative flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Cities</h1>
-            <p className="mt-2 text-cyan-100">Discover cities and their quality of life scores</p>
-          </div>
-          <Button asChild className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl">
-            <Link to="/cities/new">
-              <Plus className="mr-2 h-4 w-4" /> Add City
-            </Link>
-          </Button>
+    <>
+      <PageHeader
+        kicker={isLoading ? "Destinations" : `Destinations · ${plural(cities?.length ?? 0, "city", "cities")}`}
+        title="Cities"
+        actions={
+          isAdmin && (
+            <Button variant="outline" asChild>
+              <Link to="/cities/new">Add a city</Link>
+            </Button>
+          )
+        }
+      >
+        Rent, living costs and how each city scores for students. Scores are out of ten.
+      </PageHeader>
+
+      <div className="mb-4 flex justify-end">
+        <div className="relative w-full sm:w-64">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-4" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="City or country" className="pl-8" aria-label="Find a city" />
         </div>
       </div>
 
-      {/* Cities Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {cities?.map((city) => (
-          <Link
-            key={city._id}
-            to={`/cities/${city._id}`}
-            className="group block"
-          >
-            <div className="relative overflow-hidden rounded-2xl bg-card p-6 shadow-sm border border-border card-hover">
-              {/* Gradient accent */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-100 to-blue-100 text-2xl">
-                    {COUNTRY_FLAGS[city.country] ?? <Globe className="h-7 w-7 text-muted-foreground" />}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">{city.name}</h3>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mt-0.5">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {city.country}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {city.isCapital && (
-                    <Badge className="bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 rounded-full">
-                      Capital
-                    </Badge>
-                  )}
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 p-3">
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Living Cost / Month</p>
-                    <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
-                      ${city.monthlyLivingCost.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-purple-50 dark:bg-purple-500/10 p-3">
-                    <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">Rent (Shared)</p>
-                    <p className="text-xl font-bold text-purple-700 dark:text-purple-400">
-                      ${city.averageRentShared.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <ScoreBar value={city.qualityOfLifeScore} label="Quality of Life" />
-                  <ScoreBar value={city.studentFriendliness} label="Student Friendly" />
-                  <ScoreBar value={city.englishFriendliness} label="English Friendly" />
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+      {isLoading ? (
+        <LoadingRows rows={8} />
+      ) : (
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[760px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-rule bg-paper-sunken/60">
+                <th className="kicker py-3 pr-3 pl-5 text-left">City</th>
+                <th className="kicker px-3 py-3 text-right">Living / mo</th>
+                <th className="kicker px-3 py-3 text-right">Shared room</th>
+                <th className="kicker px-3 py-3 text-left">Quality of life</th>
+                <th className="kicker px-3 py-3 text-left">Student life</th>
+                <th className="kicker py-3 pr-5 pl-3 text-left">English</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((city) => (
+                <tr key={city._id} className="group border-b border-rule-soft transition-colors last:border-0 hover:bg-paper-hover">
+                  <td className="py-3.5 pr-3 pl-5">
+                    <Link to={`/cities/${city._id}`} className="flex items-center gap-3">
+                      <CountryPlate country={city.country} />
+                      <span>
+                        <span className="block text-[15px] leading-tight font-semibold group-hover:text-brand-ink">
+                          {city.name}
+                        </span>
+                        <span className="text-xs text-ink-3">
+                          {city.country}
+                          {city.isCapital && " · capital"}
+                        </span>
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="px-3 py-3.5 text-right text-[13px] whitespace-nowrap tnum">
+                    {formatMoney(city.monthlyLivingCost)}
+                  </td>
+                  <td className="px-3 py-3.5 text-right text-[13px] whitespace-nowrap text-ink-2 tnum">
+                    {formatMoney(city.averageRentShared)}
+                  </td>
+                  <td className="px-3 py-3.5">
+                    <Meter value={city.qualityOfLifeScore} />
+                  </td>
+                  <td className="px-3 py-3.5">
+                    <Meter value={city.studentFriendliness} />
+                  </td>
+                  <td className="py-3.5 pr-5 pl-3">
+                    <Meter value={city.englishFriendliness} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {visible.length === 0 && (
+            <p className="py-10 text-center text-sm text-ink-3">
+              {query ? `Nothing matches “${query}”.` : "No cities yet."}
+            </p>
+          )}
+        </div>
+      )}
+    </>
   )
 }

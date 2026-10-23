@@ -8,6 +8,7 @@ import { Student } from "../models/Student"
 import { Application } from "../models/Application"
 import { Program } from "../models/Program"
 import bcrypt from "bcryptjs"
+import { deleteUserData } from "../services/accounts"
 
 export async function getUsers(_req: Request, res: Response): Promise<void> {
   const users = await User.find().select("-passwordHash").sort({ createdAt: -1 })
@@ -25,6 +26,7 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: "User not found" })
     return
   }
+  await deleteUserData(String(user._id))
   res.json({ message: "User deleted" })
 }
 

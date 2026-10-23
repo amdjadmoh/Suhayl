@@ -3,25 +3,22 @@ import { useQueries } from "@tanstack/react-query";
 import { getProgram } from "@/lib/api";
 import { useCompare } from "@/lib/compareContext";
 import type { Program } from "@/types/program";
+import { cn } from "@/lib/utils";
+import { daysUntil, formatDate, formatMoney, formatTuition } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  GitCompare, X, ArrowRight, BookOpen, MapPin, CheckCircle2, XCircle,
-} from "lucide-react";
-
-function formatCurrency(amount: number, currency: string, period: string): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) + ` / ${period.toLowerCase()}`;
-}
-
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+import { CountryPlate, DaysLeft, EmptyState, PageHeader } from "@/components/kit";
 
 function getUni(program: Program) {
   return typeof program.universityId === "object" ? program.universityId : null;
 }
+
+type Row = {
+  label: string;
+  render: (p: Program) => React.ReactNode;
+  /** Index of the column worth pointing out, with a short note */
+  highlight?: { index: number; note: string; tone: "moss" | "stamp" } | null;
+};
 
 export default function Compare(): React.ReactElement {
   const { compareIds, removeFromCompare, clearCompare } = useCompare();
@@ -34,179 +31,204 @@ export default function Compare(): React.ReactElement {
     })),
   });
 
-  const programs = queries
-    .filter((q) => q.data)
-    .map((q) => q.data as Program);
-
+  const programs = queries.filter((q) => q.data).map((q) => q.data as Program);
   const isLoading = queries.some((q) => q.isLoading);
 
   if (compareIds.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 mb-5">
-          <GitCompare className="h-10 w-10 text-primary" />
-        </div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">Nothing to compare yet</h2>
-        <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
-          Add programs to your comparison list by clicking "Add to Compare" on any program page or listing.
-        </p>
-        <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
-          <Link to="/programs">
-            Browse Programs <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
+      <>
+        <PageHeader kicker="Side by side" title="Compare">
+          Put up to three programs next to each other — tuition, deadlines, tests and documents on one page.
+        </PageHeader>
+        <EmptyState
+          title="Pick programs to compare"
+          action={
+            <Button variant="primary" asChild>
+              <Link to="/programs">Browse programs</Link>
+            </Button>
+          }
+        >
+          Press “+ Compare” on any program in the list, or “Compare” on its page.
+        </EmptyState>
+      </>
     );
   }
 
+  // Point out the cheapest and the most urgent, when there's more than one
+  const cheapest =
+    programs.length > 1
+      ? programs.reduce((best, p, i) => (p.tuitionFee < programs[best]!.tuitionFee ? i : best), 0)
+      : -1;
+  const withDeadline = programs
+    .map((p, i) => ({ i, t: p.applicationDeadline ? new Date(p.applicationDeadline).getTime() : Infinity }))
+    .filter((x) => x.t !== Infinity && (daysUntil(programs[x.i]!.applicationDeadline) ?? -1) > 0);
+  const soonest = programs.length > 1 && withDeadline.length > 0 ? withDeadline.sort((a, b) => a.t - b.t)[0]!.i : -1;
+
+  const rows: Row[] = [
+    { label: "Degree", render: (p) => p.degreeLevel },
+    { label: "Taught in", render: (p) => p.languageOfInstruction },
+    {
+      label: "Tuition",
+      render: (p) => <span className="text-[13px] tnum">{formatTuition(p.tuitionFee, p.tuitionCurrency, p.tuitionPeriod)}</span>,
+      highlight: cheapest >= 0 ? { index: cheapest, note: "Lowest", tone: "moss" } : null,
+    },
+    {
+      label: "Application fee",
+      render: (p) => (p.applicationFee != null ? (p.applicationFee > 0 ? formatMoney(p.applicationFee) : "Free") : "—"),
+    },
+    {
+      label: "Deadline",
+      render: (p) =>
+        p.applicationDeadline ? (
+          <span className="flex flex-col gap-0.5">
+            <span>{formatDate(p.applicationDeadline)}</span>
+            <DaysLeft date={p.applicationDeadline} hidePast />
+          </span>
+        ) : (
+          "—"
+        ),
+      highlight: soonest >= 0 ? { index: soonest, note: "First due", tone: "stamp" } : null,
+    },
+    {
+      label: "Tests",
+      render: (p) =>
+        (p.testRequirements ?? []).length ? (
+          <span className="text-[13px] tnum">
+            {(p.testRequirements ?? []).map((tr) => `${tr.name} ${tr.minimumScore}`).join(" · ")}
+          </span>
+        ) : (
+          "None listed"
+        ),
+    },
+    { label: "Documents", render: (p) => (p.requiredDocuments.length ? `${p.requiredDocuments.length} required` : "None listed") },
+    {
+      label: "Writing",
+      render: (p) =>
+        [p.requiresSOP && "Statement", p.recommendationLetters > 0 && `${p.recommendationLetters} letter${p.recommendationLetters === 1 ? "" : "s"}`]
+          .filter(Boolean)
+          .join(" + ") || "—",
+    },
+    {
+      label: "Scholarship",
+      render: (p) => (p.scholarshipAvailable ? <span className="font-medium text-moss">Yes</span> : <span className="text-ink-3">No</span>),
+    },
+    { label: "University rank", render: (p) => (getUni(p)?.ranking ? `No. ${getUni(p)?.ranking}` : "—") },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Compare Programs</h1>
-          <p className="text-sm text-muted-foreground">
-            Comparing {compareIds.length} program{compareIds.length > 1 ? "s" : ""}
-          </p>
-        </div>
-        <Button variant="outline" onClick={clearCompare} className="border-border rounded-xl">
-          Clear All
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        kicker={`Side by side · ${compareIds.length} of 3`}
+        title="Compare"
+        actions={
+          <>
+            {compareIds.length < 3 && (
+              <Button variant="outline" asChild>
+                <Link to="/programs">Add another</Link>
+              </Button>
+            )}
+            <Button variant="ghost" onClick={clearCompare}>
+              Clear the table
+            </Button>
+          </>
+        }
+      >
+        {programs.length === 1
+          ? "One program so far. Add one or two more to see them next to each other."
+          : "Read across each line. The lowest tuition and the first deadline are marked."}
+      </PageHeader>
 
       {isLoading && programs.length === 0 ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-3">
           {compareIds.map((id) => (
-            <Skeleton key={id} className="h-64 rounded-2xl" />
+            <Skeleton key={id} className="h-72" />
           ))}
         </div>
       ) : (
-        <>
-          {/* Program cards summary */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {programs.map((program) => {
-              const uni = getUni(program);
-              return (
-                <div key={program._id} className="relative rounded-2xl border border-border bg-card shadow-sm">
-                  <button
-                    onClick={() => removeFromCompare(program._id)}
-                    className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-colors"
-                    title="Remove from comparison"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                      </div>
-                      <Badge className="rounded-full bg-muted text-foreground">{program.degreeLevel}</Badge>
-                    </div>
-
-                    <Link to={`/programs/${program._id}`} className="block">
-                      <h3 className="text-base font-semibold text-foreground hover:text-primary transition-colors mb-1">
-                        {program.name}
-                      </h3>
-                    </Link>
-
-                    {uni && (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {uni.name} · {uni.country}
-                      </div>
-                    )}
-
-                    <div className="space-y-1.5 pt-3 border-t border-border">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Tuition</span>
-                        <span className="font-semibold text-foreground">{formatCurrency(program.tuitionFee, program.tuitionCurrency, program.tuitionPeriod)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Language</span>
-                        <span className="text-foreground">{program.languageOfInstruction}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Deadline</span>
-                        <span className="text-foreground">{formatDate(program.applicationDeadline)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Scholarship</span>
-                        {program.scholarshipAvailable ? (
-                          <Badge className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 rounded-full text-xs">
-                            <CheckCircle2 className="mr-1 h-3 w-3" /> Available
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-muted text-muted-foreground border-border rounded-full text-xs">
-                            <XCircle className="mr-1 h-3 w-3" /> None
-                          </Badge>
-                        )}
-                      </div>
-                      {uni?.ranking && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Ranking</span>
-                          <span className="font-semibold text-foreground">#{uni.ranking}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Side-by-side comparison table */}
-          {programs.length >= 2 && (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="border-b border-border px-6 py-4">
-                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  <GitCompare className="h-5 w-5 text-muted-foreground" />
-                  Side-by-Side Comparison
-                </h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-muted/50 border-b border-border">
-                      <th className="px-6 py-3 text-left text-sm font-medium text-muted-foreground w-[180px]">Attribute</th>
-                      {programs.map((p) => (
-                        <th key={p._id} className="px-4 py-3 text-left text-sm font-semibold text-foreground min-w-[200px]">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[640px] table-fixed border-collapse text-sm">
+            <colgroup>
+              <col className="w-40" />
+              {programs.map((p) => (
+                <col key={p._id} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr className="border-b border-rule align-bottom">
+                <th className="pl-5" />
+                {programs.map((p) => {
+                  const uni = getUni(p);
+                  return (
+                    <th key={p._id} className="px-4 pt-5 pb-4 text-left font-normal">
+                      <div className="flex items-start justify-between gap-2">
+                        <Link
+                          to={`/programs/${p._id}`}
+                          className="text-[16px] leading-snug font-semibold text-ink hover:text-brand-ink"
+                        >
                           {p.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <TableRow label="Degree" values={programs.map((p) => p.degreeLevel)} />
-                    <TableRow label="University" values={programs.map((p) => getUni(p)?.name ?? "—")} />
-                    <TableRow label="Country" values={programs.map((p) => getUni(p)?.country ?? "—")} />
-                    <TableRow label="City" values={programs.map((p) => getUni(p)?.city ?? "—")} />
-                    <TableRow label="Language" values={programs.map((p) => p.languageOfInstruction)} />
-                    <TableRow label="Tuition" values={programs.map((p) => formatCurrency(p.tuitionFee, p.tuitionCurrency, p.tuitionPeriod))} />
-                    <TableRow label="Deadline" values={programs.map((p) => formatDate(p.applicationDeadline))} />
-                    <TableRow label="Test Req." values={programs.map((p) => (p.testRequirements ?? []).map((tr) => `${tr.name} ${tr.minimumScore}`).join(", ") || "—")} />
-                    <TableRow
-                      label="Scholarship"
-                      values={programs.map((p) => (p.scholarshipAvailable ? "Available" : "No"))}
-                    />
-                    <TableRow label="Ranking" values={programs.map((p) => getUni(p)?.ranking ? `#${getUni(p)?.ranking}` : "—")} />
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => removeFromCompare(p._id)}
+                          className="-mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-lg leading-none text-ink-4 hover:bg-stamp-soft hover:text-stamp"
+                          aria-label={`Remove ${p.name} from comparison`}
+                          title="Take off the table"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      {uni && (
+                        <p className="mt-2 flex items-center gap-2 text-[13px] text-ink-3">
+                          <CountryPlate country={uni.country} className="h-6 min-w-6 rounded-md text-[10px]" />
+                          <span className="truncate">
+                            {uni.name}, {uni.city}
+                          </span>
+                        </p>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.label} className="border-b border-rule-soft">
+                  <th scope="row" className="kicker py-3.5 pr-4 pl-5 text-left align-top">
+                    {row.label}
+                  </th>
+                  {programs.map((p, i) => {
+                    const marked = row.highlight?.index === i;
+                    return (
+                      <td key={p._id} className={cn("px-4 py-3.5 align-top text-ink", marked && "bg-paper-sunken/60")}>
+                        {row.render(p)}
+                        {marked && (
+                          <span
+                            className={cn("mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold tnum",
+                              row.highlight!.tone === "moss" ? "bg-moss-soft text-moss" : "bg-stamp-soft text-stamp",
+                            )}
+                          >
+                            {row.highlight!.note}
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              <tr>
+                <td />
+                {programs.map((p) => (
+                  <td key={p._id} className="px-4 pt-4 pb-5">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/applications/new?programId=${p._id}`}>Apply</Link>
+                    </Button>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
       )}
-    </div>
-  );
-}
-
-function TableRow({ label, values }: { label: string; values: string[] }): React.ReactElement {
-  return (
-    <tr className="border-b border-border transition-colors hover:bg-muted/30">
-      <td className="px-6 py-3 text-sm font-medium text-muted-foreground">{label}</td>
-      {values.map((val, i) => (
-        <td key={i} className="px-4 py-3 text-sm text-foreground">{val}</td>
-      ))}
-    </tr>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import "../middleware/auth"
+import { agencyScope } from "../middleware/auth"
 import { Application } from "../models/Application"
 import { Program } from "../models/Program"
 import { Student } from "../models/Student"
@@ -17,7 +17,7 @@ function buildApplicationFilter(user?: Request["user"]): Record<string, unknown>
     if (user.role === "student") {
       filter["createdBy"] = user._id
     } else if (user.role === "agency") {
-      filter["agencyId"] = user._id
+      filter["agencyId"] = user.agencyId ?? user._id
     }
     // admin sees all
   }
@@ -60,7 +60,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
       application.createdBy?.toString() === req.user._id
     const isAgencyOfApp =
       req.user.role === "agency" &&
-      application.agencyId?.toString() === req.user._id
+      application.agencyId?.toString() === agencyScope(req)
 
     if (!isAdmin && !isOwner && !isAgencyOfApp) {
       res.status(403).json({ message: "Forbidden" })
@@ -116,18 +116,34 @@ export async function create(req: Request, res: Response): Promise<void> {
     if (req.user.role === "student") {
       payload["createdBy"] = req.user._id
     } else if (req.user.role === "agency") {
-      payload["agencyId"] = req.user._id
+      payload["agencyId"] = agencyScope(req)
       if (studentId) {
         const student = await Student.findOne({
           _id: studentId,
-          agencyId: req.user._id,
+          agencyId: agencyScope(req),
         })
         if (student) {
+          payload["studentId"] = student._id
           payload["studentName"] = student.name
           payload["studentEmail"] = student.email
         }
       }
     }
+  }
+
+  // An agency managing many files shouldn't open the same program twice for one student
+  // while the first is still in play; reapplying after a decision is still allowed.
+  const duplicate = payload["studentId"]
+    ? await Application.exists({
+        agencyId: payload["agencyId"],
+        studentId: payload["studentId"],
+        programId,
+        applicationStatus: { $in: ["Preparing", "Applied", "Waitlisted"] },
+      } as Record<string, unknown>)
+    : null
+  if (duplicate) {
+    res.status(409).json({ message: "There's already an application for this program", applicationId: duplicate._id })
+    return
   }
 
   const application = await Application.create(payload)
@@ -159,7 +175,7 @@ export async function update(req: Request, res: Response): Promise<void> {
       existing.createdBy?.toString() === req.user._id
     const isAgencyOfApp =
       req.user.role === "agency" &&
-      existing.agencyId?.toString() === req.user._id
+      existing.agencyId?.toString() === agencyScope(req)
 
     if (!isAdmin && !isOwner && !isAgencyOfApp) {
       res.status(403).json({ message: "Forbidden" })
@@ -169,10 +185,17 @@ export async function update(req: Request, res: Response): Promise<void> {
 
   const newStatus = req.body["applicationStatus"] as string | undefined
 
-  // req.body is pre-validated by validate(updateApplicationSchema, "body")
+  // req.body is pre-validated by validate(updateApplicationSchema, "body").
+  // Progress is merged field by field, so a partial update (or a stale client)
+  // can't wipe what it didn't send.
+  const { applicationProgress, ...rest } = req.body as Record<string, unknown>
+  const set: Record<string, unknown> = { ...rest }
+  for (const [key, value] of Object.entries((applicationProgress ?? {}) as Record<string, unknown>)) {
+    set[`applicationProgress.${key}`] = value
+  }
   const application = await Application.findByIdAndUpdate(
     req.params["id"],
-    req.body,
+    { $set: set },
     { new: true, runValidators: true }
   )
   if (!application) {
@@ -181,12 +204,13 @@ export async function update(req: Request, res: Response): Promise<void> {
   }
 
   // Create notification if status actually changed
-  if (newStatus && newStatus !== existing.applicationStatus) {
+  const recipient = existing.createdBy ?? existing.agencyId
+  if (newStatus && newStatus !== existing.applicationStatus && recipient) {
     const prog = await Program.findById(existing.programId).select("name")
     const programName = prog?.name ?? "Unknown Program"
 
     await Notification.create({
-      userId: (existing.createdBy ?? existing.agencyId)!,
+      userId: recipient,
       type: "status_change",
       title: `Application status: ${newStatus}`,
       message: `Your application to "${programName}" is now ${newStatus}.`,
@@ -212,7 +236,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
       existing.createdBy?.toString() === req.user._id
     const isAgencyOfApp =
       req.user.role === "agency" &&
-      existing.agencyId?.toString() === req.user._id
+      existing.agencyId?.toString() === agencyScope(req)
 
     if (!isAdmin && !isOwner && !isAgencyOfApp) {
       res.status(403).json({ message: "Forbidden" })
@@ -227,7 +251,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
 export async function getCalendar(req: Request, res: Response): Promise<void> {
   const user = req.user!
   const icsString = await buildApplicationCalendar(
-    user._id,
+    user.role === "agency" ? agencyScope(req) : user._id,
     user.role as "student" | "agency" | "admin",
   )
   res.setHeader("Content-Type", "text/calendar; charset=utf-8")

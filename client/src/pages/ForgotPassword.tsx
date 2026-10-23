@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/utils";
 import AuthLayout from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
-import { api } from "@/lib/api";
-import { getErrorMessage } from "@/lib/utils";
+import { Field, FormError } from "@/components/kit";
 
 export default function ForgotPassword(): React.ReactElement {
   const [email, setEmail] = useState("");
@@ -30,60 +30,49 @@ export default function ForgotPassword(): React.ReactElement {
 
   return (
     <AuthLayout
-      title="Forgot your password?"
-      subtitle="Enter your email and we'll send you a reset link"
+      kicker="Password"
+      title={sent ? "Check your inbox" : "Forgot your password?"}
+      subtitle={
+        sent
+          ? "If that address has an account, a reset link is on its way. It can take a few minutes — and sometimes it lands in spam."
+          : "Tell us the email you signed up with and we'll send a link to choose a new password."
+      }
       footer={
         <>
           Remembered it?{" "}
-          <Link to="/login" className="font-semibold text-primary hover:underline">
+          <Link to="/login" className="link-ink">
             Back to sign in
           </Link>
         </>
       }
     >
       {sent ? (
-        <div className="flex flex-col items-center gap-4 py-4 text-center">
-          <CheckCircle2 className="h-12 w-12 text-green-500" />
-          <p className="text-sm text-muted-foreground">
-            If <strong>{email}</strong> is registered, you'll receive a reset link shortly.
-            Check your spam folder if it doesn't arrive.
+        <div className="space-y-5">
+          <p className="rounded-2xl bg-moss-soft px-4 py-3 text-sm text-ink-2">
+            Sent to <span className="font-medium text-ink">{email}</span>
           </p>
-          <Link to="/login">
-            <Button variant="outline" className="mt-2">Back to sign in</Button>
-          </Link>
+          <Button variant="outline" className="w-full" asChild>
+            <Link to="/login">Back to sign in</Link>
+          </Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+          {error && <FormError>{error}</FormError>}
+          <Field label="Email" htmlFor="email">
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-muted/50"
+              className="h-10"
             />
-          </div>
-          <Button type="submit" className="h-11 w-full rounded-xl text-base" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Send reset link
-              </>
-            )}
+          </Field>
+          <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="animate-spin" />}
+            {isSubmitting ? "Sending…" : "Send the link"}
           </Button>
         </form>
       )}

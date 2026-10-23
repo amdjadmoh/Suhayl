@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import "../middleware/auth"
+import { agencyScope } from "../middleware/auth"
 import multer from "multer"
 import papaparse from "papaparse"
 import { Student } from "../models/Student"
@@ -8,7 +8,7 @@ import { Application } from "../models/Application"
 import { applicationsToCsv } from "../services/csv"
 
 export async function getMyStudents(req: Request, res: Response): Promise<void> {
-  const students = await Student.find({ agencyId: req.user!._id }).sort({ name: 1 })
+  const students = await Student.find({ agencyId: agencyScope(req) }).sort({ name: 1 })
   res.json(students)
 }
 
@@ -18,7 +18,7 @@ export async function getUniversities(_req: Request, res: Response): Promise<voi
 }
 
 export async function getApplications(req: Request, res: Response): Promise<void> {
-  const applications = await Application.find({ agencyId: req.user!._id })
+  const applications = await Application.find({ agencyId: agencyScope(req) })
     .populate({
       path: "programId",
       populate: { path: "universityId", select: "name country city ranking" },
@@ -49,7 +49,7 @@ interface ImportResult {
 export { upload }
 
 export async function importStudents(req: Request, res: Response): Promise<void> {
-  const agencyId = req.user!._id
+  const agencyId = agencyScope(req)
   const result: ImportResult = { imported: 0, skipped: 0, errors: [] }
 
   let rows: ImportRow[] = []
@@ -90,7 +90,12 @@ export async function importStudents(req: Request, res: Response): Promise<void>
     const email = row["email"]?.trim().toLowerCase()
 
     if (!name || !email) {
-      result.errors.push({ row: i + 1, message: "Missing required fields: name, email" })
+      const missing = [!name && "name", !email && "email"].filter(Boolean).join(" and ")
+      result.errors.push({ row: i + 1, message: `No ${missing}` })
+      continue
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      result.errors.push({ row: i + 1, message: `"${email}" isn't an email address` })
       continue
     }
 
@@ -98,7 +103,7 @@ export async function importStudents(req: Request, res: Response): Promise<void>
     const existing = await Student.findOne({ email, agencyId })
     if (existing) {
       result.skipped++
-      result.errors.push({ row: i + 1, message: `Duplicate email: ${email}` })
+      result.errors.push({ row: i + 1, message: `${email} is already on your list` })
       continue
     }
 
@@ -137,7 +142,7 @@ export async function exportApplicationsCsv(
 
   let filter: Record<string, unknown> = {}
   if (user.role === "agency") {
-    filter = { agencyId: user._id }
+    filter = { agencyId: agencyScope(req) }
   }
   // admin sees all
 

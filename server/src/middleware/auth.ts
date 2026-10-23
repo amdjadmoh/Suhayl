@@ -1,10 +1,18 @@
 import type { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
+import { User } from "../models/User"
 
 declare global {
   namespace Express {
     interface Request {
-      user?: { _id: string; role: string }
+      user?: {
+        _id: string
+        role: string
+        /** Agency users: the agency's id (the owner's), for counsellors and owners alike */
+        agencyId?: string
+        /** Agency users: true for the owner, false for a counsellor */
+        isAgencyOwner?: boolean
+      }
     }
   }
 }
@@ -21,11 +29,11 @@ export interface JwtPayload {
  * Attaches decoded payload to req.user on success.
  * Returns 401 if token is missing or invalid.
  */
-export function authenticate(
+export async function authenticate(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const header = req.headers["authorization"]
   if (!header || !header.startsWith("Bearer ")) {
     res.status(401).json({ message: "Missing or malformed authorization header" })
@@ -33,16 +41,36 @@ export function authenticate(
   }
 
   const token = header.slice(7)
+  let decoded: JwtPayload
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
-    req.user = {
-      _id: decoded._id,
-      role: decoded.role,
-    }
-    next()
+    decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
   } catch {
     res.status(401).json({ message: "Invalid or expired token" })
+    return
   }
+  req.user = { _id: decoded._id, role: decoded.role }
+  if (decoded.role === "agency" && !(await attachAgency(req))) {
+    res.status(401).json({ message: "This account no longer has access" })
+    return
+  }
+  next()
+}
+
+/**
+ * Agency users act for one agency: their own if they own it, the owner's if they're a
+ * counsellor. Looked up per request so a removed counsellor loses access straight away.
+ */
+async function attachAgency(req: Request): Promise<boolean> {
+  const user = await User.findById(req.user!._id).select("agencyOwnerId")
+  if (!user) return false
+  req.user!.agencyId = String(user.agencyOwnerId ?? user._id)
+  req.user!.isAgencyOwner = !user.agencyOwnerId
+  return true
+}
+
+/** The agency whose data an agency user may see; for anyone else, their own id. */
+export function agencyScope(req: Request): string {
+  return req.user!.agencyId ?? req.user!._id
 }
 
 /**
@@ -67,11 +95,11 @@ export function authorize(...roles: string[]) {
  * optionalAuth — verifies token if present, but does not fail if absent.
  * Useful for endpoints that work differently for authenticated vs anonymous users.
  */
-export function optionalAuth(
+export async function optionalAuth(
   req: Request,
   _res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const header = req.headers["authorization"]
   if (!header || !header.startsWith("Bearer ")) {
     next()
@@ -88,5 +116,6 @@ export function optionalAuth(
   } catch {
     // Token invalid — silently continue without user
   }
+  if (req.user?.role === "agency" && !(await attachAgency(req))) delete req.user
   next()
 }

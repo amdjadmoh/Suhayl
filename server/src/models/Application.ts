@@ -35,6 +35,8 @@ export interface IApplication {
   readonly studentName: string
   readonly studentEmail: string
   readonly agencyId?: Types.ObjectId
+  // The agency's student record this application is filed under
+  readonly studentId?: Types.ObjectId
   readonly createdBy?: Types.ObjectId
   readonly applicationStatus: ApplicationStatus
   readonly applicationDeadline?: Date
@@ -53,6 +55,7 @@ const applicationSchema = new Schema<IApplicationDocument>(
     studentName: { type: String, required: true },
     studentEmail: { type: String, required: true },
     agencyId: { type: Schema.Types.ObjectId, ref: "User" },
+    studentId: { type: Schema.Types.ObjectId, ref: "Student" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     applicationStatus: {
       type: String,

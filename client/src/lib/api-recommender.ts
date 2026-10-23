@@ -53,9 +53,14 @@ async function getRecommendations(
   return response.data
 }
 
+export type InviteResult = Recommendation & {
+  /** False when the server has no email set up — the student shares the link instead. */
+  emailSent: boolean
+}
+
 async function inviteRecommender(
   data: InvitePayload,
-): Promise<Recommendation> {
+): Promise<InviteResult> {
   const response = await api.post("/recommendations", data)
   return response.data
 }
@@ -91,7 +96,7 @@ export function useRecommendations(
 }
 
 export function useInviteRecommender(): UseMutationResult<
-  Recommendation,
+  InviteResult,
   Error,
   InvitePayload
 > {

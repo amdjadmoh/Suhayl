@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CheckCircle2, Loader2, Plug } from "lucide-react";
+import { StarGlyph, Wordmark } from "@/components/kit";
 
 type BridgeState = "idle" | "connecting" | "connected" | "error";
 
@@ -22,16 +22,11 @@ export default function ExtensionBridge(): React.ReactElement {
         setError("No authentication token found. Please log in again.");
         return;
       }
-      window.postMessage(
-        { type: "wannabout-extension-bridge", token },
-        window.location.origin,
-      );
+      window.postMessage({ type: "wannabout-extension-bridge", token }, window.location.origin);
       setState("connected");
     } catch (err) {
       setState("error");
-      setError(
-        err instanceof Error ? err.message : "Failed to connect extension",
-      );
+      setError(err instanceof Error ? err.message : "Failed to connect extension");
     }
   }, []);
 
@@ -41,79 +36,56 @@ export default function ExtensionBridge(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-screen items-center justify-center bg-paper">
+        <StarGlyph className="size-5 animate-pulse text-ink-4" />
       </div>
     );
   }
 
   if (!user) {
-    // Fallback: should not render because ProtectedRoute guards this page,
-    // but redirect with returnTo so the user comes back after login.
+    // Fallback: redirect with returnTo so the user comes back after login.
     return <Navigate to="/login?returnTo=/extension-bridge" replace />;
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Connect this browser extension to WannaOut</CardTitle>
-          <CardDescription>
-            This will let the extension add programs to your account from any
-            page you visit.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {state === "idle" && (
-            <Button onClick={handleConnect} className="w-full">
-              <Plug className="mr-2 h-4 w-4" />
-              Connect extension
-            </Button>
-          )}
-
-          {state === "connecting" && (
-            <Button disabled className="w-full">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting…
-            </Button>
-          )}
-
-          {state === "connected" && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-                <CheckCircle2 className="h-5 w-5 shrink-0" />
-                <span>Connected! You can close this tab.</span>
-              </div>
-              <Button
-                onClick={handleCloseTab}
-                variant="outline"
-                className="w-full"
-              >
-                Close tab
+    <div className="flex min-h-screen flex-col bg-paper px-6 py-7">
+      <Wordmark className="text-[15px]" />
+      <div className="flex flex-1 items-center justify-center">
+        <div className="w-full max-w-sm">
+          <p className="kicker mb-3">Browser extension</p>
+          {state === "connected" ? (
+            <>
+              <h1 className="text-[30px] leading-tight font-bold tracking-[-0.02em]">Connected.</h1>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
+                Programs you save from university websites will show up in Suhayl. You can close this tab.
+              </p>
+              <Button variant="outline" className="mt-8 w-full" onClick={handleCloseTab}>
+                Close this tab
               </Button>
-            </div>
-          )}
-
-          {state === "error" && (
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
-                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                <div>
-                  <p className="font-medium">Connection failed</p>
-                  <p>{error}</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate("/login?returnTo=/extension-bridge")}
-              >
-                Log in again
+            </>
+          ) : state === "error" ? (
+            <>
+              <h1 className="text-[30px] leading-tight font-bold tracking-[-0.02em]">That didn't connect.</h1>
+              <p className="mt-3 rounded-2xl bg-stamp-soft px-4 py-3 text-sm text-stamp">{error}</p>
+              <Button variant="primary" className="mt-8 w-full" onClick={() => navigate("/login?returnTo=/extension-bridge")}>
+                Sign in again
               </Button>
-            </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-[30px] leading-tight font-bold tracking-[-0.02em]">Let the extension in?</h1>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
+                This lets the browser extension add programs to <span className="font-medium text-ink">{user.name}</span>'s
+                account from any page you visit.
+              </p>
+              <Button variant="primary" size="lg" className="mt-8 w-full" onClick={handleConnect} disabled={state === "connecting"}>
+                {state === "connecting" && <Loader2 className="animate-spin" />}
+                {state === "connecting" ? "Connecting…" : "Connect the extension"}
+              </Button>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

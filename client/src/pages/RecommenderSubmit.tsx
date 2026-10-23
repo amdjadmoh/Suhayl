@@ -1,21 +1,42 @@
 import { useParams } from "react-router-dom"
 import { useState, useMemo } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
-import {
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Send,
-  GraduationCap,
-} from "lucide-react"
+import { Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   useRecommendationByToken,
   useSubmitRecommendation,
 } from "@/lib/api-recommender"
 import { getErrorMessage } from "@/lib/utils"
+import { todayLong } from "@/lib/format"
+import { Wordmark } from "@/components/kit"
+
+function Shell({ children }: { children: React.ReactNode }): React.ReactElement {
+  return (
+    <div className="min-h-screen bg-paper px-5 py-8 sm:px-8">
+      <div className="mx-auto max-w-[42rem]">
+        <div className="mb-10 flex items-center justify-between">
+          <Wordmark className="text-[15px]" />
+          <span className="text-xs text-ink-3 tnum">{todayLong()}</span>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function Message({ kicker, title, children }: { kicker: string; title: string; children: React.ReactNode }): React.ReactElement {
+  return (
+    <Shell>
+      <div className="py-10 text-center">
+        <p className="kicker mb-3">{kicker}</p>
+        <h1 className="text-3xl leading-tight font-bold tracking-[-0.02em]">{title}</h1>
+        <p className="mx-auto mt-4 max-w-md leading-relaxed text-ink-2">{children}</p>
+      </div>
+    </Shell>
+  )
+}
 
 export default function RecommenderSubmit(): React.ReactElement {
   const { token } = useParams<{ token: string }>()
@@ -34,166 +55,97 @@ export default function RecommenderSubmit(): React.ReactElement {
     if (!token) return
     try {
       await submitMutation.mutateAsync({ token, letterText })
-      toast.success("Recommendation submitted successfully!")
+      toast.success("Letter sent")
       setSubmitted(true)
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to submit recommendation"))
     }
   }
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
-        <div className="w-full max-w-lg space-y-6">
-          <Skeleton className="h-8 w-64 mx-auto" />
-          <Skeleton className="h-48 w-full rounded-xl" />
-        </div>
-      </div>
+      <Shell>
+        <Skeleton className="h-10 w-2/3" />
+        <Skeleton className="mt-6 h-64 w-full" />
+      </Shell>
     )
   }
 
-  // Error state - recommendation not found
   if (isError || !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
-        <div className="w-full max-w-md text-center">
-          <AlertCircle className="mx-auto mb-4 h-16 w-16 text-red-400" />
-          <h1 className="text-2xl font-bold text-foreground">
-            Recommendation not found
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            This link may be invalid or expired. Please contact the student who
-            requested the recommendation.
-          </p>
-        </div>
-      </div>
+      <Message kicker="Link not recognised" title="We couldn't find this letter">
+        The link may have expired or been withdrawn. If you were expecting it, ask the student to send a new invitation.
+      </Message>
     )
   }
 
-  // Already submitted
   if (data.status === "submitted" && !submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
-        <div className="w-full max-w-md text-center">
-          <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-400" />
-          <h1 className="text-2xl font-bold text-foreground">
-            Letter already submitted
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            This letter of recommendation has already been submitted. Thank you
-            for your contribution!
-          </p>
-        </div>
-      </div>
+      <Message kicker="Already received" title="This letter is in">
+        It was submitted earlier, so there's nothing more to do. Thank you for taking the time.
+      </Message>
     )
   }
 
-  // Success state after submission
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
-        <div className="w-full max-w-md text-center">
-          <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-400" />
-          <h1 className="text-2xl font-bold text-foreground">
-            Thank you!
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Your letter of recommendation for {data.studentName} has been
-            submitted successfully. The student will be notified.
-          </p>
-        </div>
-      </div>
+      <Message kicker="Sent" title="Thank you">
+        Your letter for {data.studentName} has been delivered. They'll be told it arrived — a good letter can make the
+        difference, and you wrote one.
+      </Message>
     )
   }
 
-  // Declined
   if (data.status === "declined") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
-        <div className="w-full max-w-md text-center">
-          <AlertCircle className="mx-auto mb-4 h-16 w-16 text-amber-400" />
-          <h1 className="text-2xl font-bold text-foreground">
-            Invitation declined
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            This recommendation invitation was declined.
-          </p>
-        </div>
-      </div>
+      <Message kicker="Declined" title="This invitation was declined">
+        There's nothing left to do here.
+      </Message>
     )
   }
+
+  const tooShort = letterText.trim().length < 50
 
   // Main form — invited state
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-muted/60 to-muted p-4">
-      <div className="w-full max-w-lg">
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          {/* Header */}
-          <div className="mb-6 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <GraduationCap className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Letter of Recommendation
-            </h1>
-          </div>
+    <Shell>
+      <p className="kicker">Letter of recommendation</p>
+      <h1 className="mt-2 text-[30px] leading-[1.1] font-bold tracking-[-0.01em]">
+        For {data.studentName}
+      </h1>
+      <p className="mt-1 text-ink-3">{data.programName}</p>
 
-          {/* Request Details */}
-          <div className="mb-6 rounded-xl border border-border bg-muted p-4">
-            <p className="text-sm text-foreground/70 leading-relaxed">
-              Dear <strong>{data.recommenderName}</strong>,
-            </p>
-            <p className="mt-2 text-sm text-foreground/70 leading-relaxed">
-              <strong>{data.studentName}</strong> has requested a letter of
-              recommendation for <strong>{data.programName}</strong>. Please
-              write your letter below.
-            </p>
-          </div>
-
-          {/* Letter Textarea */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Your Letter
-            </label>
-            <Textarea
-              placeholder="Write your letter of recommendation here... (minimum 50 characters)"
-              value={letterText}
-              onChange={(e) => setLetterText(e.target.value)}
-              className="min-h-48 rounded-xl border-border resize-y"
-            />
-            <p className="text-right text-xs text-muted-foreground">
-              {wordCount} {wordCount === 1 ? "word" : "words"}
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              submitMutation.isPending || letterText.trim().length < 50
-            }
-            className="mt-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl py-6"
-          >
-            {submitMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />{" "}
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-5 w-5" /> Submit Letter
-              </>
-            )}
-          </Button>
-          {letterText.trim().length > 0 && letterText.trim().length < 50 && (
-            <p className="mt-2 text-center text-xs text-amber-600 dark:text-amber-400">
-              Letter must be at least 50 characters
-              ({letterText.trim().length}/50)
-            </p>
-          )}
-        </div>
+      <div className="card-soft mt-8 px-5 py-4 text-[15px] leading-[1.7] text-ink-2">
+        <p>Dear {data.recommenderName},</p>
+        <p className="mt-3">
+          {data.studentName} has asked you to write a letter of recommendation for their application to{" "}
+          <span className="text-ink">{data.programName}</span>. Write it below — there's no form to fill in, just the
+          letter. It goes straight to their application once you send it.
+        </p>
       </div>
-    </div>
+
+      <div className="card mt-6 transition-shadow focus-within:border-brand focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--brand)_16%,transparent)]">
+        <textarea
+          value={letterText}
+          onChange={(e) => setLetterText(e.target.value)}
+          placeholder="To the admissions committee…"
+          className="block min-h-[22rem] w-full resize-none bg-transparent px-6 py-7 text-[15px] leading-[1.75] text-ink outline-none [field-sizing:content] placeholder:text-ink-4 sm:px-8"
+          aria-label="Your letter"
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+        <span className="text-xs text-ink-3 tnum">
+          {wordCount} {wordCount === 1 ? "word" : "words"}
+          {letterText.trim().length > 0 && tooShort && (
+            <span className="ml-3 text-ochre">at least 50 characters ({letterText.trim().length}/50)</span>
+          )}
+        </span>
+        <Button variant="primary" size="lg" onClick={handleSubmit} disabled={submitMutation.isPending || tooShort}>
+          {submitMutation.isPending && <Loader2 className="animate-spin" />}
+          Send the letter
+        </Button>
+      </div>
+    </Shell>
   )
 }

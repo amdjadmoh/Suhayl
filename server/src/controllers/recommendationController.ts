@@ -4,6 +4,8 @@ import { Recommendation } from "../models/Recommendation"
 import { Application } from "../models/Application"
 import { sendEmail, isEmailEnabled } from "../services/email"
 import { renderRecommenderInvite } from "../templates/email/renderRecommenderInvite"
+import { Notification } from "../models/Notification"
+import { countLetter } from "../services/accounts"
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,7 @@ function getClientUrl(): string {
  */
 async function verifyApplicationAccess(
   applicationId: string,
-  user: { _id: string; role: string } | undefined,
+  user: { _id: string; role: string; agencyId?: string } | undefined,
 ): Promise<boolean> {
   if (!user) return false
   if (user.role === "admin") return true
@@ -32,7 +34,7 @@ async function verifyApplicationAccess(
   }
 
   if (user.role === "agency") {
-    return application.agencyId?.toString() === user._id
+    return application.agencyId?.toString() === (user.agencyId ?? user._id)
   }
 
   return false
@@ -89,8 +91,10 @@ export async function invite(req: Request, res: Response): Promise<void> {
       recommenderEmail,
     })
 
-    // Send email to the recommender
-    if (isEmailEnabled()) {
+    // Send email to the recommender. Without email configured the student
+    // shares the link themselves, so say whether it actually went out.
+    const emailSent = isEmailEnabled()
+    if (emailSent) {
       const submitUrl = `${getClientUrl()}/recommendation/${recommendation.token}`
       const { html } = await renderRecommenderInvite({
         studentName: application.studentName,
@@ -106,7 +110,7 @@ export async function invite(req: Request, res: Response): Promise<void> {
       })
     }
 
-    res.status(201).json(recommendation)
+    res.status(201).json({ ...recommendation.toObject(), emailSent })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     res.status(500).json({ message: `Failed to invite recommender: ${message}` })
@@ -203,6 +207,19 @@ export async function submit(req: Request, res: Response): Promise<void> {
     recommendation.submittedAt = new Date()
     await recommendation.save()
 
+    await countLetter(recommendation.applicationId, 1)
+    const application = await Application.findById(recommendation.applicationId).select("createdBy agencyId")
+    const owner = application?.createdBy ?? application?.agencyId
+    if (owner) {
+      await Notification.create({
+        userId: owner,
+        type: "system",
+        title: `Letter from ${recommendation.recommenderName}`,
+        message: `${recommendation.recommenderName} sent their letter for ${recommendation.studentName}'s application to ${recommendation.programName}.`,
+        link: `/applications/${recommendation.applicationId}/recommenders`,
+      })
+    }
+
     res.json({ message: "Recommendation submitted successfully" })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
@@ -234,6 +251,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
     }
 
     await Recommendation.findByIdAndDelete(id)
+    if (recommendation.status === "submitted") await countLetter(recommendation.applicationId, -1)
     res.json({ message: "Recommendation removed" })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)

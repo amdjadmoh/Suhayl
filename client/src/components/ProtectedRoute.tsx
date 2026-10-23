@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/authContext";
-import { Loader2 } from "lucide-react";
+import { StarGlyph } from "@/components/kit";
 
 interface ProtectedRouteProps {
   role?: "admin" | "student" | "agency";
@@ -15,8 +15,8 @@ export default function ProtectedRoute({
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-screen items-center justify-center bg-paper">
+        <StarGlyph className="size-5 animate-pulse text-ink-4" />
       </div>
     );
   }
