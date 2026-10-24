@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/kit";
 import { GoogleSection } from "@/components/GoogleSignIn";
+import { t } from "@/lib/i18n";
 
 /** Prevent open-redirect: only allow same-origin paths starting with "/". */
 function isSafeReturnTo(path: string | null): path is string {
@@ -29,10 +30,10 @@ export default function Login(): React.ReactElement {
     setError("");
     try {
       await loginWithGoogle(credential);
-      toast.success("Welcome back");
+      toast.success(t("Welcome back"));
       navigate(returnTo);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Google sign-in failed"));
+      setError(getErrorMessage(err, t("Google sign-in failed")));
     }
   }
 
@@ -42,10 +43,10 @@ export default function Login(): React.ReactElement {
     setIsSubmitting(true);
     try {
       await login(email, password);
-      toast.success("Welcome back");
+      toast.success(t("Welcome back"));
       navigate(returnTo);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "That email and password don't match"));
+      setError(getErrorMessage(err, t("That email and password don't match")));
     } finally {
       setIsSubmitting(false);
     }
@@ -53,21 +54,21 @@ export default function Login(): React.ReactElement {
 
   return (
     <AuthLayout
-      kicker="Sign in"
-      title="Welcome back"
-      subtitle="Your applications, deadlines and notes are where you left them."
+      kicker={t("Sign in")}
+      title={t("Welcome back")}
+      subtitle={t("Your applications, deadlines and notes are where you left them.")}
       footer={
         <>
-          New here?{" "}
+          {t("New here?")}{" "}
           <Link to="/register" className="link-ink">
-            Create an account
+            {t("Create an account")}
           </Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <FormError>{error}</FormError>}
-        <Field label="Email" htmlFor="email">
+        <Field label={t("Email")} htmlFor="email">
           <Input
             id="email"
             type="email"
@@ -82,10 +83,10 @@ export default function Login(): React.ReactElement {
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between">
             <label htmlFor="password" className="text-[13px] font-semibold text-ink-2">
-              Password
+              {t("Password")}
             </label>
             <Link to="/forgot-password" className="link-ink text-xs">
-              Forgot it?
+              {t("Forgot it?")}
             </Link>
           </div>
           <Input
@@ -100,7 +101,7 @@ export default function Login(): React.ReactElement {
         </div>
         <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="animate-spin" />}
-          {isSubmitting ? "Signing in…" : "Sign in"}
+          {isSubmitting ? t("Signing in…") : t("Sign in")}
         </Button>
 
         <GoogleSection onCredential={handleGoogleResponse} />

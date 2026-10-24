@@ -16,6 +16,7 @@ import {
 import {
   BackLink, CountryPlate, DaysLeft, ErrorState, Fact, Facts, LoadingPage, Stamp, VerificationNote,
 } from "@/components/kit";
+import { t } from "@/lib/i18n";
 
 /* ---------- Pieces ---------- */
 
@@ -112,7 +113,7 @@ function AddLine({
         placeholder={placeholder}
       />
       <Button type="button" size="sm" variant="outline" onClick={onAdd} disabled={!value.trim() || disabled}>
-        Add
+        {t("Add")}
       </Button>
     </div>
   );
@@ -166,7 +167,7 @@ function Journey({ steps }: { steps: Step[] }): React.ReactElement {
                 {s.label}
               </span>
               <span className="mt-0.5 block text-xs text-ink-4 tnum">
-                {s.failed ? "refused" : s.done ? (s.date ? formatDate(s.date) : "done") : isCurrent ? "next" : ""}
+                {s.failed ? t("refused") : s.done ? (s.date ? formatDate(s.date) : t("done")) : isCurrent ? t("next") : ""}
               </span>
             </span>
           </li>
@@ -253,7 +254,7 @@ export default function ApplicationDetail(): React.ReactElement {
       });
       return true;
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to update"));
+      toast.error(getErrorMessage(err, t("Failed to update")));
       return false;
     } finally {
       setUpdating(null);
@@ -274,9 +275,9 @@ export default function ApplicationDetail(): React.ReactElement {
           },
         }),
       });
-      toast.success("Submitted. Fingers crossed.");
+      toast.success(t("Submitted. Fingers crossed."));
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to submit"));
+      toast.error(getErrorMessage(err, t("Failed to submit")));
     } finally {
       setUpdating(null);
     }
@@ -287,9 +288,9 @@ export default function ApplicationDetail(): React.ReactElement {
     setUpdating("status");
     try {
       await updateMutation.mutateAsync({ id, data: basePayload({ applicationStatus: newStatus }) });
-      toast.success(message ?? `Marked as ${newStatus.toLowerCase()}`);
+      toast.success(message ?? t("Marked as {status}", { status: t(newStatus).toLowerCase() }));
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to update status"));
+      toast.error(getErrorMessage(err, t("Failed to update status")));
     } finally {
       setUpdating(null);
     }
@@ -297,27 +298,27 @@ export default function ApplicationDetail(): React.ReactElement {
 
   async function decideVisa(approved: boolean): Promise<void> {
     const ok = await toggleProgress({ visaApproved: approved });
-    if (ok) toast.success(approved ? "Visa approved — you can enroll now" : "Visa marked as refused");
+    if (ok) toast.success(approved ? t("Visa approved — you can enroll now") : t("Visa marked as refused"));
   }
 
   async function resetVisaDecision(): Promise<void> {
     const ok = await toggleProgress({ visaApproved: null });
-    if (ok) toast.success("Visa decision cleared");
+    if (ok) toast.success(t("Visa decision cleared"));
   }
 
   async function restartVisaApplication(): Promise<void> {
     const ok = await toggleProgress({ visaApplied: false, visaApproved: null });
-    if (ok) toast.success("Visa process restarted — tick “Visa applied” when you re-apply");
+    if (ok) toast.success(t("Visa process restarted — tick “Visa applied” when you re-apply"));
   }
 
   async function handleDelete(): Promise<void> {
     if (!id) return;
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success("Application deleted");
+      toast.success(t("Application deleted"));
       navigate("/applications");
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to delete application"));
+      toast.error(getErrorMessage(err, t("Failed to delete application")));
     }
   }
 
@@ -352,14 +353,14 @@ export default function ApplicationDetail(): React.ReactElement {
   if (isError || !application) {
     return (
       <ErrorState
-        title="Application not found"
+        title={t("Application not found")}
         action={
           <Button variant="outline" onClick={() => navigate("/applications")}>
-            Back to applications
+            {t("Back to applications")}
           </Button>
         }
       >
-        It may have been deleted, or the link is wrong.
+        {t("It may have been deleted, or the link is wrong.")}
       </ErrorState>
     );
   }
@@ -381,15 +382,15 @@ export default function ApplicationDetail(): React.ReactElement {
     if (!p.documentsObtained.includes(doc)) missingItems.push(doc);
   });
   p.testScores.forEach((ts) => {
-    if (!ts.taken) missingItems.push(`${ts.name} not taken`);
+    if (!ts.taken) missingItems.push(t("{test} not taken", { test: ts.name }));
   });
-  if (prog?.requiresSOP && p.sopStatus !== "final") missingItems.push("Statement of purpose not final");
+  if (prog?.requiresSOP && p.sopStatus !== "final") missingItems.push(t("Statement of purpose not final"));
   const recsNeeded = prog?.recommendationLetters ?? p.recommendationsRequested;
   if (recsNeeded > 0 && p.recommendationsReceived < recsNeeded) {
-    missingItems.push(`Recommendation letters: ${p.recommendationsReceived} of ${recsNeeded}`);
+    missingItems.push(t("Recommendation letters: {got} of {need}", { got: p.recommendationsReceived, need: recsNeeded }));
   }
   if (prog?.applicationFee && prog.applicationFee > 0 && !p.applicationFeePaid) {
-    missingItems.push(`Application fee (${formatMoney(prog.applicationFee)}) unpaid`);
+    missingItems.push(t("Application fee ({fee}) unpaid", { fee: formatMoney(prog.applicationFee) }));
   }
 
   // Checklist progress for the preparation stage
@@ -408,15 +409,15 @@ export default function ApplicationDetail(): React.ReactElement {
     (p.applicationFeePaid ? 1 : 0);
 
   const steps: Step[] = [
-    { label: "Started", date: a.createdAt, done: true },
-    { label: "Documents ready", date: allRequiredDocsObtained ? a.updatedAt : undefined, done: allRequiredDocsObtained },
-    { label: "Submitted", date: p.applicationSubmittedDate, done: !!p.applicationSubmittedDate },
-    { label: "Interview", done: p.interviewCompleted, date: p.interviewScheduled },
-    { label: "Visa applied", done: p.visaApplied },
+    { label: t("Started"), date: a.createdAt, done: true },
+    { label: t("Documents ready"), date: allRequiredDocsObtained ? a.updatedAt : undefined, done: allRequiredDocsObtained },
+    { label: t("Submitted"), date: p.applicationSubmittedDate, done: !!p.applicationSubmittedDate },
+    { label: t("Interview"), done: p.interviewCompleted, date: p.interviewScheduled },
+    { label: t("Visa applied"), done: p.visaApplied },
     p.visaApproved === false
-      ? { label: "Visa decision", done: true, failed: true }
-      : { label: "Visa approved", done: p.visaApproved === true },
-    { label: "Enrolled", done: a.applicationStatus === "Enrolled", date: a.applicationStatus === "Enrolled" ? a.updatedAt : undefined },
+      ? { label: t("Visa decision"), done: true, failed: true }
+      : { label: t("Visa approved"), done: p.visaApproved === true },
+    { label: t("Enrolled"), done: a.applicationStatus === "Enrolled", date: a.applicationStatus === "Enrolled" ? a.updatedAt : undefined },
   ];
 
   const tone = STATUS_META[a.applicationStatus].tone;
@@ -431,7 +432,7 @@ export default function ApplicationDetail(): React.ReactElement {
   return (
     <>
       <div className="mb-5">
-        <BackLink to="/applications">Applications</BackLink>
+        <BackLink to="/applications">{t("Applications")}</BackLink>
       </div>
 
       {/* Masthead */}
@@ -439,10 +440,10 @@ export default function ApplicationDetail(): React.ReactElement {
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0 max-w-3xl">
             <p className="kicker mb-1">
-              Application · {a.studentName}
+              {t("Application · {name}", { name: a.studentName ?? "" })}
             </p>
             <h1 className="text-[28px] leading-[1.12] font-bold tracking-[-0.025em] sm:text-[36px]">
-              {prog?.name ?? "Application"}
+              {prog?.name ?? t("Application")}
             </h1>
             {uni && (
               <p className="mt-2.5 flex flex-wrap items-center gap-2 text-[15px] text-ink-3">
@@ -459,28 +460,28 @@ export default function ApplicationDetail(): React.ReactElement {
           </div>
           <div className="flex flex-col items-start gap-3 sm:items-end">
             <Stamp tone={tone} sub={stampSub}>
-              {a.applicationStatus}
+              {t(a.applicationStatus)}
             </Stamp>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" asChild>
-                <Link to={`/applications/${a._id}/edit`}>Edit details</Link>
+                <Link to={`/applications/${a._id}/edit`}>{t("Edit details")}</Link>
               </Button>
               <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-stamp hover:bg-stamp-soft hover:text-stamp">
-                    Delete
+                    {t("Delete")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Delete this application?</DialogTitle>
+                    <DialogTitle>{t("Delete this application?")}</DialogTitle>
                     <DialogDescription>
-                      Its checklist, statement and recommender invitations go with it. This can't be undone.
+                      {t("Its checklist, statement and recommender invitations go with it. This can't be undone.")}
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                      Keep it
+                      {t("Keep it")}
                     </Button>
                     <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
                       {deleteMutation.isPending ? <Loader2 className="animate-spin" /> : null}
@@ -500,9 +501,9 @@ export default function ApplicationDetail(): React.ReactElement {
 
       {a.applicationStatus === "Enrolled" && (
         <div className="mb-8 rounded-3xl bg-moss-soft px-6 py-5 text-center">
-          <p className="text-xl font-bold tracking-[-0.02em] text-moss">Enrolled — that's the whole journey</p>
+          <p className="text-xl font-bold tracking-[-0.02em] text-moss">{t("Enrolled — that's the whole journey")}</p>
           <p className="mt-1 text-sm text-ink-2">
-            {a.studentName} is officially in {prog?.name ?? "the program"}. Safe travels.
+            {t("{name} is officially in {program}. Safe travels.", { name: a.studentName ?? "", program: prog?.name ?? t("the program") })}
           </p>
         </div>
       )}
@@ -511,11 +512,11 @@ export default function ApplicationDetail(): React.ReactElement {
       <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{missingItems.length > 0 ? "A few things are still open" : "Ready to submit?"}</DialogTitle>
+            <DialogTitle>{missingItems.length > 0 ? t("A few things are still open") : t("Ready to submit?")}</DialogTitle>
             <DialogDescription>
               {missingItems.length > 0
-                ? "You can still mark it as submitted — just make sure you meant to."
-                : "Everything on the checklist is ticked. This marks the application as sent."}
+                ? t("You can still mark it as submitted — just make sure you meant to.")
+                : t("Everything on the checklist is ticked. This marks the application as sent.")}
             </DialogDescription>
           </DialogHeader>
           {missingItems.length > 0 && (
@@ -527,7 +528,7 @@ export default function ApplicationDetail(): React.ReactElement {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSubmitDialogOpen(false)}>
-              Not yet
+              {t("Not yet")}
             </Button>
             <Button
               variant="primary"
@@ -538,7 +539,7 @@ export default function ApplicationDetail(): React.ReactElement {
               disabled={updating === "submit"}
             >
               {updating === "submit" && <Loader2 className="animate-spin" />}
-              Mark as submitted
+              {t("Mark as submitted")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -550,9 +551,9 @@ export default function ApplicationDetail(): React.ReactElement {
           {stageIsPrep && (
             <section>
               <div className="mb-3 flex items-end justify-between gap-4">
-                <h2 className="text-[17px] font-bold tracking-[-0.01em]">Checklist</h2>
+                <h2 className="text-[17px] font-bold tracking-[-0.01em]">{t("Checklist")}</h2>
                 <span className="text-[13px] font-semibold text-ink-3 tnum">
-                  {prepDone} of {prepTotal} done
+                  {t("{done} of {total} done", { done: prepDone, total: prepTotal })}
                 </span>
               </div>
               <div className="mb-5 h-2 overflow-hidden rounded-full bg-paper-sunken">
@@ -563,13 +564,13 @@ export default function ApplicationDetail(): React.ReactElement {
 
               {isReadOnly && (
                 <p className="mb-4 rounded-2xl bg-paper-sunken px-4 py-3 text-[13.5px] text-ink-2">
-                  Submitted, so the checklist is locked as a record of what was sent.
+                  {t("Submitted, so the checklist is locked as a record of what was sent.")}
                 </p>
               )}
 
               <div className="card divide-y divide-rule-soft px-5 py-4">
                 {p.testScores.length > 0 && (
-                  <ChecklistGroup title="Tests">
+                  <ChecklistGroup title={t("Tests")}>
                     {p.testScores.map((ts, i) => (
                       <CheckRow
                         key={i}
@@ -588,7 +589,7 @@ export default function ApplicationDetail(): React.ReactElement {
                               type="number"
                               step="0.5"
                               className="h-7 w-20 text-right text-xs tnum"
-                              placeholder="Score"
+                              placeholder={t("Score")}
                               disabled={isReadOnly}
                               value={ts.score ?? ""}
                               onChange={(e) => {
@@ -604,7 +605,7 @@ export default function ApplicationDetail(): React.ReactElement {
                   </ChecklistGroup>
                 )}
 
-                <ChecklistGroup title="Documents">
+                <ChecklistGroup title={t("Documents")}>
                   {prog?.requiredDocuments.map((doc, i) => {
                     const done = p.documentsObtained.includes(doc);
                     return (
@@ -644,7 +645,7 @@ export default function ApplicationDetail(): React.ReactElement {
                     />
                   ))}
                   {!prog?.requiredDocuments.length && extraDocs.length === 0 && (
-                    <li className="py-2 text-sm text-ink-3">The program doesn't list any documents.</li>
+                    <li className="py-2 text-sm text-ink-3">{t("The program doesn't list any documents.")}</li>
                   )}
                   {!isReadOnly && (
                     <li className="pt-1">
@@ -652,7 +653,7 @@ export default function ApplicationDetail(): React.ReactElement {
                         value={docInput}
                         onChange={setDocInput}
                         onAdd={addDocument}
-                        placeholder="Something else you need to send…"
+                        placeholder={t("Something else you need to send…")}
                         disabled={updating === "documentsObtained"}
                       />
                     </li>
@@ -660,18 +661,18 @@ export default function ApplicationDetail(): React.ReactElement {
                 </ChecklistGroup>
 
                 {(prog?.requiresSOP || (prog?.recommendationLetters ?? 0) > 0 || p.recommendationsRequested > 0) && (
-                  <ChecklistGroup title="Writing">
+                  <ChecklistGroup title={t("Writing")}>
                     {prog?.requiresSOP && (
                       <CheckRow
                         done={p.sopStatus === "final"}
-                        label="Statement of purpose"
-                        detail={p.sopStatus === "draft" ? "draft" : undefined}
+                        label={t("Statement of purpose")}
+                        detail={p.sopStatus === "draft" ? t("draft") : undefined}
                         disabled={isReadOnly}
                         loading={updating === "sopStatus"}
                         onClick={() => toggleProgress({ sopStatus: p.sopStatus === "final" ? "not_started" : "final" })}
                         trailing={
                           <Link to={`/applications/${a._id}/statement`} className="link-ink shrink-0 text-[13px]">
-                            Write
+                            {t("Write")}
                           </Link>
                         }
                       />
@@ -679,7 +680,7 @@ export default function ApplicationDetail(): React.ReactElement {
                     {((prog?.recommendationLetters ?? 0) > 0 || p.recommendationsRequested > 0) && (
                       <CheckRow
                         done={p.recommendationsReceived >= p.recommendationsRequested && p.recommendationsRequested > 0}
-                        label="Letters of recommendation"
+                        label={t("Letters of recommendation")}
                         detail={p.recommendationsRequested > 0 ? `${p.recommendationsReceived}/${p.recommendationsRequested}` : undefined}
                         disabled={isReadOnly}
                         loading={updating === "recommendationsReceived"}
@@ -694,7 +695,7 @@ export default function ApplicationDetail(): React.ReactElement {
                         }
                         trailing={
                           <Link to={`/applications/${a._id}/recommenders`} className="link-ink shrink-0 text-[13px]">
-                            Recommenders
+                            {t("Recommenders")}
                           </Link>
                         }
                       />
@@ -702,15 +703,15 @@ export default function ApplicationDetail(): React.ReactElement {
                   </ChecklistGroup>
                 )}
 
-                <ChecklistGroup title="Fees">
+                <ChecklistGroup title={t("Fees")}>
                   <CheckRow
                     done={p.applicationFeePaid}
-                    label="Application fee paid"
+                    label={t("Application fee paid")}
                     detail={
                       prog?.applicationFee != null && prog.applicationFee > 0
                         ? formatMoney(prog.applicationFee)
                         : prog?.applicationFee === 0
-                          ? "free"
+                          ? t("free")
                           : undefined
                     }
                     disabled={isReadOnly}
@@ -728,7 +729,7 @@ export default function ApplicationDetail(): React.ReactElement {
                 <h2 className="text-[17px] font-bold tracking-[-0.01em]">Visa{uni?.country ? ` for ${uni.country}` : ""}</h2>
                 {country && (
                   <Link to={`/countries/${country._id}`} className="link-ink text-[13px]">
-                    Country notes
+                    {t("Country notes")}
                   </Link>
                 )}
               </div>
@@ -736,7 +737,7 @@ export default function ApplicationDetail(): React.ReactElement {
               {country && <VerificationNote status={country.verificationStatus} subject="visa" className="mb-6" />}
 
               <div className="card divide-y divide-rule-soft px-5 py-4">
-                <ChecklistGroup title="Visa documents">
+                <ChecklistGroup title={t("Visa documents")}>
                   {country?.requiredDocuments?.length ? (
                     country.requiredDocuments.map((doc, i) => {
                       const done = !!p.visaDocumentsObtained?.includes(doc);
@@ -795,31 +796,31 @@ export default function ApplicationDetail(): React.ReactElement {
                         value={docInput}
                         onChange={setDocInput}
                         onAdd={addVisaDocument}
-                        placeholder="Another document the embassy asked for…"
+                        placeholder={t("Another document the embassy asked for…")}
                         disabled={updating === "visaDocumentsPending"}
                       />
                     </li>
                   )}
                 </ChecklistGroup>
 
-                <ChecklistGroup title="Visa & interview">
+                <ChecklistGroup title={t("Visa & interview")}>
                   <CheckRow
                     done={p.visaApplied}
-                    label="Visa applied"
+                    label={t("Visa applied")}
                     disabled={isReadOnly}
                     loading={updating === "visaApplied"}
                     onClick={() => toggleProgress({ visaApplied: !p.visaApplied })}
                   />
                   <CheckRow
                     done={p.interviewCompleted}
-                    label="Interview done"
+                    label={t("Interview done")}
                     detail={p.interviewScheduled ? formatDate(p.interviewScheduled) : undefined}
                     disabled={isReadOnly}
                     loading={updating === "interviewCompleted"}
                     onClick={() => toggleProgress({ interviewCompleted: !p.interviewCompleted })}
                   />
                   <li className="flex flex-wrap items-center gap-3 py-2">
-                    <span className="flex-1 text-sm text-ink-2">Visa deadline</span>
+                    <span className="flex-1 text-sm text-ink-2">{t("Visa deadline")}</span>
                     {p.visaDeadline && !isReadOnly && (
                       <button
                         type="button"
@@ -827,7 +828,7 @@ export default function ApplicationDetail(): React.ReactElement {
                         disabled={updating === "visaDeadline"}
                         className="text-[13px] font-semibold text-ink-3 hover:text-stamp"
                       >
-                        Clear
+                        {t("Clear")}
                       </button>
                     )}
                     <Input
@@ -844,7 +845,7 @@ export default function ApplicationDetail(): React.ReactElement {
               {p.visaApplied && a.applicationStatus !== "Enrolled" && (
                 <div className="mt-6">
                   {p.visaApproved == null && (
-                    <Panel title="Has the embassy decided?" description="Record the outcome once the letter arrives.">
+                    <Panel title={t("Has the embassy decided?")} description={t("Record the outcome once the letter arrives.")}>
                       <div className="flex flex-wrap gap-2">
                         <Button variant="primary" size="sm" onClick={() => decideVisa(true)} disabled={isReadOnly || updating === "visaApproved"}>
                           {updating === "visaApproved" ? <Loader2 className="animate-spin" /> : <Check />}
@@ -852,7 +853,7 @@ export default function ApplicationDetail(): React.ReactElement {
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => decideVisa(false)} disabled={isReadOnly || updating === "visaApproved"}>
                           <X />
-                          Refused
+                          {t("Refused")}
                         </Button>
                       </div>
                     </Panel>
@@ -860,8 +861,8 @@ export default function ApplicationDetail(): React.ReactElement {
                   {p.visaApproved === false && (
                     <Panel
                       tone="stamp"
-                      title="The visa was refused"
-                      description="That's hard news. The documents you gathered are kept — you can apply again when you're ready."
+                      title={t("The visa was refused")}
+                      description={t("That's hard news. The documents you gathered are kept — you can apply again when you're ready.")}
                     >
                       <div className="flex flex-wrap items-center gap-3">
                         <Button variant="outline" size="sm" onClick={restartVisaApplication} disabled={isReadOnly || updating === "visaApplied"}>
@@ -874,13 +875,13 @@ export default function ApplicationDetail(): React.ReactElement {
                           disabled={isReadOnly || updating === "visaApproved"}
                           className="link-ink text-[13px] disabled:opacity-50"
                         >
-                          Undo decision
+                          {t("Undo decision")}
                         </button>
                       </div>
                     </Panel>
                   )}
                   {p.visaApproved === true && (
-                    <Panel tone="moss" title="Visa approved" description="The stamp is in the passport.">
+                    <Panel tone="moss" title={t("Visa approved")} description={t("The stamp is in the passport.")}>
                       {a.applicationStatus === "Accepted" && (
                         <button
                           type="button"
@@ -888,7 +889,7 @@ export default function ApplicationDetail(): React.ReactElement {
                           disabled={updating === "visaApproved"}
                           className="link-ink text-[13px] disabled:opacity-50"
                         >
-                          Undo decision
+                          {t("Undo decision")}
                         </button>
                       )}
                     </Panel>
@@ -898,15 +899,15 @@ export default function ApplicationDetail(): React.ReactElement {
 
               {p.visaApproved === true && a.applicationStatus === "Accepted" && (
                 <div className="mt-6 rounded-3xl bg-brand-soft p-6">
-                  <p className="text-xl leading-tight font-bold tracking-[-0.02em]">One step left</p>
+                  <p className="text-xl leading-tight font-bold tracking-[-0.02em]">{t("One step left")}</p>
                   <p className="mt-1 text-sm text-ink-2">
-                    Offer accepted, visa approved. Mark the enrollment when the university confirms it.
+                    {t("Offer accepted, visa approved. Mark the enrollment when the university confirms it.")}
                   </p>
                   <Button
                     variant="primary"
                     size="lg"
                     className="mt-4"
-                    onClick={() => updateStatus("Enrolled", "Enrolled — congratulations!")}
+                    onClick={() => updateStatus("Enrolled", t("Enrolled — congratulations!"))}
                     disabled={updating === "status"}
                   >
                     {updating === "status" && <Loader2 className="animate-spin" />}
@@ -920,11 +921,11 @@ export default function ApplicationDetail(): React.ReactElement {
           {a.applicationStatus === "Rejected" && (
             <Panel
               tone="stamp"
-              title="Not this time"
-              description="It stings, but it's one door. The program details are kept here in case you want to try again next intake."
+              title={t("Not this time")}
+              description={t("It stings, but it's one door. The program details are kept here in case you want to try again next intake.")}
             >
               <Button variant="outline" size="sm" asChild>
-                <Link to="/programs">Look at other programs</Link>
+                <Link to="/programs">{t("Look at other programs")}</Link>
               </Button>
             </Panel>
           )}
@@ -932,30 +933,30 @@ export default function ApplicationDetail(): React.ReactElement {
           {/* Decisions */}
           {a.applicationStatus === "Preparing" && (
             <div className="rounded-3xl bg-brand-soft p-6">
-              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">Sent it off?</p>
+              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">{t("Sent it off?")}</p>
               <p className="mt-1 text-sm text-ink-2">
-                Once you've submitted on the university's portal, mark it here. The deadline stops counting down.
+                {t("Once you've submitted on the university's portal, mark it here. The deadline stops counting down.")}
               </p>
               <Button variant="primary" size="lg" className="mt-4" onClick={() => setSubmitDialogOpen(true)} disabled={updating === "submit"}>
                 {updating === "submit" && <Loader2 className="animate-spin" />}
-                Mark as submitted
+                {t("Mark as submitted")}
               </Button>
             </div>
           )}
 
           {a.applicationStatus === "Applied" && (
             <div className="rounded-3xl bg-brand-soft p-6">
-              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">Heard back?</p>
-              <p className="mt-1 text-sm text-ink-2">Record the university's answer when it comes.</p>
+              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">{t("Heard back?")}</p>
+              <p className="mt-1 text-sm text-ink-2">{t("Record the university's answer when it comes.")}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="primary" onClick={() => updateStatus("Accepted", "Accepted! Well done.")} disabled={updating === "status"}>
-                  Accepted
+                <Button variant="primary" onClick={() => updateStatus("Accepted", t("Accepted! Well done."))} disabled={updating === "status"}>
+                  {t("Accepted")}
                 </Button>
                 <Button variant="outline" onClick={() => updateStatus("Waitlisted")} disabled={updating === "status"}>
-                  Waitlisted
+                  {t("Waitlisted")}
                 </Button>
                 <Button variant="outline" onClick={() => updateStatus("Rejected")} disabled={updating === "status"}>
-                  Rejected
+                  {t("Rejected")}
                 </Button>
               </div>
             </div>
@@ -963,14 +964,14 @@ export default function ApplicationDetail(): React.ReactElement {
 
           {a.applicationStatus === "Waitlisted" && (
             <div className="rounded-3xl bg-brand-soft p-6">
-              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">Off the waiting list?</p>
-              <p className="mt-1 text-sm text-ink-2">When the university decides, record it here.</p>
+              <p className="text-xl leading-tight font-bold tracking-[-0.02em]">{t("Off the waiting list?")}</p>
+              <p className="mt-1 text-sm text-ink-2">{t("When the university decides, record it here.")}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="primary" onClick={() => updateStatus("Accepted", "Accepted! Well done.")} disabled={updating === "status"}>
-                  Accepted
+                <Button variant="primary" onClick={() => updateStatus("Accepted", t("Accepted! Well done."))} disabled={updating === "status"}>
+                  {t("Accepted")}
                 </Button>
                 <Button variant="outline" onClick={() => updateStatus("Rejected")} disabled={updating === "status"}>
-                  Rejected
+                  {t("Rejected")}
                 </Button>
               </div>
             </div>
@@ -980,39 +981,39 @@ export default function ApplicationDetail(): React.ReactElement {
         {/* ── Aside: the facts ── */}
         <aside className="space-y-8">
           <div>
-            <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">Details</p>
+            <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">{t("Details")}</p>
             <Facts className="card px-5 py-1">
-              <Fact label="Student">{a.studentName}</Fact>
-              <Fact label="Email">
+              <Fact label={t("Student")}>{a.studentName}</Fact>
+              <Fact label={t("Email")}>
                 <span className="break-all">{a.studentEmail}</span>
               </Fact>
-              <Fact label="Deadline">
+              <Fact label={t("Deadline")}>
                 {a.applicationDeadline ? (
                   <span className="flex flex-col items-end">
                     <span>{formatDateLong(a.applicationDeadline)}</span>
                     {stageIsPrep && <DaysLeft date={a.applicationDeadline} />}
                   </span>
                 ) : (
-                  <span className="text-ink-4">not set</span>
+                  <span className="text-ink-4">{t("not set")}</span>
                 )}
               </Fact>
-              <Fact label="Application fee">
+              <Fact label={t("Application fee")}>
                 {prog?.applicationFee != null && prog.applicationFee > 0 ? (
                   <span>
                     {formatMoney(prog.applicationFee)}{" "}
                     <span className={cn("text-xs tnum", p.applicationFeePaid ? "text-moss" : "text-ochre")}>
-                      {p.applicationFeePaid ? "paid" : "unpaid"}
+                      {p.applicationFeePaid ? t("paid") : t("unpaid")}
                     </span>
                   </span>
                 ) : prog?.applicationFee === 0 ? (
                   "Free"
                 ) : (
-                  <span className="text-ink-4">not set</span>
+                  <span className="text-ink-4">{t("not set")}</span>
                 )}
               </Fact>
-              {p.visaDeadline && <Fact label="Visa deadline">{formatDateLong(p.visaDeadline)}</Fact>}
-              <Fact label="Started">{formatDate(a.createdAt)}</Fact>
-              <Fact label="Last change">{formatDate(a.updatedAt)}</Fact>
+              {p.visaDeadline && <Fact label={t("Visa deadline")}>{formatDateLong(p.visaDeadline)}</Fact>}
+              <Fact label={t("Started")}>{formatDate(a.createdAt)}</Fact>
+              <Fact label={t("Last change")}>{formatDate(a.updatedAt)}</Fact>
             </Facts>
             {a.notes && (
               <p className="mt-3 rounded-2xl bg-paper-sunken px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-ink-2">
@@ -1020,22 +1021,22 @@ export default function ApplicationDetail(): React.ReactElement {
               </p>
             )}
             <Link to={`/applications/${a._id}/edit`} className="link-ink mt-3 inline-block px-1 text-sm">
-              Edit status, deadline and notes
+              {t("Edit status, deadline and notes")}
             </Link>
           </div>
 
           {prog && (
             <div>
-              <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">The program</p>
+              <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">{t("The program")}</p>
               <Facts className="card px-5 py-1">
-                <Fact label="Degree">{prog.degreeLevel}</Fact>
-                <Fact label="Taught in">{prog.languageOfInstruction}</Fact>
+                <Fact label={t("Degree")}>{prog.degreeLevel}</Fact>
+                <Fact label={t("Taught in")}>{prog.languageOfInstruction}</Fact>
                 {prog.tuitionFee != null && (
-                  <Fact label="Tuition">{formatTuition(prog.tuitionFee, prog.tuitionCurrency || "EUR", prog.tuitionPeriod)}</Fact>
+                  <Fact label={t("Tuition")}>{formatTuition(prog.tuitionFee, prog.tuitionCurrency || "EUR", prog.tuitionPeriod)}</Fact>
                 )}
               </Facts>
               <Link to={`/programs/${prog._id}`} className="link-ink mt-3 inline-block px-1 text-sm">
-                Full program page
+                {t("Full program page")}
               </Link>
             </div>
           )}

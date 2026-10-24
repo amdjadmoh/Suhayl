@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DaysLeft, Field, StatusTag } from "@/components/kit";
+import { t } from "@/lib/i18n";
 
 type Sort = "urgent" | "deadline" | "name" | "newest" | "balance";
 type Quick = "attention" | "owes" | "new" | null;
@@ -70,9 +71,9 @@ function BulkAskDialog({
         note: note.trim() || undefined,
         dueDate: dueDate || undefined,
       });
-      toast.success(`Asked ${plural(r.requested, "student")} for ${title.trim()}`, {
+      toast.success(t("Asked {students} for {doc}", { students: plural(r.requested, "student"), doc: title.trim() }), {
         description:
-          [r.emailed ? `${plural(r.emailed, "family", "families")} emailed their link.` : "", r.alreadyAsked ? `${plural(r.alreadyAsked, "student")} already had this request open.` : ""]
+          [r.emailed ? t("{n} emailed their link.", { n: plural(r.emailed, "family", "families") }) : "", r.alreadyAsked ? t("{n} already had this request open.", { n: plural(r.alreadyAsked, "student") }) : ""]
             .filter(Boolean)
             .join(" ") || undefined,
       });
@@ -82,7 +83,7 @@ function BulkAskDialog({
       onOpenChange(false);
       onDone();
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't send the requests"));
+      toast.error(getErrorMessage(err, t("Couldn't send the requests")));
     }
   }
 
@@ -91,45 +92,45 @@ function BulkAskDialog({
       <DialogContent>
         <form onSubmit={onSubmit} className="grid gap-5">
           <DialogHeader>
-            <DialogTitle>Ask {plural(students.length, "student")} for a document</DialogTitle>
+            <DialogTitle>{t("Ask {students} for a document", { students: plural(students.length, "student") })}</DialogTitle>
             <DialogDescription>
-              It appears on each family link. Students who already have the same request open are skipped.
+              {t("It appears on each family link. Students who already have the same request open are skipped.")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-2">
-            {COMMON_DOCUMENTS.map((t) => (
+            {COMMON_DOCUMENTS.map((preset) => t(preset)).map((doc) => (
               <button
-                key={t}
+                key={doc}
                 type="button"
-                onClick={() => setTitle(t)}
-                aria-pressed={title === t}
+                onClick={() => setTitle(doc)}
+                aria-pressed={title === doc}
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors",
-                  title === t ? "border-brand bg-brand text-on-brand" : "border-rule bg-paper-raised text-ink-2 hover:bg-paper-hover",
+                  title === doc ? "border-brand bg-brand text-on-brand" : "border-rule bg-paper-raised text-ink-2 hover:bg-paper-hover",
                 )}
               >
-                {t}
+                {doc}
               </button>
             ))}
           </div>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
-            <Field label="Document" htmlFor="bulk-title">
-              <Input id="bulk-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Or type your own" />
+            <Field label={t("Document")} htmlFor="bulk-title">
+              <Input id="bulk-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("Or type your own")} />
             </Field>
-            <Field label="Needed by" htmlFor="bulk-due">
+            <Field label={t("Needed by")} htmlFor="bulk-due">
               <Input id="bulk-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </Field>
-            <Field label="Note for them" htmlFor="bulk-note" className="sm:col-span-2">
-              <Input id="bulk-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Valid for at least 18 months" />
+            <Field label={t("Note for them")} htmlFor="bulk-note" className="sm:col-span-2">
+              <Input id="bulk-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("e.g. Valid for at least 18 months")} />
             </Field>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={!title.trim() || bulk.isPending}>
               {bulk.isPending && <Loader2 className="animate-spin" />}
-              Ask {plural(students.length, "student")}
+              {t("Ask {students}", { students: plural(students.length, "student") })}
             </Button>
           </DialogFooter>
         </form>
@@ -265,25 +266,27 @@ export function StudentRoster({
     try {
       const r = await bulkAssign.mutateAsync({ studentIds: [...selected], counsellorId });
       toast.success(
-        counsellorId ? `${plural(r.updated, "student")} given to ${memberName(counsellorId) ?? "them"}` : `${plural(r.updated, "student")} unassigned`,
+        counsellorId
+          ? t("{students} given to {name}", { students: plural(r.updated, "student"), name: memberName(counsellorId) ?? t("them") })
+          : t("{students} unassigned", { students: plural(r.updated, "student") }),
       );
       setSelected(new Set());
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't assign them"));
+      toast.error(getErrorMessage(err, t("Couldn't assign them")));
     }
   }
 
   async function copyPhones(): Promise<void> {
     const phones = selectedSummaries.map((s) => s.student.phone).filter(Boolean).join("\n");
     if (!phones) {
-      toast.error("None of them have a phone number on file");
+      toast.error(t("None of them have a phone number on file"));
       return;
     }
     try {
       await navigator.clipboard.writeText(phones);
-      toast.success(`Copied ${plural(phones.split("\n").length, "phone number")}`, { description: "Paste them into a WhatsApp broadcast list." });
+      toast.success(t("Copied {n}", { n: plural(phones.split("\n").length, "phone number") }), { description: t("Paste them into a WhatsApp broadcast list.") });
     } catch {
-      toast.error("Copy didn't work in this browser");
+      toast.error(t("Copy didn't work in this browser"));
     }
   }
 
@@ -308,9 +311,9 @@ export function StudentRoster({
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        {quickChip("attention", "Needs attention", counts.attention)}
-        {quickChip("owes", "Owes a balance", counts.owes)}
-        {quickChip("new", "No application yet", counts.new)}
+        {quickChip("attention", t("Needs attention"), counts.attention)}
+        {quickChip("owes", t("Owes a balance"), counts.owes)}
+        {quickChip("new", t("No application yet"), counts.new)}
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(5,minmax(0,1fr))]">
@@ -322,30 +325,30 @@ export function StudentRoster({
               setQuery(e.target.value);
               setShown(PAGE);
             }}
-            placeholder="Name, email or phone"
+            placeholder={t("Name, email or phone")}
             className="pl-10"
-            aria-label="Find a student"
+            aria-label={t("Find a student")}
           />
         </div>
         <Select value={stage} onValueChange={(v) => { setStage(v as Stage | typeof ALL); setShown(PAGE); }}>
-          <SelectTrigger aria-label="Stage">
+          <SelectTrigger aria-label={t("Stage")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Every stage</SelectItem>
+            <SelectItem value={ALL}>{t("Every stage")}</SelectItem>
             {STAGES.map((s) => (
               <SelectItem key={s} value={s}>
-                {s === "New" ? "No application yet" : s}
+                {s === "New" ? t("No application yet") : t(s)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={intake} onValueChange={(v) => { setIntake(v); setShown(PAGE); }}>
-          <SelectTrigger aria-label="Intake">
+          <SelectTrigger aria-label={t("Intake")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Every intake</SelectItem>
+            <SelectItem value={ALL}>{t("Every intake")}</SelectItem>
             {intakes.map((i) => (
               <SelectItem key={i} value={i}>
                 {i}
@@ -354,11 +357,11 @@ export function StudentRoster({
           </SelectContent>
         </Select>
         <Select value={country} onValueChange={(v) => { setCountry(v); setShown(PAGE); }}>
-          <SelectTrigger aria-label="Country">
+          <SelectTrigger aria-label={t("Country")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Every country</SelectItem>
+            <SelectItem value={ALL}>{t("Every country")}</SelectItem>
             {countries.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
@@ -368,13 +371,13 @@ export function StudentRoster({
         </Select>
         {hasTeam && (
           <Select value={counsellor} onValueChange={(v) => { setCounsellor(v); setShown(PAGE); }}>
-            <SelectTrigger aria-label="Counsellor">
+            <SelectTrigger aria-label={t("Counsellor")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Every counsellor</SelectItem>
-              {user && <SelectItem value={user._id}>My students</SelectItem>}
-              <SelectItem value="none">No counsellor</SelectItem>
+              <SelectItem value={ALL}>{t("Every counsellor")}</SelectItem>
+              {user && <SelectItem value={user._id}>{t("My students")}</SelectItem>}
+              <SelectItem value="none">{t("No counsellor")}</SelectItem>
               {members
                 .filter((m) => m._id !== user?._id)
                 .map((m) => (
@@ -386,26 +389,26 @@ export function StudentRoster({
           </Select>
         )}
         <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
-          <SelectTrigger aria-label="Sort">
+          <SelectTrigger aria-label={t("Sort")}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="urgent">Most urgent first</SelectItem>
-            <SelectItem value="deadline">Next deadline</SelectItem>
-            <SelectItem value="name">Name A–Z</SelectItem>
-            <SelectItem value="newest">Newest first</SelectItem>
-            <SelectItem value="balance">Largest balance</SelectItem>
+            <SelectItem value="urgent">{t("Most urgent first")}</SelectItem>
+            <SelectItem value="deadline">{t("Next deadline")}</SelectItem>
+            <SelectItem value="name">{t("Name A–Z")}</SelectItem>
+            <SelectItem value="newest">{t("Newest first")}</SelectItem>
+            <SelectItem value="balance">{t("Largest balance")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1 text-[13px] text-ink-3">
         <span className="tnum">
-          {visible.length === students.length ? plural(students.length, "student") : `${visible.length} of ${students.length} students`}
+          {visible.length === students.length ? plural(students.length, "student") : t("{shown} of {total} students", { shown: visible.length, total: students.length })}
         </span>
         {filtered && (
           <button type="button" onClick={clearFilters} className="font-semibold text-brand-ink hover:underline">
-            Clear filters
+            {t("Clear filters")}
           </button>
         )}
       </div>
@@ -418,15 +421,15 @@ export function StudentRoster({
                 <Checkbox
                   checked={allOnPageSelected}
                   onCheckedChange={toggleAllVisible}
-                  aria-label={`Select all ${visible.length} shown`}
+                  aria-label={t("Select all {n} shown", { n: visible.length })}
                 />
               </th>
-              <th className="kicker py-3 pr-3 pl-2 text-left">Student</th>
-              <th className="kicker px-3 py-3 text-left">Stage</th>
-              {hasTeam && <th className="kicker px-3 py-3 text-left">Counsellor</th>}
-              <th className="kicker px-3 py-3 text-left">Next deadline</th>
-              <th className="kicker px-3 py-3 text-left">Documents</th>
-              <th className="kicker px-3 py-3 text-right">Balance</th>
+              <th className="kicker py-3 pr-3 pl-2 text-left">{t("Student")}</th>
+              <th className="kicker px-3 py-3 text-left">{t("Stage")}</th>
+              {hasTeam && <th className="kicker px-3 py-3 text-left">{t("Counsellor")}</th>}
+              <th className="kicker px-3 py-3 text-left">{t("Next deadline")}</th>
+              <th className="kicker px-3 py-3 text-left">{t("Documents")}</th>
+              <th className="kicker px-3 py-3 text-right">{t("Balance")}</th>
               <th className="py-3 pr-5 pl-3" />
             </tr>
           </thead>
@@ -437,7 +440,7 @@ export function StudentRoster({
               return (
                 <tr key={st._id} className={cn("border-b border-rule-soft transition-colors last:border-0", checked ? "bg-brand-soft/40" : "hover:bg-paper-hover")}>
                   <td className="py-3.5 pl-5 align-top">
-                    <Checkbox checked={checked} onCheckedChange={() => toggle(st._id)} aria-label={`Select ${st.name}`} className="mt-0.5" />
+                    <Checkbox checked={checked} onCheckedChange={() => toggle(st._id)} aria-label={t("Select {name}", { name: st.name })} className="mt-0.5" />
                   </td>
                   <td className="max-w-[20rem] py-3.5 pr-3 pl-2 align-top">
                     <Link to={`/agency/students/${st._id}`} className="font-semibold text-ink hover:text-brand-ink">
@@ -453,7 +456,7 @@ export function StudentRoster({
                   </td>
                   <td className="px-3 py-3.5 align-top">
                     {s.stage === "New" ? (
-                      <span className="rounded-full bg-paper-sunken px-2.5 py-0.5 text-xs font-semibold text-ink-3">No application</span>
+                      <span className="rounded-full bg-paper-sunken px-2.5 py-0.5 text-xs font-semibold text-ink-3">{t("No application")}</span>
                     ) : (
                       <StatusTag status={s.stage} />
                     )}
@@ -463,7 +466,7 @@ export function StudentRoster({
                       {memberName(st.counsellorId) ? (
                         <span className="font-medium text-ink-2">{memberName(st.counsellorId)!.split(" ")[0]}</span>
                       ) : (
-                        <span className="text-ink-4">Nobody</span>
+                        <span className="text-ink-4">{t("Nobody")}</span>
                       )}
                     </td>
                   )}
@@ -482,8 +485,8 @@ export function StudentRoster({
                       <span className="text-ink-4">—</span>
                     ) : (
                       <span className="flex flex-wrap gap-1.5">
-                        {s.docsToCheck > 0 && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-ink">{s.docsToCheck} to check</span>}
-                        {s.docsOwed > 0 && <span className="rounded-full bg-ochre-soft px-2 py-0.5 text-xs font-semibold text-ochre">{s.docsOwed} owed</span>}
+                        {s.docsToCheck > 0 && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-ink">{t("{n} to check", { n: s.docsToCheck })}</span>}
+                        {s.docsOwed > 0 && <span className="rounded-full bg-ochre-soft px-2 py-0.5 text-xs font-semibold text-ochre">{t("{n} owed", { n: s.docsOwed })}</span>}
                       </span>
                     )}
                   </td>
@@ -491,17 +494,17 @@ export function StudentRoster({
                     {s.balance === null ? (
                       <span className="text-ink-4">—</span>
                     ) : s.balance === 0 ? (
-                      <span className="text-[13px] font-semibold text-moss">Paid</span>
+                      <span className="text-[13px] font-semibold text-moss">{t("Paid")}</span>
                     ) : (
                       <span className="text-[13px] font-semibold text-ink">{money(s.balance, st.feeCurrency)}</span>
                     )}
                   </td>
                   <td className="py-3.5 pr-5 pl-3 text-right align-top whitespace-nowrap">
                     <Button variant="ghost" size="xs" onClick={() => onEdit(st)}>
-                      Edit
+                      {t("Edit")}
                     </Button>
                     <Button variant="ghost" size="xs" className="text-stamp hover:bg-stamp-soft hover:text-stamp" onClick={() => onDelete(st)}>
-                      Delete
+                      {t("Delete")}
                     </Button>
                   </td>
                 </tr>
@@ -509,13 +512,13 @@ export function StudentRoster({
             })}
           </tbody>
         </table>
-        {visible.length === 0 && <p className="py-10 text-center text-sm text-ink-3">Nobody matches these filters.</p>}
+        {visible.length === 0 && <p className="py-10 text-center text-sm text-ink-3">{t("Nobody matches these filters.")}</p>}
       </div>
 
       {visible.length > shown && (
         <div className="mt-4 flex justify-center">
           <Button variant="outline" onClick={() => setShown((n) => n + PAGE)}>
-            Show {Math.min(PAGE, visible.length - shown)} more
+            {t("Show {n} more", { n: Math.min(PAGE, visible.length - shown) })}
           </Button>
         </div>
       )}
@@ -523,35 +526,35 @@ export function StudentRoster({
       {selected.size > 0 && (
         <div className="sticky bottom-24 z-20 mt-4 md:bottom-6">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 rounded-2xl bg-ink px-4 py-3 text-paper shadow-[0_16px_40px_-12px_rgb(0_0_0/0.45)]">
-            <span className="mr-auto text-sm font-semibold tnum">{plural(selected.size, "student")} selected</span>
+            <span className="mr-auto text-sm font-semibold tnum">{t("{students} selected", { students: plural(selected.size, "student") })}</span>
             <Button size="sm" variant="primary" onClick={() => setAskOpen(true)}>
               <FileText />
-              Ask for a document
+              {t("Ask for a document")}
             </Button>
             {hasTeam && (
               <Select value="" onValueChange={assign}>
-                <SelectTrigger className="h-8 w-auto gap-1.5 rounded-full border-0 bg-paper-raised px-3 text-[13px] font-semibold text-ink" aria-label="Assign to">
-                  <SelectValue placeholder="Assign to…" />
+                <SelectTrigger className="h-8 w-auto gap-1.5 rounded-full border-0 bg-paper-raised px-3 text-[13px] font-semibold text-ink" aria-label={t("Assign to")}>
+                  <SelectValue placeholder={t("Assign to…")} />
                 </SelectTrigger>
                 <SelectContent>
                   {members.map((m) => (
                     <SelectItem key={m._id} value={m._id}>
-                      {m._id === user?._id ? `${m.name} (me)` : m.name}
+                      {m._id === user?._id ? t("{name} (me)", { name: m.name }) : m.name}
                     </SelectItem>
                   ))}
-                  <SelectItem value="none">No counsellor</SelectItem>
+                  <SelectItem value="none">{t("No counsellor")}</SelectItem>
                 </SelectContent>
               </Select>
             )}
             <Button size="sm" variant="secondary" onClick={copyPhones}>
               <Copy />
-              Copy phone numbers
+              {t("Copy phone numbers")}
             </Button>
             <button
               type="button"
               onClick={() => setSelected(new Set())}
               className="inline-flex size-8 items-center justify-center rounded-full text-paper/70 hover:bg-white/10 hover:text-paper"
-              aria-label="Clear selection"
+              aria-label={t("Clear selection")}
             >
               <X className="size-4" />
             </button>

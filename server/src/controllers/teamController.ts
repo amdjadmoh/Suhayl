@@ -96,7 +96,7 @@ export async function inviteMember(req: Request, res: Response): Promise<void> {
   })
   const owner = await User.findById(agencyScope(req)).select("name")
   const emailSent = await emailInvite(member.email, member.name, owner?.name ?? "Your agency", inviteToken, false)
-  await logActivity(req, null, `Invited ${member.name} to the team`)
+  await logActivity(req, null, "Invited {name} to the team", { name: member.name })
   res.status(201).json({ _id: member._id, name: member.name, email: member.email, inviteToken, emailSent })
 }
 
@@ -129,7 +129,7 @@ export async function removeMember(req: Request, res: Response): Promise<void> {
   const released = await Student.updateMany({ agencyId: agencyScope(req), counsellorId: member._id }, { $unset: { counsellorId: "" } })
   await Notification.deleteMany({ userId: member._id })
   await User.findByIdAndDelete(member._id)
-  await logActivity(req, null, `Removed ${member.name} from the team`)
+  await logActivity(req, null, "Removed {name} from the team", { name: member.name })
   res.json({ message: "Removed from the team", studentsUnassigned: released.modifiedCount })
 }
 
@@ -183,6 +183,6 @@ export async function bulkAssign(req: Request, res: Response): Promise<void> {
     counsellorId ? { $set: { counsellorId: new Types.ObjectId(counsellorId) } } : { $unset: { counsellorId: "" } },
   )
   const to = counsellorId ? await User.findById(counsellorId).select("name") : null
-  for (const id of studentIds) await logActivity(req, id, to ? `Gave the file to ${to.name}` : "Removed the counsellor")
+  for (const id of studentIds) await logActivity(req, id, to ? "Gave the file to {name}" : "Removed the counsellor", to ? { name: to.name } : {})
   res.json({ updated: result.modifiedCount })
 }

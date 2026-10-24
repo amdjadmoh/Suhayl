@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   BackLink, CountryPlate, ErrorState, Fact, Facts, Field, FormSection, LoadingPage, PageHeader, StatusTag,
 } from "@/components/kit";
+import { t } from "@/lib/i18n";
 
 export default function AddEditApplication(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
@@ -143,7 +144,7 @@ export default function AddEditApplication(): React.ReactElement {
 
   async function onCreate(data: ApplicationFormData): Promise<void> {
     if (isAgency && (!data.studentName || !data.studentEmail)) {
-      toast.error("Choose which student this application is for");
+      toast.error(t("Choose which student this application is for"));
       return;
     }
     try {
@@ -153,20 +154,20 @@ export default function AddEditApplication(): React.ReactElement {
         applicationStatus: "Preparing",
         applicationProgress: {},
       } as ApplicationFormData);
-      toast.success("Application started");
+      toast.success(t("Application started"));
       navigate(`/applications/${result._id}`);
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to create application"));
+      toast.error(getErrorMessage(err, t("Failed to create application")));
     }
   }
 
   async function onUpdate(data: ApplicationFormData): Promise<void> {
     try {
       await updateMutation.mutateAsync({ id: id!, data: { ...data } });
-      toast.success("Saved");
+      toast.success(t("Saved"));
       navigate(`/applications/${id}`);
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to update"));
+      toast.error(getErrorMessage(err, t("Failed to update")));
     }
   }
 
@@ -175,8 +176,8 @@ export default function AddEditApplication(): React.ReactElement {
   if (isEdit && !existing) {
     return (
       <ErrorState
-        title="Application not found"
-        action={<Button variant="outline" onClick={() => navigate("/applications")}>Back to applications</Button>}
+        title={t("Application not found")}
+        action={<Button variant="outline" onClick={() => navigate("/applications")}>{t("Back to applications")}</Button>}
       />
     );
   }
@@ -187,22 +188,21 @@ export default function AddEditApplication(): React.ReactElement {
     return (
       <>
         <PageHeader
-          back={<BackLink onClick={() => navigate(-1)}>Back</BackLink>}
-          kicker="New application"
-          title="Which program is it for?"
+          back={<BackLink onClick={() => navigate(-1)}>{t("Back")}</BackLink>}
+          kicker={t("New application")}
+          title={t("Which program is it for?")}
         >
-          Choose the program and Suhayl copies its requirements — documents, tests, letters, the fee and the deadline —
-          into a checklist you can tick off.
+          {t("Choose the program and Suhayl copies its requirements — documents, tests, letters, the fee and the deadline — into a checklist you can tick off.")}
         </PageHeader>
 
         <form onSubmit={handleSubmit(onCreate)}>
           {isAgency && (
-            <FormSection title="Student" description="Applications are filed under one of your students.">
-              <Field label="Student" required className="sm:col-span-2">
+            <FormSection title={t("Student")} description={t("Applications are filed under one of your students.")}>
+              <Field label={t("Student")} required className="sm:col-span-2">
                 <Select value={studentId} onValueChange={chooseStudent}>
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={!students ? "Loading students…" : students.length ? "Choose a student…" : "Add a student first"}
+                      placeholder={!students ? t("Loading students…") : students.length ? t("Choose a student…") : t("Add a student first")}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -218,8 +218,8 @@ export default function AddEditApplication(): React.ReactElement {
           )}
 
           <FormSection
-            title="Program"
-            description="Can't find it? Add it from the Programs page first — custom programs stay private to you."
+            title={t("Program")}
+            description={t("Can't find it? Add it from the Programs page first — custom programs stay private to you.")}
           >
             <div className="sm:col-span-2">
               <div className="relative">
@@ -227,20 +227,20 @@ export default function AddEditApplication(): React.ReactElement {
                 <Input
                   value={programQuery}
                   onChange={(e) => setProgramQuery(e.target.value)}
-                  placeholder="Search by program, university or country"
+                  placeholder={t("Search by program, university or country")}
                   className="pl-8"
-                  aria-label="Search programs"
+                  aria-label={t("Search programs")}
                 />
               </div>
               <div
                 role="radiogroup"
-                aria-label="Programs"
+                aria-label={t("Programs")}
                 className="mt-2 max-h-[22rem] overflow-y-auto rounded-2xl border border-rule bg-paper-raised"
               >
                 {programsLoading ? (
-                  <p className="px-4 py-6 text-sm text-ink-3">Loading programs…</p>
+                  <p className="px-4 py-6 text-sm text-ink-3">{t("Loading programs…")}</p>
                 ) : filteredPrograms.length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-ink-3">Nothing matches “{programQuery}”.</p>
+                  <p className="px-4 py-6 text-sm text-ink-3">{t("Nothing matches “{q}”.", { q: programQuery })}</p>
                 ) : (
                   <ul className="divide-y divide-rule-soft">
                     {filteredPrograms.map((p) => {
@@ -269,13 +269,13 @@ export default function AddEditApplication(): React.ReactElement {
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
                               <span className="block truncate text-xs text-ink-3">
-                                {uni ? `${uni.name} · ${uni.city}` : ""} · {p.degreeLevel}
+                                {uni ? `${uni.name} · ${uni.city}` : ""} · {t(p.degreeLevel)}
                               </span>
                             </span>
                             {taken ? (
-                              <span className="rounded-full bg-paper-sunken px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-ink-3">Already applying</span>
+                              <span className="rounded-full bg-paper-sunken px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-ink-3">{t("Already applying")}</span>
                             ) : fitsProfile(p) ? (
-                              <span className="rounded-full bg-moss-soft px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-moss">Fits profile</span>
+                              <span className="rounded-full bg-moss-soft px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap text-moss">{t("Fits profile")}</span>
                             ) : null}
                             {uni && <CountryPlate country={uni.country} />}
                           </button>
@@ -289,16 +289,16 @@ export default function AddEditApplication(): React.ReactElement {
 
             {selectedProg && (
               <div className="sm:col-span-2">
-                <p className="kicker mb-1">You picked</p>
+                <p className="kicker mb-1">{t("You picked")}</p>
                 <p className="text-lg leading-tight font-semibold">{selectedProg.name}</p>
                 {selectedUni && <p className="text-sm text-ink-3">{selectedUni.name}, {selectedUni.country}</p>}
                 <Facts className="mt-3 max-w-md">
-                  <Fact label="Degree">{selectedProg.degreeLevel} · {selectedProg.languageOfInstruction}</Fact>
-                  <Fact label="Tuition">
+                  <Fact label={t("Degree")}>{t(selectedProg.degreeLevel)} · {selectedProg.languageOfInstruction}</Fact>
+                  <Fact label={t("Tuition")}>
                     {formatTuition(selectedProg.tuitionFee, selectedProg.tuitionCurrency, selectedProg.tuitionPeriod)}
                   </Fact>
-                  <Fact label="Deadline">{formatDate(selectedProg.applicationDeadline, "not published")}</Fact>
-                  <Fact label="Documents">{selectedProg.requiredDocuments.length || "none listed"}</Fact>
+                  <Fact label={t("Deadline")}>{formatDate(selectedProg.applicationDeadline, t("not published"))}</Fact>
+                  <Fact label={t("Documents")}>{selectedProg.requiredDocuments.length || t("none listed")}</Fact>
                 </Facts>
               </div>
             )}
@@ -306,11 +306,11 @@ export default function AddEditApplication(): React.ReactElement {
 
           <div className="flex items-center justify-end gap-2 pt-6">
             <Button type="button" variant="ghost" onClick={() => navigate(-1)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={isSubmitting || !programId || (isAgency && !studentId)}>
               {isSubmitting && <Loader2 className="animate-spin" />}
-              Start application
+              {t("Start application")}
             </Button>
           </div>
         </form>
@@ -323,16 +323,16 @@ export default function AddEditApplication(): React.ReactElement {
   return (
     <>
       <PageHeader
-        back={<BackLink to={`/applications/${id}`}>Application</BackLink>}
-        kicker="Edit application"
-        title={selectedProg?.name ?? "Application details"}
+        back={<BackLink to={`/applications/${id}`}>{t("Application")}</BackLink>}
+        kicker={t("Edit application")}
+        title={selectedProg?.name ?? t("Application details")}
       >
-        The checklist lives on the application page. Here you can correct the status, deadline and notes.
+        {t("The checklist lives on the application page. Here you can correct the status, deadline and notes.")}
       </PageHeader>
 
       <form onSubmit={handleSubmit(onUpdate)}>
-        <FormSection title="Status & deadline" description="Normally the status moves on its own as you record decisions.">
-          <Field label="Status">
+        <FormSection title={t("Status & deadline")} description={t("Normally the status moves on its own as you record decisions.")}>
+          <Field label={t("Status")}>
             <Select
               value={status}
               onValueChange={(v) => setValue("applicationStatus", v as ApplicationFormData["applicationStatus"])}
@@ -349,24 +349,24 @@ export default function AddEditApplication(): React.ReactElement {
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Deadline" htmlFor="deadline">
+          <Field label={t("Deadline")} htmlFor="deadline">
             <Input id="deadline" type="date" className="text-sm tnum" {...register("applicationDeadline")} />
           </Field>
         </FormSection>
 
-        <FormSection title="Notes" description="Anything worth remembering — a contact at admissions, a portal password hint, a feeling.">
+        <FormSection title={t("Notes")} description={t("Anything worth remembering — a contact at admissions, a portal password hint, a feeling.")}>
           <Field label="Notes" htmlFor="notes" className="sm:col-span-2">
-            <Textarea id="notes" rows={5} placeholder="Write anything…" {...register("notes")} />
+            <Textarea id="notes" rows={5} placeholder={t("Write anything…")} {...register("notes")} />
           </Field>
         </FormSection>
 
         <div className="flex items-center justify-end gap-2 pt-6">
           <Button type="button" variant="ghost" onClick={() => navigate(`/applications/${id}`)}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="animate-spin" />}
-            Save changes
+            {t("Save changes")}
           </Button>
         </div>
       </form>

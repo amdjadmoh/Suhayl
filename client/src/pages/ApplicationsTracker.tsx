@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmptyState, ErrorState, FilterTabs, LoadingRows, PageHeader } from "@/components/kit";
 import { ApplicationList } from "@/components/ledger";
 import { appProgram, appUniversity, countByStatus } from "@/lib/applications";
+import { t } from "@/lib/i18n";
 
 // The order an application usually moves through
 const JOURNEY: ApplicationStatus[] = ["Preparing", "Applied", "Waitlisted", "Accepted", "Enrolled", "Rejected"];
@@ -79,8 +80,8 @@ export default function ApplicationsTracker(): React.ReactElement {
 
   if (isError) {
     return (
-      <ErrorState title="Your applications didn't load">
-        {error instanceof Error ? error.message : "Unknown error"}
+      <ErrorState title={t("Your applications didn't load")}>
+        {error instanceof Error ? error.message : t("Unknown error")}
       </ErrorState>
     );
   }
@@ -88,44 +89,43 @@ export default function ApplicationsTracker(): React.ReactElement {
   return (
     <>
       <PageHeader
-        kicker={isLoading ? "Applications" : `Applications · ${applications.length} on file`}
-        title={isAgency ? "Applications" : "Your applications"}
+        kicker={isLoading ? t("Applications") : t("Applications · {n} on file", { n: applications.length })}
+        title={isAgency ? t("Applications") : t("Your applications")}
         actions={
           <>
             <Button variant="outline" onClick={downloadDeadlinesCalendar}>
-              Add deadlines to calendar
+              {t("Add deadlines to calendar")}
             </Button>
             {canAdd && (
               <Button variant="primary" asChild>
-                <Link to="/applications/new">New application</Link>
+                <Link to="/applications/new">{t("New application")}</Link>
               </Button>
             )}
           </>
         }
       >
-        Files still being prepared come first, then those waiting for an answer, then decided ones. Each group runs soonest deadline first.
+        {t("Files still being prepared come first, then those waiting for an answer, then decided ones. Each group runs soonest deadline first.")}
       </PageHeader>
 
       {isLoading ? (
         <LoadingRows rows={5} />
       ) : applications.length === 0 ? (
         <EmptyState
-          title="Start your first application"
+          title={t("Start your first application")}
           action={
             canAdd && (
               <>
                 <Button variant="outline" asChild>
-                  <Link to="/programs">Browse programs</Link>
+                  <Link to="/programs">{t("Browse programs")}</Link>
                 </Button>
                 <Button variant="primary" asChild>
-                  <Link to="/applications/new">New application</Link>
+                  <Link to="/applications/new">{t("New application")}</Link>
                 </Button>
               </>
             )
           }
         >
-          Each application keeps its own checklist — documents, tests, letters, fees — taken from the program's
-          requirements.
+          {t("Each application keeps its own checklist — documents, tests, letters, fees — taken from the program's requirements.")}
         </EmptyState>
       ) : (
         <>
@@ -134,18 +134,18 @@ export default function ApplicationsTracker(): React.ReactElement {
               value={filter}
               onChange={(v) => { setFilter(v); setShown(PAGE); }}
               options={[
-                { value: "all", label: "All", count: applications.length },
-                ...JOURNEY.map((s) => ({ value: s, label: s, count: counts[s] ?? 0 })),
+                { value: "all", label: t("All"), count: applications.length },
+                ...JOURNEY.map((s) => ({ value: s, label: t(s), count: counts[s] ?? 0 })),
               ]}
             />
             <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               {isAgency || countries.length > 1 ? (
                 <Select value={country} onValueChange={(v) => { setCountry(v); setShown(PAGE); }}>
-                  <SelectTrigger className="w-full sm:w-44" aria-label="Country">
+                  <SelectTrigger className="w-full sm:w-44" aria-label={t("Country")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Every country</SelectItem>
+                    <SelectItem value="all">{t("Every country")}</SelectItem>
                     {countries.map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
@@ -155,14 +155,14 @@ export default function ApplicationsTracker(): React.ReactElement {
                 </Select>
               ) : null}
               <Select value={when} onValueChange={(v) => { setWhen(v as When); setShown(PAGE); }}>
-                <SelectTrigger className="w-full sm:w-52" aria-label="Deadline">
+                <SelectTrigger className="w-full sm:w-52" aria-label={t("Deadline")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="any">Any deadline</SelectItem>
-                  <SelectItem value="missed">Still preparing, deadline missed</SelectItem>
-                  <SelectItem value="soon">Still preparing, due in 14 days</SelectItem>
-                  <SelectItem value="later">Still preparing, due later</SelectItem>
+                  <SelectItem value="any">{t("Any deadline")}</SelectItem>
+                  <SelectItem value="missed">{t("Still preparing, deadline missed")}</SelectItem>
+                  <SelectItem value="soon">{t("Still preparing, due in 14 days")}</SelectItem>
+                  <SelectItem value="later">{t("Still preparing, due later")}</SelectItem>
                 </SelectContent>
               </Select>
             <div className="relative w-full sm:w-64">
@@ -170,9 +170,9 @@ export default function ApplicationsTracker(): React.ReactElement {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={isAgency ? "Program, university or student" : "Program or university"}
+                placeholder={isAgency ? t("Program, university or student") : t("Program or university")}
                 className="pl-8"
-                aria-label="Filter applications"
+                aria-label={t("Filter applications")}
               />
             </div>
             </div>
@@ -180,7 +180,7 @@ export default function ApplicationsTracker(): React.ReactElement {
 
           {visible.length === 0 ? (
             <div className="card-soft px-5 py-10 text-center text-sm text-ink-3">
-              {query ? `Nothing matches “${query}”.` : "No applications match these filters."}
+              {query ? t("Nothing matches “{q}”.", { q: query }) : t("No applications match these filters.")}
             </div>
           ) : (
             <ApplicationList applications={visible.slice(0, shown)} showStudent={isAgency} />
@@ -188,11 +188,11 @@ export default function ApplicationsTracker(): React.ReactElement {
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-1">
             <p className="text-[13px] text-ink-3 tnum">
-              Showing {Math.min(shown, visible.length)} of {plural(visible.length, "application")}
+              {t("Showing {shown} of {total}", { shown: Math.min(shown, visible.length), total: plural(visible.length, "application") })}
             </p>
             {visible.length > shown && (
               <Button variant="outline" size="sm" onClick={() => setShown((n) => n + PAGE)}>
-                Show {Math.min(PAGE, visible.length - shown)} more
+                {t("Show {n} more", { n: Math.min(PAGE, visible.length - shown) })}
               </Button>
             )}
           </div>

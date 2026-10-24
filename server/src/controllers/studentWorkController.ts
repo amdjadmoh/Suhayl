@@ -28,7 +28,7 @@ export async function addTask(req: Request, res: Response): Promise<void> {
   const { text, dueDate } = req.body as { text: string; dueDate?: string }
   student.tasks.push({ text, ...(dueDate ? { dueDate: new Date(dueDate) } : {}), done: false, createdAt: new Date() } as never)
   await student.save()
-  await logActivity(req, student._id, `Added a follow-up: ${text}`)
+  await logActivity(req, student._id, "Added a follow-up: {task}", { task: text })
   res.status(201).json(student)
 }
 
@@ -49,7 +49,7 @@ export async function updateTask(req: Request, res: Response): Promise<void> {
     ;(task as unknown as { set: (k: string, v: unknown) => void }).set("doneAt", done ? new Date() : undefined)
   }
   await student.save()
-  if (done !== undefined) await logActivity(req, student._id, `${done ? "Did" : "Reopened"}: ${task.text}`)
+  if (done !== undefined) await logActivity(req, student._id, done ? "Did: {task}" : "Reopened: {task}", { task: task.text })
   res.json(student)
 }
 
@@ -69,7 +69,10 @@ export async function addPayment(req: Request, res: Response): Promise<void> {
   const { amount, paidAt, method, note } = req.body as { amount: number; paidAt: string; method?: string; note?: string }
   student.payments.push({ amount, paidAt: new Date(paidAt), ...(method ? { method } : {}), ...(note ? { note } : {}) } as never)
   await student.save()
-  await logActivity(req, student._id, `Recorded a payment of ${amount.toLocaleString("en-GB")} ${student.feeCurrency}${method ? ` (${method})` : ""}`)
+  await logActivity(req, student._id, method ? "Recorded a payment of {amount} ({method})" : "Recorded a payment of {amount}", {
+    amount: `${amount.toLocaleString("en-GB")} ${student.feeCurrency}`,
+    ...(method ? { method } : {}),
+  })
   res.status(201).json(student)
 }
 
@@ -80,7 +83,7 @@ export async function removePayment(req: Request, res: Response): Promise<void> 
   const gone = student.payments.find((p) => String(p._id) === req.params["paymentId"])
   student.payments = student.payments.filter((p) => String(p._id) !== req.params["paymentId"]) as never
   await student.save()
-  if (gone) await logActivity(req, student._id, `Deleted a payment of ${gone.amount.toLocaleString("en-GB")} ${student.feeCurrency}`)
+  if (gone) await logActivity(req, student._id, "Deleted a payment of {amount}", { amount: `${gone.amount.toLocaleString("en-GB")} ${student.feeCurrency}` })
   res.json(student)
 }
 
@@ -112,7 +115,7 @@ export async function bulkRequestDocument(req: Request, res: Response): Promise<
       })),
     )
   }
-  for (const id of fresh) await logActivity(req, id, `Asked for ${title}`)
+  for (const id of fresh) await logActivity(req, id, "Asked for {doc}", { doc: title })
   let emailed = 0
   for (const st of students) {
     if (!skip.has(String(st._id)) && (await notifyFamily(st, [title], dueDate ? new Date(dueDate) : undefined))) emailed++

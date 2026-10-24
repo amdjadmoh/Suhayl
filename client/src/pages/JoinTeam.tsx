@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Field } from "@/components/kit";
 import AuthLayout from "@/components/AuthLayout";
+import { t } from "@/lib/i18n";
 
 /** Where a counsellor lands from the owner's invite link: choose a password and start. */
 export default function JoinTeam(): React.ReactElement {
@@ -30,17 +31,17 @@ export default function JoinTeam(): React.ReactElement {
     try {
       const session = await acceptInvite(token, shownName.trim(), password);
       startSession(session);
-      toast.success(`Welcome to ${invite?.agencyName ?? "the team"}`);
+      toast.success(t("Welcome to {agency}", { agency: invite?.agencyName ?? t("the team") }));
       navigate("/agency", { replace: true });
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't finish joining"));
+      toast.error(getErrorMessage(err, t("Couldn't finish joining")));
       setSubmitting(false);
     }
   }
 
   if (isLoading) {
     return (
-      <AuthLayout kicker="Join your agency" title="Opening your invite…" subtitle="One moment.">
+      <AuthLayout kicker={t("Join your agency")} title={t("Opening your invite…")} subtitle={t("One moment.")}>
         <Skeleton className="h-40 w-full rounded-2xl" />
       </AuthLayout>
     );
@@ -48,24 +49,24 @@ export default function JoinTeam(): React.ReactElement {
 
   if (isError || !invite) {
     return (
-      <AuthLayout kicker="Join your agency" title="This link doesn't work any more" subtitle="Invite links work once.">
+      <AuthLayout kicker={t("Join your agency")} title={t("This link doesn't work any more")} subtitle={t("Invite links work once.")}>
         <p className="text-[15px] leading-relaxed text-ink-2">
-          It has already been used or the agency made a new one. Ask whoever invited you to send a fresh link.
+          {t("It has already been used or the agency made a new one. Ask whoever invited you to send a fresh link.")}
         </p>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout kicker="Join your agency" title={`Join ${invite.agencyName}`} subtitle="You'll see the agency's students, deadlines and documents.">
+    <AuthLayout kicker={t("Join your agency")} title={t("Join {agency}", { agency: invite.agencyName })} subtitle={t("You'll see the agency's students, deadlines and documents.")}>
       <form onSubmit={onSubmit} className="grid gap-4">
         <p className="text-[15px] leading-relaxed text-ink-2">
-          You'll sign in as <span className="font-semibold text-ink">{invite.email}</span>. Choose a password to finish.
+          {t("You'll sign in as {email}. Choose a password to finish.", { email: invite.email })}
         </p>
-        <Field label="Your name" htmlFor="join-name">
+        <Field label={t("Your name")} htmlFor="join-name">
           <Input id="join-name" value={shownName} onChange={(e) => setName(e.target.value)} autoComplete="name" required className="h-10" />
         </Field>
-        <Field label="Password" htmlFor="join-password" hint="At least 6 characters.">
+        <Field label={t("Password")} htmlFor="join-password" hint={t("At least 6 characters.")}>
           <Input
             id="join-password"
             type="password"
@@ -78,22 +79,22 @@ export default function JoinTeam(): React.ReactElement {
           />
         </Field>
         <label className="flex items-start gap-3 text-[13.5px] leading-relaxed text-ink-2">
-          <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" aria-label="I agree to the terms and privacy policy" />
+          <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" aria-label={t("I agree to the terms and privacy policy")} />
           <span>
-            I agree to the{" "}
+            {t("I agree to the")}{" "}
             <Link to="/terms" target="_blank" className="link-ink">
-              terms
+              {t("terms")}
             </Link>{" "}
-            and the{" "}
+            {t("and the")}{" "}
             <Link to="/privacy" target="_blank" className="link-ink">
-              privacy policy
+              {t("privacy policy")}
             </Link>
             .
           </span>
         </label>
         <Button type="submit" variant="primary" size="lg" className="w-full" disabled={submitting || password.length < 6 || !shownName.trim() || !agreed}>
           {submitting && <Loader2 className="animate-spin" />}
-          Join the team
+          {t("Join the team")}
         </Button>
       </form>
     </AuthLayout>

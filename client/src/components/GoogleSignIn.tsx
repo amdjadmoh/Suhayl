@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { t } from "@/lib/i18n";
 
 const GOOGLE_CLIENT_ID = import.meta.env["VITE_GOOGLE_CLIENT_ID"] as string | undefined;
 
@@ -106,7 +107,7 @@ export function GoogleSection({
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <span className="h-px flex-1 bg-rule" />
-        <span className="text-xs text-ink-4 tnum">or</span>
+        <span className="text-xs text-ink-4 tnum">{t("or")}</span>
         <span className="h-px flex-1 bg-rule" />
       </div>
       <GoogleSignIn onCredential={onCredential} />

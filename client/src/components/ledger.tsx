@@ -6,6 +6,7 @@ import { appProgram, appUniversity } from "@/lib/applications";
 import { cn } from "@/lib/utils";
 import { daysUntil, shortDate } from "@/lib/format";
 import { CountryPlate, DaysLeft, LedgerDate, StatusTag } from "@/components/kit";
+import { t } from "@/lib/i18n";
 
 /* One application as a row in a card list */
 
@@ -36,10 +37,10 @@ export function ApplicationRow({
           <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-paper-sunken text-sm text-ink-4">—</span>
         )}
         <div className="min-w-0">
-          <p className="truncate font-semibold text-ink">{prog?.name ?? "Untitled program"}</p>
+          <p className="truncate font-semibold text-ink">{prog?.name ?? t("Untitled program")}</p>
           <p className="mt-0.5 truncate text-[13px] text-ink-3">
             {showStudent && <span className="font-medium text-ink-2">{a.studentName} · </span>}
-            {uni ? `${uni.name}, ${uni.city}` : "University not set"}
+            {uni ? `${uni.name}, ${uni.city}` : t("University not set")}
           </p>
         </div>
         <div className="col-start-2 row-start-2 flex items-center gap-2 sm:col-start-auto sm:row-start-auto">
@@ -47,15 +48,15 @@ export function ApplicationRow({
         </div>
         <div className="row-span-2 text-right sm:row-span-1">
           {dateMode === "added" ? (
-            <span className="text-[13px] whitespace-nowrap text-ink-3">Added {shortDate(a.createdAt)}</span>
+            <span className="text-[13px] whitespace-nowrap text-ink-3">{t("Added {date}", { date: shortDate(a.createdAt) })}</span>
           ) : missed ? (
             <span className="text-[13px] font-semibold whitespace-nowrap text-stamp tnum">
-              Missed by {Math.abs(daysUntil(a.applicationDeadline) ?? 0)} d
+              {t("Missed by {n} d", { n: Math.abs(daysUntil(a.applicationDeadline) ?? 0) })}
             </span>
           ) : preparing ? (
             <DaysLeft date={a.applicationDeadline} />
           ) : a.applicationStatus === "Applied" ? (
-            <span className="text-[13px] whitespace-nowrap text-ink-3">{submittedAt ? `Sent ${shortDate(submittedAt)}` : "Sent"}</span>
+            <span className="text-[13px] whitespace-nowrap text-ink-3">{submittedAt ? t("Sent {date}", { date: shortDate(submittedAt) }) : t("Sent")}</span>
           ) : uni ? (
             <CountryPlate country={uni.country} className="ml-auto" />
           ) : null}
@@ -97,7 +98,7 @@ export function StatusBreakdown({ counts }: { counts: Record<ApplicationStatus, 
           APPLICATION_STATUSES.filter((s) => counts[s]).map((s) => (
             <div
               key={s}
-              title={`${s}: ${counts[s]}`}
+              title={`${t(s)}: ${counts[s]}`}
               className={cn("rounded-full", STATUS_META[s].dot, s === "Enrolled" && "bg-moss-solid")}
               style={{ width: `${((counts[s] ?? 0) / total) * 100}%` }}
             />

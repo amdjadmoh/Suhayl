@@ -65,9 +65,7 @@ const corsOrigins = process.env["CORS_ORIGINS"]
   ? process.env["CORS_ORIGINS"].split(",").map((s) => s.trim())
   : ["http://localhost:5173"]
 
-if (process.env["NODE_ENV"] === "production" && !process.env["CORS_ORIGINS"]) {
-  throw new Error("CORS_ORIGINS must be set in production")
-}
+// A missing CORS_ORIGINS in production is reported by checkConfig() with the other settings
 
 // ── Security headers (before CORS so helmet sets headers first) ─────────
 app.use(
@@ -354,4 +352,7 @@ async function start(): Promise<void> {
   setInterval(checkDeadlines, 24 * 60 * 60 * 1000)
 }
 
-start()
+start().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : err)
+  process.exit(1)
+})

@@ -2,47 +2,53 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, production-ready]
   pull_request:
-    branches: [master]
 
+# The repo is an npm workspace: every job installs from the root package-lock.json.
 jobs:
   server:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: server
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-          cache-dependency-path: server/package-lock.json
-      - run: npm ci
-      - name: Lint (if script exists)
-        run: npm run lint || true
-      - run: npm run typecheck
-      - run: npm test
+      - run: npm ci --workspace server
+      - run: npm run typecheck --workspace server
+      - run: npm test --workspace server
         env:
           JWT_SECRET: test-secret-for-ci
           NODE_ENV: test
           CORS_ORIGINS: http://localhost:5173
+      - run: npm run build --workspace server
 
   client:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: client
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-          cache-dependency-path: client/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+      - run: npm ci --workspace client
+      - run: npm run lint --workspace client
+      - run: npm run typecheck --workspace client
+      - run: npm test --workspace client
+      - run: npm run build --workspace client
+
+  # The production image must build, and must refuse to start without its settings
+  docker:
+    runs-on: ubuntu-latest
+    needs: [server, client]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t suhayl:ci .
+      - name: Refuses to start without production settings
+        run: |
+          set +e
+          docker run --rm -e NODE_ENV=production suhayl:ci > out.txt 2>&1
+          code=$?
+          cat out.txt
+          test $code -ne 0 && grep -q "can't start in production" out.txt

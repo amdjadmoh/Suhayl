@@ -78,6 +78,7 @@ describe("API client", () => {
         email: "new@test.com",
         password: "pass123",
         role: "student",
+        acceptTerms: true,
       })
       expect(result.token).toBe("reg-token")
     })

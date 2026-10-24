@@ -18,5 +18,19 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Providers export their hook, and ui primitives export their style variants
+      'react-refresh/only-export-components': [
+        'error',
+        { allowConstantExport: true, allowExportNames: ['buttonVariants', 'badgeVariants', 'tabsListVariants', 'useAuth', 'useCompare', 'useCompareOptional'] },
+      ],
+    },
+  },
+  {
+    files: ['src/tests/**/*.{ts,tsx}'],
+    rules: {
+      // Test doubles stand in for components with loose props
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
 ])

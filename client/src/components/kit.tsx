@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { STATUS_META, countryCode, type ApplicationStatus } from "@/lib/constants";
 import { daysUntil, ledgerDate } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
+import { t, tn } from "@/lib/i18n";
 
 /* ─── Brand ─────────────────────────────────────────────────────────────── */
 
@@ -190,7 +191,7 @@ export function StatusTag({
       ) : (
         <span className={cn("size-1.5 shrink-0 rounded-full", meta?.dot ?? "bg-ink-3")} />
       )}
-      {status}
+      {t(status)}
     </span>
   );
 }
@@ -236,13 +237,13 @@ export function DaysLeft({
   let text: string;
   let tone = "text-ink-3";
   if (days < 0) {
-    text = short ? `${Math.abs(days)}d late` : `${Math.abs(days)} day${days === -1 ? "" : "s"} late`;
+    text = short ? t("{n}d late", { n: Math.abs(days) }) : tn(Math.abs(days), "{n} day late", "{n} days late");
     tone = "text-ink-4";
   } else if (days === 0) {
-    text = "Today";
+    text = t("Today");
     tone = "text-stamp font-semibold";
   } else {
-    text = short ? `${days}d left` : `${days} day${days === 1 ? "" : "s"} left`;
+    text = short ? t("{n}d left", { n: days }) : tn(days, "{n} day left", "{n} days left");
     if (days <= 14) tone = "text-stamp font-semibold";
     else if (days <= 30) tone = "text-ochre font-semibold";
   }
@@ -352,7 +353,7 @@ export function EmptyState({
 }
 
 export function ErrorState({
-  title = "Something went wrong",
+  title = t("Something went wrong"),
   children,
   action,
 }: {
@@ -421,7 +422,7 @@ export function VerificationTag({
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-semibold", v.pill, className)}>
       <v.icon className="size-3" />
-      {v.tag}
+      {t(v.tag)}
     </span>
   );
 }
@@ -454,7 +455,7 @@ export function VerificationNote({
     <div className={cn("flex gap-3 rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed", v.box, className)}>
       <v.icon className={cn("mt-0.5 size-4 shrink-0", v.fg)} />
       <p>
-        <span className={cn("font-semibold", v.fg)}>{v.label}.</span> <span className="text-ink-2">{text}</span>
+        <span className={cn("font-semibold", v.fg)}>{t(v.label)}.</span> <span className="text-ink-2">{t(text)}</span>
       </p>
     </div>
   );

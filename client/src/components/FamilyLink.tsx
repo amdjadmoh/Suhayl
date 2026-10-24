@@ -6,6 +6,7 @@ import { daysUntil, formatDate } from "@/lib/format";
 import type { Student } from "@/types/student";
 import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { t } from "@/lib/i18n";
 
 /** Turns on the private link a student and their parents use to follow the file and upload documents. */
 export function FamilyLink({ student }: { student: Student }): React.ReactElement {
@@ -19,10 +20,10 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Link copied — send it to them on WhatsApp");
+      toast.success(t("Link copied — send it to them on WhatsApp"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Copy didn't work — select the link and copy it by hand");
+      toast.error(t("Copy didn't work — select the link and copy it by hand"));
     }
   }
 
@@ -32,7 +33,7 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
       toast.success(message);
       if (enabled && updated.portalToken) await copy(portalUrl(updated.portalToken));
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't change the link"));
+      toast.error(getErrorMessage(err, t("Couldn't change the link")));
     }
   }
 
@@ -42,14 +43,13 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
         <span className="flex size-9 items-center justify-center rounded-xl bg-paper-raised text-brand-ink">
           <Users className="size-[18px]" />
         </span>
-        <p className="mt-3 text-[15px] font-bold text-ink">Family link</p>
+        <p className="mt-3 text-[15px] font-bold text-ink">{t("Family link")}</p>
         <p className="mt-1 text-[13px] leading-relaxed text-ink-2">
-          A private page where {firstName} and their parents follow every application and upload the documents you ask
-          for. No account or password needed.
+          {t("A private page where {name} and their parents follow every application and upload the documents you ask for. No account or password needed.", { name: firstName ?? student.name })}
         </p>
-        <Button variant="primary" size="sm" className="mt-4" onClick={() => change(true, "Family link is on")} disabled={setPortal.isPending}>
+        <Button variant="primary" size="sm" className="mt-4" onClick={() => change(true, t("Family link is on"))} disabled={setPortal.isPending}>
           {setPortal.isPending && <Loader2 className="animate-spin" />}
-          Create the link
+          {t("Create the link")}
         </Button>
       </div>
     );
@@ -58,13 +58,13 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[15px] font-bold text-ink">Family link</p>
-        <span className="rounded-full bg-moss-soft px-2.5 py-0.5 text-xs font-semibold text-moss">On</span>
+        <p className="text-[15px] font-bold text-ink">{t("Family link")}</p>
+        <span className="rounded-full bg-moss-soft px-2.5 py-0.5 text-xs font-semibold text-moss">{t("On")}</span>
       </div>
-      <p className="mt-1 text-[13px] leading-relaxed text-ink-3">Anyone with this link can see {firstName}'s file. Share it only with them and their family.</p>
+      <p className="mt-1 text-[13px] leading-relaxed text-ink-3">{t("Anyone with this link can see {name}'s file. Share it only with them and their family.", { name: firstName ?? student.name })}</p>
       {student.portalExpiresAt && (
         <p className={`mt-2 text-[13px] ${(daysUntil(student.portalExpiresAt) ?? 99) <= 14 ? "font-semibold text-ochre" : "text-ink-3"}`}>
-          Works until {formatDate(student.portalExpiresAt)}.{" "}
+          {t("Works until {date}.", { date: formatDate(student.portalExpiresAt) })}{" "}
           <button
             type="button"
             className="font-semibold text-brand-ink hover:underline"
@@ -72,13 +72,13 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
             onClick={async () => {
               try {
                 await extend.mutateAsync(student._id);
-                toast.success("Link extended for another six months");
+                toast.success(t("Link extended for another six months"));
               } catch (err: unknown) {
-                toast.error(getErrorMessage(err, "Couldn't extend the link"));
+                toast.error(getErrorMessage(err, t("Couldn't extend the link")));
               }
             }}
           >
-            Extend
+            {t("Extend")}
           </button>
         </p>
       )}
@@ -86,11 +86,11 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="primary" size="sm" onClick={() => copy(link)}>
           {copied ? <Check /> : <Copy />}
-          {copied ? "Copied" : "Copy link"}
+          {copied ? t("Copied") : t("Copy link")}
         </Button>
         <Button variant="ghost" size="sm" asChild>
           <a href={link} target="_blank" rel="noreferrer">
-            Preview
+            {t("Preview")}
           </a>
         </Button>
       </div>
@@ -98,19 +98,19 @@ export function FamilyLink({ student }: { student: Student }): React.ReactElemen
         <button
           type="button"
           className="inline-flex items-center gap-1 font-medium text-ink-2 hover:text-ink"
-          onClick={() => change(true, "New link made — the old one no longer works")}
+          onClick={() => change(true, t("New link made — the old one no longer works"))}
           disabled={setPortal.isPending}
         >
           <RefreshCw className="size-3.5" />
-          Make a new link
+          {t("Make a new link")}
         </button>
         <button
           type="button"
           className="font-medium text-stamp hover:underline"
-          onClick={() => change(false, "Family link turned off")}
+          onClick={() => change(false, t("Family link turned off"))}
           disabled={setPortal.isPending}
         >
-          Turn off
+          {t("Turn off")}
         </button>
       </div>
     </div>

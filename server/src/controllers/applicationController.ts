@@ -158,7 +158,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     }
   }
 
-  await logActivity(req, application.studentId, `Started an application to ${program.name}`)
+  await logActivity(req, application.studentId, "Started an application to {program}", { program: program.name })
   res.status(201).json(application)
 }
 
@@ -218,7 +218,7 @@ export async function update(req: Request, res: Response): Promise<void> {
       message: `Your application to "${programName}" is now ${newStatus}.`,
       link: `/applications/${application._id}`,
     })
-    await logActivity(req, existing.studentId, `Moved ${programName} to ${newStatus}`)
+    await logActivity(req, existing.studentId, "Moved {program} to {status}", { program: programName, status: newStatus })
   }
 
   res.json(application)
@@ -249,7 +249,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
 
   await Application.findByIdAndDelete(req.params["id"])
   const prog = await Program.findById(existing.programId).select("name")
-  await logActivity(req, existing.studentId, `Deleted the application to ${prog?.name ?? "a program"}`)
+  await logActivity(req, existing.studentId, "Deleted the application to {program}", { program: prog?.name ?? "?" })
   res.json({ message: "Application deleted" })
 }
 

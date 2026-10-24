@@ -3,6 +3,7 @@ import type { DocumentRequest } from "@/types/document"
 import type { Student, StudentTask } from "@/types/student"
 import type { ApplicationStatus } from "@/lib/constants"
 import { daysUntil } from "@/lib/format"
+import { tn } from "@/lib/i18n"
 import { belongsTo } from "@/lib/studentProfile"
 import { appUniversity } from "@/lib/applications"
 
@@ -51,7 +52,6 @@ export function stageOf(apps: Application[]): Stage {
   return apps.reduce<Stage>((best, a) => (STAGE_RANK[a.applicationStatus] > STAGE_RANK[best] ? a.applicationStatus : best), "Rejected")
 }
 
-const plural = (n: number, one: string, many = `${one}s`): string => `${n} ${n === 1 ? one : many}`
 
 export function summarise(students: Student[], apps: Application[], docs: DocumentRequest[]): StudentSummary[] {
   const docsByStudent = new Map<string, DocumentRequest[]>()
@@ -85,11 +85,11 @@ export function summarise(students: Student[], apps: Application[], docs: Docume
     const balance = student.feeAgreed != null ? Math.max(0, student.feeAgreed - paid) : null
 
     const attention: string[] = []
-    if (missed.length) attention.push(`${plural(missed.length, "deadline")} missed`)
-    if (dueThisWeek.length) attention.push(`${plural(dueThisWeek.length, "deadline")} this week`)
-    if (tasksDue.length) attention.push(`${plural(tasksDue.length, "follow-up")} due`)
-    if (docsToCheck) attention.push(`${plural(docsToCheck, "document")} to check`)
-    if (docsLate) attention.push(`${plural(docsLate, "document")} overdue from the family`)
+    if (missed.length) attention.push(tn(missed.length, "{n} deadline missed", "{n} deadlines missed"))
+    if (dueThisWeek.length) attention.push(tn(dueThisWeek.length, "{n} deadline this week", "{n} deadlines this week"))
+    if (tasksDue.length) attention.push(tn(tasksDue.length, "{n} follow-up due", "{n} follow-ups due"))
+    if (docsToCheck) attention.push(tn(docsToCheck, "{n} document to check", "{n} documents to check"))
+    if (docsLate) attention.push(tn(docsLate, "{n} document overdue from the family", "{n} documents overdue from the family"))
 
     const countries = [...new Set(mine.map((a) => appUniversity(a)?.country).filter((c): c is string => !!c))]
 

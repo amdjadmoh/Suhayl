@@ -37,15 +37,20 @@ export function AuthProvider({
   children: ReactNode;
 }): React.ReactElement {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem("token");
+    } catch {
+      return null;
+    }
+  });
+  // Only wait when there is a saved session to check
+  const [isLoading, setIsLoading] = useState(() => token !== null);
   const queryClient = useQueryClient();
 
   // On mount: check localStorage for existing token
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
+    if (token) {
       // Validate token and fetch user
       getMe()
         .then((userData) => {
@@ -60,9 +65,9 @@ export function AuthProvider({
         .finally(() => {
           setIsLoading(false);
         });
-    } else {
-      setIsLoading(false);
     }
+    // Runs once for the session found at load; later sign-ins set the user directly
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = useCallback(

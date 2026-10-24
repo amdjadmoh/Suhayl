@@ -22,13 +22,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, Section } from "@/components/kit";
-import { COMMON_DOCUMENTS as COMMON } from "@/lib/documentPresets";
+import { COMMON_DOCUMENTS } from "@/lib/documentPresets";
+import { t } from "@/lib/i18n";
 
 const STATUS: Record<DocumentStatus, { label: string; tone: string }> = {
-  requested: { label: "Waiting for them", tone: "bg-ochre-soft text-ochre" },
-  uploaded: { label: "To check", tone: "bg-brand-soft text-brand-ink" },
-  accepted: { label: "Accepted", tone: "bg-moss-soft text-moss" },
-  rejected: { label: "Sent back", tone: "bg-stamp-soft text-stamp" },
+  requested: { label: t("Waiting for them"), tone: "bg-ochre-soft text-ochre" },
+  uploaded: { label: t("To check"), tone: "bg-brand-soft text-brand-ink" },
+  accepted: { label: t("Accepted"), tone: "bg-moss-soft text-moss" },
+  rejected: { label: t("Sent back"), tone: "bg-stamp-soft text-stamp" },
 };
 
 
@@ -46,20 +47,20 @@ function DocumentRow({ doc }: { doc: DocumentRequest }): React.ReactElement {
   async function decide(status: "accepted" | "rejected"): Promise<void> {
     try {
       await review.mutateAsync({ id: doc._id, status, rejectReason: status === "rejected" ? reason.trim() : undefined });
-      toast.success(status === "accepted" ? `${doc.title} accepted` : `${doc.title} sent back`);
+      toast.success(status === "accepted" ? t("{doc} accepted", { doc: doc.title }) : t("{doc} sent back", { doc: doc.title }));
       setSendingBack(false);
       setReason("");
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't save that"));
+      toast.error(getErrorMessage(err, t("Couldn't save that")));
     }
   }
 
   async function onDelete(): Promise<void> {
     try {
       await remove.mutateAsync(doc._id);
-      toast.success("Request removed");
+      toast.success(t("Request removed"));
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't remove the request"));
+      toast.error(getErrorMessage(err, t("Couldn't remove the request")));
     }
   }
 
@@ -73,14 +74,14 @@ function DocumentRow({ doc }: { doc: DocumentRequest }): React.ReactElement {
           <p className="font-semibold text-ink">{doc.title}</p>
           <p className="text-[13px] text-ink-3">
             {doc.file
-              ? `${doc.file.originalName} · ${fileSize(doc.file.size)} · sent ${timeAgo(doc.file.uploadedAt)}`
+              ? t("{file} · {size} · sent {when}", { file: doc.file.originalName, size: fileSize(doc.file.size), when: timeAgo(doc.file.uploadedAt) })
               : doc.dueDate
-                ? `Needed by ${formatDate(doc.dueDate)}`
-                : `Asked ${timeAgo(doc.createdAt)}`}
+                ? t("Needed by {date}", { date: formatDate(doc.dueDate) })
+                : t("Asked {when}", { when: timeAgo(doc.createdAt) })}
           </p>
           {doc.note && <p className="mt-1 text-[13px] text-ink-2">{doc.note}</p>}
           {doc.status === "rejected" && doc.rejectReason && (
-            <p className="mt-1 text-[13px] text-stamp">You said: {doc.rejectReason}</p>
+            <p className="mt-1 text-[13px] text-stamp">{t("You said: {reason}", { reason: doc.rejectReason })}</p>
           )}
         </div>
         <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", st.tone)}>{st.label}</span>
@@ -90,18 +91,18 @@ function DocumentRow({ doc }: { doc: DocumentRequest }): React.ReactElement {
         {doc.file && (
           <Button variant="outline" size="sm" onClick={() => downloadAgencyDocument(doc._id, doc.file!.originalName)}>
             <Download />
-            Download
+            {t("Download")}
           </Button>
         )}
         {doc.status === "uploaded" && !sendingBack && (
           <>
             <Button variant="primary" size="sm" onClick={() => decide("accepted")} disabled={review.isPending}>
               <Check />
-              Accept
+              {t("Accept")}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setSendingBack(true)}>
               <Undo2 />
-              Send back
+              {t("Send back")}
             </Button>
           </>
         )}
@@ -111,7 +112,7 @@ function DocumentRow({ doc }: { doc: DocumentRequest }): React.ReactElement {
           className="ml-auto text-ink-3 hover:bg-stamp-soft hover:text-stamp"
           onClick={onDelete}
           disabled={remove.isPending}
-          aria-label={`Remove ${doc.title}`}
+          aria-label={t("Remove {doc}", { doc: doc.title })}
         >
           <Trash2 />
         </Button>
@@ -129,15 +130,15 @@ function DocumentRow({ doc }: { doc: DocumentRequest }): React.ReactElement {
             autoFocus
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="What's wrong with it? e.g. the second page is missing"
+            placeholder={t("What's wrong with it? e.g. the second page is missing")}
             className="min-w-0 flex-1 basis-64"
-            aria-label="Why you're sending it back"
+            aria-label={t("Why you're sending it back")}
           />
           <Button type="submit" variant="destructive" size="sm" className="h-10" disabled={review.isPending}>
-            Send back
+            {t("Send back")}
           </Button>
           <Button type="button" variant="ghost" size="sm" className="h-10" onClick={() => setSendingBack(false)}>
-            Cancel
+            {t("Cancel")}
           </Button>
         </form>
       )}
@@ -154,16 +155,18 @@ export function StudentDocuments({ studentId, firstName }: { studentId: string; 
   const [dueDate, setDueDate] = useState("");
 
   const list = docs ?? [];
+  // Titles are saved in the language they're picked in, so families read them in it too
+  const COMMON = COMMON_DOCUMENTS.map((d) => t(d));
   const asked = new Set(list.map((d) => d.title.toLowerCase()));
   const toCheck = list.filter((d) => d.status === "uploaded").length;
 
   async function ask(docTitle: string, extra?: { note?: string; dueDate?: string }): Promise<boolean> {
     try {
       const r = await request.mutateAsync({ studentId, title: docTitle, ...extra });
-      toast.success(`Asked ${firstName} for ${docTitle}`, { description: r.emailSent ? "We emailed them their family link." : undefined });
+      toast.success(t("Asked {name} for {doc}", { name: firstName, doc: docTitle }), { description: r.emailSent ? t("We emailed them their family link.") : undefined });
       return true;
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Couldn't send the request"));
+      toast.error(getErrorMessage(err, t("Couldn't send the request")));
       return false;
     }
   }
@@ -182,18 +185,18 @@ export function StudentDocuments({ studentId, firstName }: { studentId: string; 
 
   return (
     <Section
-      title="Documents"
+      title={t("Documents")}
       count={isLoading ? undefined : list.length}
       action={
         <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
           <Plus />
-          Ask for a document
+          {t("Ask for a document")}
         </Button>
       }
     >
       {toCheck > 0 && (
         <p className="mb-3 rounded-2xl bg-brand-soft px-4 py-3 text-[13.5px] font-medium text-brand-ink">
-          {toCheck === 1 ? "1 document is" : `${toCheck} documents are`} waiting for you to check.
+          {toCheck === 1 ? t("1 document is waiting for you to check.") : t("{n} documents are waiting for you to check.", { n: toCheck })}
         </p>
       )}
       {isLoading ? (
@@ -201,18 +204,18 @@ export function StudentDocuments({ studentId, firstName }: { studentId: string; 
       ) : list.length === 0 ? (
         <div className="card-soft px-5 py-5">
           <p className="text-sm text-ink-2">
-            Ask {firstName} for what you need. They upload it from their family link, and you check it here.
+            {t("Ask {name} for what you need. They upload it from their family link, and you check it here.", { name: firstName })}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {COMMON.slice(0, 6).map((t) => (
+            {COMMON.slice(0, 6).map((doc) => (
               <button
-                key={t}
+                key={doc}
                 type="button"
-                onClick={() => ask(t)}
+                onClick={() => ask(doc)}
                 disabled={request.isPending}
                 className="rounded-full border border-rule bg-paper-raised px-3 py-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-paper-hover hover:text-ink"
               >
-                + {t}
+                + {doc}
               </button>
             ))}
           </div>
@@ -229,43 +232,43 @@ export function StudentDocuments({ studentId, firstName }: { studentId: string; 
         <DialogContent>
           <form onSubmit={onSubmit} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>Ask {firstName} for a document</DialogTitle>
-              <DialogDescription>It shows up on their family link, where they can upload a PDF or a photo.</DialogDescription>
+              <DialogTitle>{t("Ask {name} for a document", { name: firstName })}</DialogTitle>
+              <DialogDescription>{t("It shows up on their family link, where they can upload a PDF or a photo.")}</DialogDescription>
             </DialogHeader>
             <div className="flex flex-wrap gap-2">
-              {COMMON.filter((t) => !asked.has(t.toLowerCase())).map((t) => (
+              {COMMON.filter((doc) => !asked.has(doc.toLowerCase())).map((doc) => (
                 <button
-                  key={t}
+                  key={doc}
                   type="button"
-                  onClick={() => setTitle(t)}
-                  aria-pressed={title === t}
+                  onClick={() => setTitle(doc)}
+                  aria-pressed={title === doc}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors",
-                    title === t ? "border-brand bg-brand text-on-brand" : "border-rule bg-paper-raised text-ink-2 hover:bg-paper-hover",
+                    title === doc ? "border-brand bg-brand text-on-brand" : "border-rule bg-paper-raised text-ink-2 hover:bg-paper-hover",
                   )}
                 >
-                  {t}
+                  {doc}
                 </button>
               ))}
             </div>
             <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
-              <Field label="Document" htmlFor="doc-title">
-                <Input id="doc-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Or type your own" />
+              <Field label={t("Document")} htmlFor="doc-title">
+                <Input id="doc-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("Or type your own")} />
               </Field>
-              <Field label="Needed by" htmlFor="doc-due">
+              <Field label={t("Needed by")} htmlFor="doc-due">
                 <Input id="doc-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
               </Field>
-              <Field label="Note for them" htmlFor="doc-note" className="sm:col-span-2">
-                <Input id="doc-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Both sides, in colour" />
+              <Field label={t("Note for them")} htmlFor="doc-note" className="sm:col-span-2">
+                <Input id="doc-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("e.g. Both sides, in colour")} />
               </Field>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={!title.trim() || request.isPending}>
                 {request.isPending && <Loader2 className="animate-spin" />}
-                Ask for it
+                {t("Ask for it")}
               </Button>
             </DialogFooter>
           </form>

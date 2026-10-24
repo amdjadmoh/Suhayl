@@ -7,7 +7,11 @@ export interface IActivity {
   /** Empty when the family did it through their link */
   actorId?: Types.ObjectId
   actorName: string
+  /** The line in English, for exports and older readers */
   action: string
+  /** The same line as an English template plus its values, so each reader sees it in their language */
+  template?: string
+  vars?: Record<string, string>
   createdAt: Date
 }
 
@@ -20,6 +24,8 @@ const activitySchema = new Schema<IActivityDocument>(
     actorId: { type: Schema.Types.ObjectId, ref: "User" },
     actorName: { type: String, required: true },
     action: { type: String, required: true },
+    template: { type: String },
+    vars: { type: Schema.Types.Mixed },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 )

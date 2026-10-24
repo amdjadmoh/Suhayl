@@ -7,6 +7,7 @@ import { City } from "./models/City"
 import { User } from "./models/User"
 import { Student } from "./models/Student"
 import bcrypt from "bcryptjs"
+import { isProduction } from "./config"
 
 const countries = [
   {
@@ -1216,12 +1217,16 @@ export async function seedIfEmpty(): Promise<number> {
   await City.insertMany(cities)
   console.log(`Seeded ${cities.length} cities`)
 
-  // Create production admin account
-  const existingAdmin = await User.findOne({ email: "admin@admin.com" })
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(process.env["ADMIN_PASSWORD"] ?? "admin123", 10)
-    await User.create({ email: "admin@admin.com", passwordHash: hashedPassword, name: "Admin", role: "admin" } as any)
-    console.log("Created admin account: admin@admin.com")
+  // First admin account. In production it is created only from ADMIN_EMAIL and a
+  // strong ADMIN_PASSWORD, never with a default password.
+  const adminEmail = (process.env["ADMIN_EMAIL"] ?? "admin@admin.com").toLowerCase()
+  const adminPassword = process.env["ADMIN_PASSWORD"] ?? (isProduction ? "" : "admin123")
+  if (isProduction && adminPassword.length < 12) {
+    console.warn("WARNING: no admin account created. Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) to create one on first start.")
+  } else if (!(await User.findOne({ email: adminEmail }))) {
+    const hashedPassword = await bcrypt.hash(adminPassword, 10)
+    await User.create({ email: adminEmail, passwordHash: hashedPassword, name: "Admin", role: "admin" } as any)
+    console.log(`Created admin account: ${adminEmail}`)
   }
 
   return countries.length

@@ -37,6 +37,7 @@ import {
   profileToPayload,
   type StudentProfileForm,
 } from "@/lib/studentProfile";
+import { t } from "@/lib/i18n";
 
 type StudentForm = { name: string; email: string; phone: string; notes: string };
 
@@ -76,10 +77,10 @@ export default function AgencyStudentDetail(): React.ReactElement {
         // Empty strings clear a field; undefined would leave the old value in place
         data: { name: data.name, email: data.email, phone: data.phone.trim(), notes: data.notes.trim(), ...profileToPayload(profile) },
       });
-      toast.success("Student updated");
+      toast.success(t("Student updated"));
       setEditOpen(false);
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to update student"));
+      toast.error(getErrorMessage(err, t("Failed to update student")));
     }
   }
 
@@ -87,10 +88,10 @@ export default function AgencyStudentDetail(): React.ReactElement {
     if (!student) return;
     try {
       await deleteMutation.mutateAsync(student._id);
-      toast.success("Student deleted");
+      toast.success(t("Student deleted"));
       navigate("/agency/students");
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to delete student"));
+      toast.error(getErrorMessage(err, t("Failed to delete student")));
     }
   }
 
@@ -113,19 +114,19 @@ export default function AgencyStudentDetail(): React.ReactElement {
   return (
     <>
       <PageHeader
-        back={<BackLink to="/agency/students">Students</BackLink>}
-        kicker="Student file"
+        back={<BackLink to="/agency/students">{t("Students")}</BackLink>}
+        kicker={t("Student file")}
         title={student.name}
         actions={
           <>
             <Button variant="ghost" size="sm" onClick={openEdit}>
-              Edit
+              {t("Edit")}
             </Button>
             <Button variant="ghost" size="sm" className="text-stamp hover:bg-stamp-soft hover:text-stamp" onClick={() => setDeleteOpen(true)}>
-              Delete
+              {t("Delete")}
             </Button>
             <Button variant="primary" size="sm" asChild>
-              <Link to={newAppHref}>Start an application</Link>
+              <Link to={newAppHref}>{t("Start an application")}</Link>
             </Button>
           </>
         }
@@ -134,15 +135,15 @@ export default function AgencyStudentDetail(): React.ReactElement {
       <div className="grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-10">
           <FollowUps student={student} />
-          <Section title="Applications" count={studentApplications.length}>
+          <Section title={t("Applications")} count={studentApplications.length}>
             {studentApplications.length > 0 ? (
               <ApplicationList applications={studentApplications} />
             ) : (
               <EmptyState
-                title={`No applications for ${student.name.split(" ")[0]} yet`}
+                title={t("No applications for {name} yet", { name: firstName })}
                 action={
                   <Button variant="primary" asChild>
-                    <Link to={newAppHref}>Start an application</Link>
+                    <Link to={newAppHref}>{t("Start an application")}</Link>
                   </Button>
                 }
               />
@@ -151,7 +152,7 @@ export default function AgencyStudentDetail(): React.ReactElement {
           <StudentDocuments studentId={student._id} firstName={firstName} />
           <ActivityLog items={activity ?? []} isLoading={activityLoading} />
           {studentApplications.length > 1 && (
-            <Section title="Where things stand">
+            <Section title={t("Where things stand")}>
               <div className="pt-2">
                 <StatusBreakdown counts={countByStatus(studentApplications)} />
               </div>
@@ -167,45 +168,45 @@ export default function AgencyStudentDetail(): React.ReactElement {
           <div className="mb-8">
             <Payments key={student._id} student={student} />
           </div>
-          <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">Profile</p>
+          <p className="mb-3 text-[17px] font-bold tracking-[-0.01em]">{t("Profile")}</p>
           {hasProfile(student) || aiming ? (
             <Facts className="card px-5 py-1">
-              {aiming && <Fact label="Aiming for">{aiming}</Fact>}
-              <Fact label="GPA">{student.gpa ?? <span className="text-ink-4">not given</span>}</Fact>
-              <Fact label="IELTS">{student.ieltsScore ?? <span className="text-ink-4">not given</span>}</Fact>
-              <Fact label="Budget">
-                {student.monthlyBudget != null ? `${formatMoney(student.monthlyBudget, "EUR")} / month` : <span className="text-ink-4">not given</span>}
+              {aiming && <Fact label={t("Aiming for")}>{aiming}</Fact>}
+              <Fact label={t("GPA")}>{student.gpa ?? <span className="text-ink-4">{t("not given")}</span>}</Fact>
+              <Fact label={t("IELTS")}>{student.ieltsScore ?? <span className="text-ink-4">{t("not given")}</span>}</Fact>
+              <Fact label={t("Budget")}>
+                {student.monthlyBudget != null ? t("{amount} / month", { amount: formatMoney(student.monthlyBudget, "EUR") }) : <span className="text-ink-4">{t("not given")}</span>}
               </Fact>
-              {!!student.preferredCountries?.length && <Fact label="Countries">{listJoin(student.preferredCountries)}</Fact>}
+              {!!student.preferredCountries?.length && <Fact label={t("Countries")}>{listJoin(student.preferredCountries)}</Fact>}
             </Facts>
           ) : (
             <div className="card-soft px-5 py-4 text-[13px] leading-relaxed text-ink-3">
-              Add {firstName}'s GPA, IELTS, budget and countries to match programs to them.{" "}
+              {t("Add {name}'s GPA, IELTS, budget and countries to match programs to them.", { name: firstName })}{" "}
               <button type="button" onClick={openEdit} className="link-ink font-semibold">
-                Add profile
+                {t("Add profile")}
               </button>
             </div>
           )}
           <Button variant="secondary" className="mt-3 w-full" asChild>
             <Link to={matchesHref(student)}>
               <Sparkles />
-              Find programs for {firstName}
+              {t("Find programs for {name}", { name: firstName })}
             </Link>
           </Button>
 
-          <p className="mt-8 mb-3 text-[17px] font-bold tracking-[-0.01em]">Contact</p>
+          <p className="mt-8 mb-3 text-[17px] font-bold tracking-[-0.01em]">{t("Contact")}</p>
           <Facts className="card px-5 py-1">
-            <Fact label="Email">
+            <Fact label={t("Email")}>
               <a href={`mailto:${student.email}`} className="link-ink break-all">
                 {student.email}
               </a>
             </Fact>
-            <Fact label="Phone">{student.phone ? <span className="text-[13px] tnum">{student.phone}</span> : <span className="text-ink-4">not given</span>}</Fact>
-            <Fact label="On file since">{formatDate(student.createdAt)}</Fact>
+            <Fact label={t("Phone")}>{student.phone ? <span className="text-[13px] tnum">{student.phone}</span> : <span className="text-ink-4">{t("not given")}</span>}</Fact>
+            <Fact label={t("On file since")}>{formatDate(student.createdAt)}</Fact>
           </Facts>
           {student.notes && (
             <>
-              <p className="mt-8 mb-3 text-[17px] font-bold tracking-[-0.01em]">Notes</p>
+              <p className="mt-8 mb-3 text-[17px] font-bold tracking-[-0.01em]">{t("Notes")}</p>
               <p className="card-soft px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-ink-2">
                 {student.notes}
               </p>
@@ -218,33 +219,33 @@ export default function AgencyStudentDetail(): React.ReactElement {
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
           <form onSubmit={handleSubmit(handleEditSubmit)} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>Edit {student.name}</DialogTitle>
+              <DialogTitle>{t("Edit {name}", { name: student.name })}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
-              <Field label="Name" htmlFor="e-name" required error={errors.name?.message}>
-                <Input id="e-name" {...register("name", { required: "Name is required" })} />
+              <Field label={t("Name")} htmlFor="e-name" required error={errors.name?.message}>
+                <Input id="e-name" {...register("name", { required: t("Name is required") })} />
               </Field>
-              <Field label="Email" htmlFor="e-email" required error={errors.email?.message}>
-                <Input id="e-email" type="email" {...register("email", { required: "Email is required" })} />
+              <Field label={t("Email")} htmlFor="e-email" required error={errors.email?.message}>
+                <Input id="e-email" type="email" {...register("email", { required: t("Email is required") })} />
               </Field>
-              <Field label="Phone" htmlFor="e-phone">
+              <Field label={t("Phone")} htmlFor="e-phone">
                 <Input id="e-phone" className="tnum" {...register("phone")} />
               </Field>
-              <Field label="Notes" htmlFor="e-notes">
+              <Field label={t("Notes")} htmlFor="e-notes">
                 <Textarea id="e-notes" {...register("notes")} rows={3} />
               </Field>
               <div className="border-t border-rule-soft pt-4">
-                <p className="mb-3 text-[15px] font-bold text-ink">Academic profile</p>
+                <p className="mb-3 text-[15px] font-bold text-ink">{t("Academic profile")}</p>
                 <StudentProfileFields idPrefix="e" value={profile} onChange={setProfile} />
               </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="animate-spin" />}
-                Save
+                {t("Save")}
               </Button>
             </DialogFooter>
           </form>
@@ -254,16 +255,16 @@ export default function AgencyStudentDetail(): React.ReactElement {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete {student.name}?</DialogTitle>
-            <DialogDescription>All of their applications are deleted with them. This can't be undone.</DialogDescription>
+            <DialogTitle>{t("Delete {name}?", { name: student.name })}</DialogTitle>
+            <DialogDescription>{t("All of their applications are deleted with them. This can't be undone.")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Keep
+              {t("Keep")}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
               {deleteMutation.isPending && <Loader2 className="animate-spin" />}
-              Delete student
+              {t("Delete student")}
             </Button>
           </DialogFooter>
         </DialogContent>

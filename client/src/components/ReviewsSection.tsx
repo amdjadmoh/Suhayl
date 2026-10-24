@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, Star } from "lucide-react";
@@ -73,14 +73,6 @@ export default function ReviewsSection({
   const [comment, setComment] = useState("");
   const [editing, setEditing] = useState(false);
 
-  // Pre-fill the form when the user's own review exists and they choose to edit
-  useEffect(() => {
-    if (myReview && !editing) {
-      setRating(myReview.rating);
-      setComment(myReview.comment);
-    }
-  }, [myReview, editing]);
-
   const showForm = !!user && (!myReview || editing);
   const others = reviews.filter((r) => !myReview || r._id !== myReview._id);
 
@@ -148,7 +140,16 @@ export default function ReviewsSection({
               <span className="kicker">Your review</span>
               <Rating value={myReview.rating} />
               <span className="ml-auto flex gap-1">
-                <Button variant="ghost" size="xs" onClick={() => setEditing(true)}>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => {
+                    // Start the form from what they wrote before
+                    setRating(myReview.rating);
+                    setComment(myReview.comment);
+                    setEditing(true);
+                  }}
+                >
                   Edit
                 </Button>
                 <Button

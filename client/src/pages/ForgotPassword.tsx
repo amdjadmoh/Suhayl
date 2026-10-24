@@ -7,6 +7,7 @@ import AuthLayout from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/kit";
+import { t } from "@/lib/i18n";
 
 export default function ForgotPassword(): React.ReactElement {
   const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ export default function ForgotPassword(): React.ReactElement {
       await api.post("/auth/forgot-password", { email });
       setSent(true);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Something went wrong. Please try again."));
+      setError(getErrorMessage(err, t("Something went wrong. Please try again.")));
     } finally {
       setIsSubmitting(false);
     }
@@ -30,18 +31,18 @@ export default function ForgotPassword(): React.ReactElement {
 
   return (
     <AuthLayout
-      kicker="Password"
-      title={sent ? "Check your inbox" : "Forgot your password?"}
+      kicker={t("Password")}
+      title={sent ? t("Check your inbox") : t("Forgot your password?")}
       subtitle={
         sent
-          ? "If that address has an account, a reset link is on its way. It can take a few minutes — and sometimes it lands in spam."
-          : "Tell us the email you signed up with and we'll send a link to choose a new password."
+          ? t("If that address has an account, a reset link is on its way. It can take a few minutes — and sometimes it lands in spam.")
+          : t("Tell us the email you signed up with and we'll send a link to choose a new password.")
       }
       footer={
         <>
-          Remembered it?{" "}
+          {t("Remembered it?")}{" "}
           <Link to="/login" className="link-ink">
-            Back to sign in
+            {t("Back to sign in")}
           </Link>
         </>
       }
@@ -49,16 +50,16 @@ export default function ForgotPassword(): React.ReactElement {
       {sent ? (
         <div className="space-y-5">
           <p className="rounded-2xl bg-moss-soft px-4 py-3 text-sm text-ink-2">
-            Sent to <span className="font-medium text-ink">{email}</span>
+            {t("Sent to {email}", { email })}
           </p>
           <Button variant="outline" className="w-full" asChild>
-            <Link to="/login">Back to sign in</Link>
+            <Link to="/login">{t("Back to sign in")}</Link>
           </Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <FormError>{error}</FormError>}
-          <Field label="Email" htmlFor="email">
+          <Field label={t("Email")} htmlFor="email">
             <Input
               id="email"
               type="email"
@@ -72,7 +73,7 @@ export default function ForgotPassword(): React.ReactElement {
           </Field>
           <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="animate-spin" />}
-            {isSubmitting ? "Sending…" : "Send the link"}
+            {isSubmitting ? t("Sending…") : t("Send the link")}
           </Button>
         </form>
       )}

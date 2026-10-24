@@ -40,7 +40,7 @@ export async function createRequest(req: Request, res: Response): Promise<void> 
     ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
   })
   const emailSent = await notifyFamily(student, [title], dueDate ? new Date(dueDate) : undefined)
-  await logActivity(req, student._id, `Asked for ${title}`)
+  await logActivity(req, student._id, "Asked for {doc}", { doc: title })
   res.status(201).json({ ...document.toObject(), emailSent })
 }
 
@@ -68,7 +68,12 @@ export async function review(req: Request, res: Response): Promise<void> {
   document.status = status
   document.set("rejectReason", status === "rejected" && rejectReason ? rejectReason : undefined)
   await document.save()
-  await logActivity(req, document.studentId, status === "accepted" ? `Accepted ${document.title}` : `Sent back ${document.title}${rejectReason ? `: ${rejectReason}` : ""}`)
+  await logActivity(
+    req,
+    document.studentId,
+    status === "accepted" ? "Accepted {doc}" : rejectReason ? "Sent back {doc}: {reason}" : "Sent back {doc}",
+    { doc: document.title, ...(rejectReason ? { reason: rejectReason } : {}) },
+  )
   res.json(document)
 }
 
@@ -80,7 +85,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
     return
   }
   await removeFile(document.file?.storedName)
-  await logActivity(req, document.studentId, `Removed the request for ${document.title}`)
+  await logActivity(req, document.studentId, "Removed the request for {doc}", { doc: document.title })
   res.json({ message: "Request removed" })
 }
 

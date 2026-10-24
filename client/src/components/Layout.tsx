@@ -7,6 +7,7 @@ import {
   FileText,
   GraduationCap,
   House,
+  Languages,
   LogOut,
   Settings as SettingsIcon,
   Users,
@@ -27,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { lang, setLang, t } from "@/lib/i18n";
 
 type NavItem = { to: string; label: string; end?: boolean; count?: number };
 type TabItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
@@ -124,7 +126,7 @@ function TopNav({ main, more }: { main: NavItem[]; more: NavItem[] }): React.Rea
                 )
               }
             >
-              <span>{item.label}</span>
+              <span>{t(item.label)}</span>
               {!!item.count && (
                 <span className="flex size-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-on-brand tnum">
                   {item.count}
@@ -144,13 +146,13 @@ function TopNav({ main, more }: { main: NavItem[]; more: NavItem[] }): React.Rea
                     moreActive ? "bg-paper-sunken text-ink" : "text-ink-3 hover:bg-paper-hover hover:text-ink",
                   )}
                 >
-                  More
+                  {t("More")}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 {more.map((m) => (
                   <DropdownMenuItem key={m.to} asChild className="cursor-pointer font-medium">
-                    <Link to={m.to}>{m.label}</Link>
+                    <Link to={m.to}>{t(m.label)}</Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -174,15 +176,15 @@ function BottomTabs({ tabs, rest }: { tabs: TabItem[]; rest: NavItem[] }): React
       className="fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-paper-raised/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex max-w-md">
-        {tabs.map((t) => (
-          <li key={t.to} className="flex flex-1">
+        {tabs.map((tab) => (
+          <li key={tab.to} className="flex flex-1">
             <NavLink
-              to={t.to}
-              end={t.end}
+              to={tab.to}
+              end={tab.end}
               className={({ isActive }) => cn(tabCls, isActive ? "text-brand" : "text-ink-3")}
             >
-              <t.icon className="size-[22px]" strokeWidth={2} />
-              {t.label}
+              <tab.icon className="size-[22px]" strokeWidth={2} />
+              {t(tab.label)}
             </NavLink>
           </li>
         ))}
@@ -191,14 +193,14 @@ function BottomTabs({ tabs, rest }: { tabs: TabItem[]; rest: NavItem[] }): React
             <DropdownMenuTrigger asChild>
               <button type="button" className={cn(tabCls, restActive ? "text-brand" : "text-ink-3")}>
                 <Ellipsis className="size-[22px]" />
-                More
+                {t("More")}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="mb-2 w-52">
               {rest.map((m) => (
                 <DropdownMenuItem key={m.to} asChild className="cursor-pointer font-medium">
                   <Link to={m.to}>
-                    {m.label}
+                    {t(m.label)}
                     {!!m.count && <span className="ml-auto text-xs font-bold text-brand tnum">{m.count}</span>}
                   </Link>
                 </DropdownMenuItem>
@@ -229,7 +231,7 @@ function NotificationBell(): React.ReactElement | null {
         <button
           type="button"
           className="relative inline-flex size-10 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-paper-sunken hover:text-ink"
-          aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
+          aria-label={unreadCount > 0 ? t("{n} unread notifications", { n: unreadCount }) : t("Notifications")}
         >
           <Bell className="size-5" />
           {unreadCount > 0 && (
@@ -241,20 +243,20 @@ function NotificationBell(): React.ReactElement | null {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[22rem] max-w-[calc(100vw-2rem)] p-0">
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span className="text-base font-bold">Notifications</span>
+          <span className="text-base font-bold">{t("Notifications")}</span>
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={() => markAll.mutate()}
               className="text-[13px] font-semibold text-brand-ink hover:underline"
             >
-              Mark all read
+              {t("Mark all read")}
             </button>
           )}
         </div>
         <div className="max-h-96 overflow-y-auto p-1.5">
           {notifications.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-3">You're all caught up.</p>
+            <p className="px-4 py-8 text-center text-sm text-ink-3">{t("You're all caught up.")}</p>
           ) : (
             notifications.slice(0, 10).map((n) => (
               <DropdownMenuItem
@@ -296,7 +298,7 @@ function UserMenu(): React.ReactElement | null {
         <button
           type="button"
           className="ml-1 inline-flex size-10 items-center justify-center rounded-full bg-brand-soft text-[13px] font-bold text-brand-ink transition-shadow hover:ring-4 hover:ring-brand-soft/70"
-          aria-label="Account"
+          aria-label={t("Account")}
         >
           {initials(user.name)}
         </button>
@@ -307,9 +309,9 @@ function UserMenu(): React.ReactElement | null {
           <p className="mt-0.5 truncate text-[13px] font-normal text-ink-3">{user.email}</p>
           <p className="mt-2 inline-flex rounded-full bg-paper-sunken px-2 py-0.5 text-xs font-semibold text-ink-2">
             {user.agencyRole === "counsellor" ? (
-              <>Counsellor{user.agencyName ? ` at ${user.agencyName}` : ""}</>
+              <>{user.agencyName ? t("Counsellor at {agency}", { agency: user.agencyName }) : t("Counsellor")}</>
             ) : user.role === "agency" ? (
-              <>Agency owner</>
+              <>{t("Agency owner")}</>
             ) : (
               <>
                 <span className="capitalize">{user.role}</span>&nbsp;account
@@ -321,12 +323,16 @@ function UserMenu(): React.ReactElement | null {
         <DropdownMenuItem asChild className="cursor-pointer font-medium">
           <Link to="/settings">
             <SettingsIcon />
-            Settings
+            {t("Settings")}
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setLang(lang === "fr" ? "en" : "fr")} className="cursor-pointer font-medium">
+          <Languages />
+          {lang === "fr" ? "English" : "Français"}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer font-medium">
           <LogOut />
-          Sign out
+          {t("Sign out")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

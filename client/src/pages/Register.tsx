@@ -10,10 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/kit";
 import { GoogleSection } from "@/components/GoogleSignIn";
+import { t } from "@/lib/i18n";
 
 const ROLES = [
-  { value: "student", title: "I'm applying", note: "For myself and my own applications" },
-  { value: "agency", title: "I help students apply", note: "An agency or counsellor with several students" },
+  { value: "student", title: t("I'm applying"), note: t("For myself and my own applications") },
+  { value: "agency", title: t("I help students apply"), note: t("An agency or counsellor with several students") },
 ] as const;
 
 export default function Register(): React.ReactElement {
@@ -31,10 +32,10 @@ export default function Register(): React.ReactElement {
     setError("");
     try {
       await loginWithGoogle(credential);
-      toast.success("You're in");
+      toast.success(t("You're in"));
       navigate("/dashboard");
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Google sign-up failed"));
+      setError(getErrorMessage(err, t("Google sign-up failed")));
     }
   }
 
@@ -47,7 +48,7 @@ export default function Register(): React.ReactElement {
       toast.success("You're in");
       navigate("/dashboard");
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Registration failed"));
+      setError(getErrorMessage(err, t("Registration failed")));
     } finally {
       setIsSubmitting(false);
     }
@@ -55,14 +56,14 @@ export default function Register(): React.ReactElement {
 
   return (
     <AuthLayout
-      kicker="Create an account"
-      title="Create your account"
-      subtitle="Free. It takes a minute, and you can add your first application straight away."
+      kicker={t("Create an account")}
+      title={t("Create your account")}
+      subtitle={t("Free. It takes a minute, and you can add your first application straight away.")}
       footer={
         <>
-          Already have one?{" "}
+          {t("Already have one?")}{" "}
           <Link to="/login" className="link-ink">
-            Sign in
+            {t("Sign in")}
           </Link>
         </>
       }
@@ -71,7 +72,7 @@ export default function Register(): React.ReactElement {
         {error && <FormError>{error}</FormError>}
 
         <fieldset>
-          <legend className="mb-2 text-[13px] font-semibold text-ink-2">Who is it for?</legend>
+          <legend className="mb-2 text-[13px] font-semibold text-ink-2">{t("Who is it for?")}</legend>
           <div role="radiogroup" className="grid gap-2 sm:grid-cols-2">
             {ROLES.map((r) => {
               const on = role === r.value;
@@ -97,10 +98,10 @@ export default function Register(): React.ReactElement {
           </div>
         </fieldset>
 
-        <Field label={role === "agency" ? "Agency or your name" : "Your name"} htmlFor="name">
+        <Field label={role === "agency" ? t("Agency or your name") : t("Your name")} htmlFor="name">
           <Input id="name" type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required className="h-10" />
         </Field>
-        <Field label="Email" htmlFor="email">
+        <Field label={t("Email")} htmlFor="email">
           <Input
             id="email"
             type="email"
@@ -112,7 +113,7 @@ export default function Register(): React.ReactElement {
             className="h-10"
           />
         </Field>
-        <Field label="Password" htmlFor="password" hint="At least 6 characters.">
+        <Field label={t("Password")} htmlFor="password" hint={t("At least 6 characters.")}>
           <Input
             id="password"
             type="password"
@@ -126,15 +127,15 @@ export default function Register(): React.ReactElement {
         </Field>
 
         <label className="flex items-start gap-3 text-[13.5px] leading-relaxed text-ink-2">
-          <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" aria-label="I agree to the terms and privacy policy" />
+          <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" aria-label={t("I agree to the terms and privacy policy")} />
           <span>
-            I agree to the{" "}
+            {t("I agree to the")}{" "}
             <Link to="/terms" target="_blank" className="link-ink">
-              terms
+              {t("terms")}
             </Link>{" "}
-            and the{" "}
+            {t("and the")}{" "}
             <Link to="/privacy" target="_blank" className="link-ink">
-              privacy policy
+              {t("privacy policy")}
             </Link>
             .
           </span>
@@ -142,10 +143,10 @@ export default function Register(): React.ReactElement {
 
         <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting || !agreed}>
           {isSubmitting && <Loader2 className="animate-spin" />}
-          {isSubmitting ? "Creating your account…" : "Create account"}
+          {isSubmitting ? t("Creating your account…") : t("Create account")}
         </Button>
 
-        <GoogleSection onCredential={handleGoogleResponse} note="Signing up with Google creates a student account and means you agree to the terms and privacy policy." />
+        <GoogleSection onCredential={handleGoogleResponse} note={t("Signing up with Google creates a student account and means you agree to the terms and privacy policy.")} />
       </form>
     </AuthLayout>
   );

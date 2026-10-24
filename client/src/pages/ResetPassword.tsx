@@ -7,6 +7,7 @@ import AuthLayout from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/kit";
+import { t } from "@/lib/i18n";
 
 export default function ResetPassword(): React.ReactElement {
   const [searchParams] = useSearchParams();
@@ -22,11 +23,11 @@ export default function ResetPassword(): React.ReactElement {
     e.preventDefault();
     setError("");
     if (password !== confirm) {
-      setError("Those two passwords don't match");
+      setError(t("Those two passwords don't match"));
       return;
     }
     if (!token) {
-      setError("Missing reset token. Use the link from your email.");
+      setError(t("Missing reset token. Use the link from your email."));
       return;
     }
     setIsSubmitting(true);
@@ -34,7 +35,7 @@ export default function ResetPassword(): React.ReactElement {
       await api.post("/auth/reset-password", { token, password });
       setDone(true);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Reset link is invalid or has expired."));
+      setError(getErrorMessage(err, t("Reset link is invalid or has expired.")));
     } finally {
       setIsSubmitting(false);
     }
@@ -43,12 +44,12 @@ export default function ResetPassword(): React.ReactElement {
   if (!token) {
     return (
       <AuthLayout
-        kicker="Password"
-        title="This link doesn't work"
-        subtitle="It's missing the part that identifies you — or it's been used already. Ask for a fresh one."
+        kicker={t("Password")}
+        title={t("This link doesn't work")}
+        subtitle={t("It's missing the part that identifies you — or it's been used already. Ask for a fresh one.")}
       >
         <Button variant="primary" size="lg" className="w-full" asChild>
-          <Link to="/forgot-password">Send me a new link</Link>
+          <Link to="/forgot-password">{t("Send me a new link")}</Link>
         </Button>
       </AuthLayout>
     );
@@ -56,15 +57,15 @@ export default function ResetPassword(): React.ReactElement {
 
   return (
     <AuthLayout
-      kicker="Password"
-      title={done ? "Password updated" : "Choose a new password"}
-      subtitle={done ? "You can sign in with it now." : "Something you haven't used before, at least six characters."}
+      kicker={t("Password")}
+      title={done ? t("Password updated") : t("Choose a new password")}
+      subtitle={done ? t("You can sign in with it now.") : t("Something you haven't used before, at least six characters.")}
       footer={
         done ? undefined : (
           <>
-            Changed your mind?{" "}
+            {t("Changed your mind?")}{" "}
             <Link to="/login" className="link-ink">
-              Back to sign in
+              {t("Back to sign in")}
             </Link>
           </>
         )
@@ -72,12 +73,12 @@ export default function ResetPassword(): React.ReactElement {
     >
       {done ? (
         <Button variant="primary" size="lg" className="w-full" onClick={() => navigate("/login")}>
-          Sign in
+          {t("Sign in")}
         </Button>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && <FormError>{error}</FormError>}
-          <Field label="New password" htmlFor="password">
+          <Field label={t("New password")} htmlFor="password">
             <Input
               id="password"
               type="password"
@@ -89,7 +90,7 @@ export default function ResetPassword(): React.ReactElement {
               className="h-10"
             />
           </Field>
-          <Field label="Same again" htmlFor="confirm">
+          <Field label={t("Same again")} htmlFor="confirm">
             <Input
               id="confirm"
               type="password"
@@ -103,7 +104,7 @@ export default function ResetPassword(): React.ReactElement {
           </Field>
           <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="animate-spin" />}
-            {isSubmitting ? "Saving…" : "Save new password"}
+            {isSubmitting ? t("Saving…") : t("Save new password")}
           </Button>
         </form>
       )}

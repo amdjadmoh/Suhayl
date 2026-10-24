@@ -51,7 +51,7 @@ export async function create(req: Request, res: Response): Promise<void> {
   }
   const { counsellorId: _ignored, ...fields } = req.body as Record<string, unknown>
   const student = await Student.create({ ...fields, ...(counsellorId ? { counsellorId } : {}), agencyId })
-  await logActivity(req, student._id, `Added ${student.name}`)
+  await logActivity(req, student._id, "Added {name}", { name: student.name })
   res.status(201).json(student)
 }
 
@@ -96,7 +96,7 @@ export async function update(req: Request, res: Response): Promise<void> {
   }
   if (counsellorId !== undefined && String(before.counsellorId ?? "") !== String(counsellorId ?? "")) {
     const to = counsellorId ? await User.findById(counsellorId).select("name") : null
-    await logActivity(req, student._id, to ? `Gave the file to ${to.name}` : "Removed the counsellor")
+    await logActivity(req, student._id, to ? "Gave the file to {name}" : "Removed the counsellor", to ? { name: to.name } : {})
   }
   // Blank and missing are the same thing to a person reading the history
   const norm = (v: unknown): string => JSON.stringify(v === "" || v === undefined || (Array.isArray(v) && v.length === 0) ? null : v)
@@ -104,7 +104,7 @@ export async function update(req: Request, res: Response): Promise<void> {
   const labels: Record<string, string> = { name: "name", email: "email", phone: "phone", notes: "notes", feeAgreed: "agreed fee" }
   const named = changed.map((k) => labels[k]).filter(Boolean)
   const profile = changed.some((k) => ["gpa", "ieltsScore", "monthlyBudget", "preferredCountries", "degreeLevel", "targetIntake"].includes(k))
-  if (named.length || profile) await logActivity(req, student._id, `Updated ${[...named, ...(profile ? ["academic profile"] : [])].join(", ")}`)
+  if (named.length || profile) await logActivity(req, student._id, "Updated {fields}", { fields: [...named, ...(profile ? ["academic profile"] : [])].join(", ") })
   res.json(student)
 }
 
@@ -123,6 +123,6 @@ export async function remove(req: Request, res: Response): Promise<void> {
   const removed = await deleteApplications(applicationsOf(student, agencyId))
   await deleteDocuments({ studentId: student._id })
   await Student.findByIdAndDelete(student._id)
-  await logActivity(req, null, `Deleted ${student.name} and ${removed} application${removed === 1 ? "" : "s"}`)
+  await logActivity(req, null, removed === 1 ? "Deleted {name} and 1 application" : "Deleted {name} and {n} applications", { name: student.name, n: removed })
   res.json({ message: "Student and their applications deleted", applicationsDeleted: removed })
 }

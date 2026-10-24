@@ -18,8 +18,8 @@ Backend: Express 5, TypeScript, MongoDB (Mongoose), falls back to in-memory Mong
 ## Running locally
 
 ```bash
-# Install everything
-npm run install:all
+# Install everything (the repo is an npm workspace)
+npm install
 
 # Start both client and server
 npm run dev
@@ -29,4 +29,8 @@ Client runs on `http://localhost:5173`, server on `http://localhost:5000`.
 
 By default the server tries to connect to `mongodb://localhost:27017/wannaout`. If it can't reach MongoDB, it starts an in-memory instance automatically — no setup needed to try it out.
 
-Set `MONGODB_URI` and `PORT` in a `.env` file if you want to use your own instance.
+Set `MONGODB_URI` and `PORT` in a `.env` file if you want to use your own instance. `.env.example` lists every setting.
+
+## Deploying
+
+See [docs/DEPLOY.md](docs/DEPLOY.md): the Docker image, the settings production requires, and the accounts you need (database, file storage, email, domain).

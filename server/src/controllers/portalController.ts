@@ -137,7 +137,7 @@ export async function upload(req: Request, res: Response): Promise<void> {
     link: `/agency/students/${student._id}`,
   })
 
-  await logFamilyActivity(student.agencyId, student._id, `Sent ${document.title}`)
+  await logFamilyActivity(student.agencyId, student._id, "Sent {doc}", { doc: document.title })
   res.json(publicDocument(document))
 }
 

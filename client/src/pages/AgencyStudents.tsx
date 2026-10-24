@@ -29,6 +29,7 @@ import { StudentProfileFields } from "@/components/StudentProfileFields";
 import { useAgencyDocuments } from "@/lib/api-documents";
 import { EMPTY_PROFILE, profileToForm, profileToPayload, type StudentProfileForm } from "@/lib/studentProfile";
 import { StudentRoster } from "@/components/StudentRoster";
+import { t } from "@/lib/i18n";
 
 type StudentFormData = {
   name: string;
@@ -101,14 +102,14 @@ export default function AgencyStudents(): React.ReactElement {
     try {
       if (editingStudent) {
         await updateMutation.mutateAsync({ id: editingStudent._id, data: payload });
-        toast.success("Student updated");
+        toast.success(t("Student updated"));
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success(`${data.name} added`);
+        toast.success(t("{name} added", { name: data.name }));
       }
       setDialogOpen(false);
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, editingStudent ? "Failed to update student" : "Failed to create student"));
+      toast.error(getErrorMessage(err, editingStudent ? t("Failed to update student") : t("Failed to create student")));
     }
   }
 
@@ -116,10 +117,10 @@ export default function AgencyStudents(): React.ReactElement {
     if (!toDelete) return;
     try {
       await deleteMutation.mutateAsync(toDelete._id);
-      toast.success("Student deleted");
+      toast.success(t("Student deleted"));
       setToDelete(null);
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to delete student"));
+      toast.error(getErrorMessage(err, t("Failed to delete student")));
     }
   }
 
@@ -128,52 +129,52 @@ export default function AgencyStudents(): React.ReactElement {
     try {
       const result = await importMutation.mutateAsync(importFile);
       setImportResult(result);
-      toast.success(`Imported ${plural(result.imported, "student")}`);
+      toast.success(t("Imported {students}", { students: plural(result.imported, "student") }));
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Failed to import students"));
+      toast.error(getErrorMessage(err, t("Failed to import students")));
     }
   }
 
   if (isError) {
-    return <ErrorState title="Students didn't load">{error instanceof Error ? error.message : "Unknown error"}</ErrorState>;
+    return <ErrorState title={t("Students didn't load")}>{error instanceof Error ? error.message : t("Unknown error")}</ErrorState>;
   }
 
   return (
     <>
       <PageHeader
-        kicker={isLoading ? "Agency" : `Agency · ${plural(students?.length ?? 0, "student")}`}
-        title="Students"
+        kicker={isLoading ? t("Agency") : t("Agency · {students}", { students: plural(students?.length ?? 0, "student") })}
+        title={t("Students")}
         actions={
           <>
             <Button variant="outline" onClick={openImport}>
-              Import a spreadsheet
+              {t("Import a spreadsheet")}
             </Button>
             <Button variant="primary" onClick={openCreateDialog}>
-              Add a student
+              {t("Add a student")}
             </Button>
           </>
         }
       >
-        Everyone you're helping apply. Open a student's file to see their applications or start a new one for them.
+        {t("Everyone you're helping apply. Open a student's file to see their applications or start a new one for them.")}
       </PageHeader>
 
       {isLoading ? (
         <LoadingRows rows={5} />
       ) : !students || students.length === 0 ? (
         <EmptyState
-          title="Add your first student"
+          title={t("Add your first student")}
           action={
             <>
               <Button variant="outline" onClick={openImport}>
-                Import a spreadsheet
+                {t("Import a spreadsheet")}
               </Button>
               <Button variant="primary" onClick={openCreateDialog}>
-                Add a student
+                {t("Add a student")}
               </Button>
             </>
           }
         >
-          Add them one at a time, or upload a CSV with their names and emails.
+          {t("Add them one at a time, or upload a CSV with their names and emails.")}
         </EmptyState>
       ) : (
         <StudentRoster
@@ -190,36 +191,36 @@ export default function AgencyStudents(): React.ReactElement {
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5">
             <DialogHeader>
-              <DialogTitle>{editingStudent ? `Edit ${editingStudent.name}` : "Add a student"}</DialogTitle>
+              <DialogTitle>{editingStudent ? t("Edit {name}", { name: editingStudent.name }) : t("Add a student")}</DialogTitle>
               <DialogDescription>
-                Use the email they'll apply with. The profile is optional; it lets you match programs to them.
+                {t("Use the email they'll apply with. The profile is optional; it lets you match programs to them.")}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4">
-              <Field label="Name" htmlFor="s-name" required error={errors.name?.message}>
-                <Input id="s-name" {...register("name", { required: "Name is required" })} placeholder="Yasmine Haddad" />
+              <Field label={t("Name")} htmlFor="s-name" required error={errors.name?.message}>
+                <Input id="s-name" {...register("name", { required: t("Name is required") })} placeholder="Yasmine Haddad" />
               </Field>
-              <Field label="Email" htmlFor="s-email" required error={errors.email?.message}>
-                <Input id="s-email" type="email" {...register("email", { required: "Email is required" })} placeholder="yasmine@example.com" />
+              <Field label={t("Email")} htmlFor="s-email" required error={errors.email?.message}>
+                <Input id="s-email" type="email" {...register("email", { required: t("Email is required") })} placeholder="yasmine@example.com" />
               </Field>
-              <Field label="Phone" htmlFor="s-phone">
+              <Field label={t("Phone")} htmlFor="s-phone">
                 <Input id="s-phone" className="tnum" {...register("phone")} placeholder="+213 …" />
               </Field>
-              <Field label="Notes" htmlFor="s-notes">
-                <Textarea id="s-notes" {...register("notes")} placeholder="Interests, constraints, what they've told you…" rows={3} />
+              <Field label={t("Notes")} htmlFor="s-notes">
+                <Textarea id="s-notes" {...register("notes")} placeholder={t("Interests, constraints, what they've told you…")} rows={3} />
               </Field>
               <div className="border-t border-rule-soft pt-4">
-                <p className="mb-3 text-[15px] font-bold text-ink">Academic profile</p>
+                <p className="mb-3 text-[15px] font-bold text-ink">{t("Academic profile")}</p>
                 <StudentProfileFields idPrefix="s" value={profile} onChange={setProfile} />
               </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="animate-spin" />}
-                {editingStudent ? "Save" : "Add student"}
+                {editingStudent ? t("Save") : t("Add student")}
               </Button>
             </DialogFooter>
           </form>
@@ -230,16 +231,16 @@ export default function AgencyStudents(): React.ReactElement {
       <Dialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete {toDelete?.name}?</DialogTitle>
-            <DialogDescription>All of their applications are deleted with them. This can't be undone.</DialogDescription>
+            <DialogTitle>{t("Delete {name}?", { name: toDelete?.name ?? "" })}</DialogTitle>
+            <DialogDescription>{t("All of their applications are deleted with them. This can't be undone.")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setToDelete(null)}>
-              Keep
+              {t("Keep")}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
               {deleteMutation.isPending && <Loader2 className="animate-spin" />}
-              Delete student
+              {t("Delete student")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -249,11 +250,9 @@ export default function AgencyStudents(): React.ReactElement {
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Import from a spreadsheet</DialogTitle>
+            <DialogTitle>{t("Import from a spreadsheet")}</DialogTitle>
             <DialogDescription>
-              A CSV file with the columns <span className="text-ink tnum">name</span>,{" "}
-              <span className="text-ink tnum">email</span>, <span className="text-ink tnum">phone</span> and{" "}
-              <span className="text-ink tnum">notes</span>. Rows with an email you already have are skipped.
+              {t("A CSV file with the columns name, email, phone and notes. Rows with an email you already have are skipped.")}
             </DialogDescription>
           </DialogHeader>
 
@@ -261,11 +260,11 @@ export default function AgencyStudents(): React.ReactElement {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-paper-raised py-3">
-                  <p className="kicker">Imported</p>
+                  <p className="kicker">{t("Imported")}</p>
                   <p className="text-2xl text-moss tnum font-bold tracking-[-0.02em]">{importResult.imported}</p>
                 </div>
                 <div className="bg-paper-raised py-3 pl-4">
-                  <p className="kicker">Skipped</p>
+                  <p className="kicker">{t("Skipped")}</p>
                   <p className="text-2xl text-ochre tnum font-bold tracking-[-0.02em]">{importResult.skipped}</p>
                 </div>
               </div>
@@ -273,7 +272,7 @@ export default function AgencyStudents(): React.ReactElement {
                 <ul className="max-h-48 space-y-1 overflow-y-auto rounded-2xl bg-stamp-soft px-4 py-3 text-xs text-ink-2">
                   {importResult.errors.map((err, i) => (
                     <li key={i}>
-                      <span className="text-stamp tnum">Row {err.row}</span> — {err.message}
+                      <span className="text-stamp tnum">{t("Row {n}", { n: err.row })}</span> — {err.message}
                     </li>
                   ))}
                 </ul>
@@ -286,7 +285,7 @@ export default function AgencyStudents(): React.ReactElement {
                     setImportResult(null);
                   }}
                 >
-                  Done
+                  {t("Done")}
                 </Button>
               </DialogFooter>
             </>
@@ -313,7 +312,7 @@ export default function AgencyStudents(): React.ReactElement {
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
                   >
-                    Remove
+                    {t("Remove")}
                   </Button>
                 </div>
               ) : (
@@ -322,20 +321,20 @@ export default function AgencyStudents(): React.ReactElement {
                   onClick={() => fileInputRef.current?.click()}
                   className="rounded-2xl border-2 border-dashed border-rule px-4 py-8 text-center transition-colors hover:border-brand hover:bg-brand-soft"
                 >
-                  <p className="text-base font-semibold">Choose a .csv file</p>
-                  <p className="mt-1 text-xs text-ink-3">Exported from Excel, Sheets or Numbers</p>
+                  <p className="text-base font-semibold">{t("Choose a .csv file")}</p>
+                  <p className="mt-1 text-xs text-ink-3">{t("Exported from Excel, Sheets or Numbers")}</p>
                 </button>
               )}
               <a href={TEMPLATE_HREF} download="students_template.csv" className="link-ink w-fit text-[13px]">
-                Download a blank template
+                {t("Download a blank template")}
               </a>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setImportDialogOpen(false)}>
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button type="button" variant="primary" disabled={!importFile || importMutation.isPending} onClick={handleImport}>
                   {importMutation.isPending && <Loader2 className="animate-spin" />}
-                  Import
+                  {t("Import")}
                 </Button>
               </DialogFooter>
             </>

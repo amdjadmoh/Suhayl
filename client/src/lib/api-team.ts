@@ -91,6 +91,9 @@ export interface ActivityItem {
   actorId?: string
   actorName: string
   action: string
+  /** English template and values; rendered in the reader's language */
+  template?: string
+  vars?: Record<string, string>
   createdAt: string
 }
 
