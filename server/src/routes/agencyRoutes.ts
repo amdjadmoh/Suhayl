@@ -10,7 +10,7 @@ import {
 import { authenticate, authorize } from "../middleware/auth"
 import { validate } from "../middleware/validate"
 import { inviteMemberSchema } from "../validators/authValidator"
-import { inviteMember, listTeam, removeMember, renewInvite } from "../controllers/teamController"
+import { inviteMember, listTeam, removeMember, renewInvite, resetMemberPassword } from "../controllers/teamController"
 import { agencyActivity } from "../controllers/documentController"
 
 export const agencyRouter = Router()
@@ -33,4 +33,5 @@ agencyRouter.get("/team", listTeam)
 agencyRouter.get("/activity", agencyActivity)
 agencyRouter.post("/team", validate(inviteMemberSchema, "body"), inviteMember)
 agencyRouter.post("/team/:id/invite", renewInvite)
+agencyRouter.post("/team/:id/password-reset", resetMemberPassword)
 agencyRouter.delete("/team/:id", removeMember)

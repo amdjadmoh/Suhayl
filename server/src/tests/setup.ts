@@ -20,6 +20,10 @@ function clearMongooseModels(): void {
   }
 }
 
+// setupFiles run before every test file is loaded, so a file that imports a model
+// at the top starts from a clean registry even after a file that loaded the whole app.
+clearMongooseModels()
+
 let _mongoServer: MongoMemoryServer | null = null
 
 export async function startMemoryServer(): Promise<MongoMemoryServer> {
@@ -186,4 +190,23 @@ export async function createTestApp(): Promise<express.Application> {
   })
 
   return app
+}
+
+// ── The production app ────────────────────────────────────────────────────────
+// Security tests run against the real middleware stack (auth, rate limits, routes).
+export async function createRealApp(): Promise<express.Express> {
+  const { createApp } = await import("../app.js")
+  return createApp()
+}
+
+/** Registers an account through the API and returns its token and id. */
+export async function signUp(
+  app: express.Express,
+  role: "student" | "agency",
+  email: string,
+): Promise<{ token: string; id: string }> {
+  const { default: request } = await import("supertest")
+  const res = await request(app).post("/api/auth/register").send({ email, password: "Passw0rd-long", name: email.split("@")[0], role })
+  if (res.status !== 201) throw new Error(`sign-up failed: ${res.status} ${JSON.stringify(res.body)}`)
+  return { token: res.body.token as string, id: String(res.body.user._id) }
 }

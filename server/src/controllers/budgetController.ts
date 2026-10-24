@@ -3,6 +3,7 @@ import { Program } from "../models/Program"
 import { University } from "../models/University"
 import { Country } from "../models/Country"
 import { City } from "../models/City"
+import { findVisibleProgram, findVisibleUniversity } from "../services/visibility"
 
 const DEGREE_DURATION: Record<string, number> = {
   Bachelor: 4,
@@ -37,13 +38,13 @@ export async function calculateBudget(req: Request, res: Response): Promise<void
     return
   }
 
-  const program = await Program.findById(programId)
+  const program = await findVisibleProgram(req.user, programId)
   if (!program) {
     res.status(404).json({ message: "Program not found" })
     return
   }
 
-  const university = await University.findById(program.universityId)
+  const university = await findVisibleUniversity(req.user, program.universityId)
   if (!university) {
     res.status(404).json({ message: "University not found" })
     return

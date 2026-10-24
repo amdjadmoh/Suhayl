@@ -6,10 +6,26 @@ import { Student } from "../models/Student"
 import { Notification } from "../models/Notification"
 import { buildApplicationCalendar } from "../services/calendar"
 import { logActivity } from "../services/activity"
+import { canViewProgram, findVisibleProgram } from "../services/visibility"
+import { containsText, paging } from "../services/query"
 
 const POPULATE_PROGRAM = {
   path: "programId",
   populate: { path: "universityId", select: "name country city ranking" },
+}
+
+/**
+ * An application can point at a program the caller may no longer see (made before
+ * visibility was checked, or since made private). Then only its name goes out: none
+ * of another account's private requirements, fees or notes.
+ */
+function withVisibleProgram(application: InstanceType<typeof Application>, viewer: Request["user"]): Record<string, unknown> {
+  const json = application.toJSON() as unknown as Record<string, unknown>
+  const program = json["programId"] as { _id?: unknown; name?: string; isOfficial?: boolean; createdBy?: unknown } | null
+  if (program && typeof program === "object" && "_id" in program && !canViewProgram(viewer, program)) {
+    json["programId"] = { _id: program._id, name: program.name, hidden: true }
+  }
+  return json
 }
 
 function buildApplicationFilter(user?: Request["user"]): Record<string, unknown> {
@@ -33,15 +49,15 @@ export async function getAll(req: Request, res: Response): Promise<void> {
     filter["applicationStatus"] = query["status"]
   }
 
-  if (query["search"] != null && query["search"].length > 0) {
-    filter["studentName"] = { $regex: query["search"], $options: "i" }
-  }
+  const search = containsText(query["search"])
+  if (search) filter["studentName"] = search
 
+  const { limit, skip } = paging(req.query as Record<string, unknown>, { limit: 1000, max: 1000 })
   const [applications, total] = await Promise.all([
-    Application.find(filter).populate(POPULATE_PROGRAM).sort({ createdAt: -1 }),
+    Application.find(filter).populate(POPULATE_PROGRAM).sort({ createdAt: -1 }).skip(skip).limit(limit),
     Application.countDocuments(filter),
   ])
-  res.json({ applications, total })
+  res.json({ applications: applications.map((a) => withVisibleProgram(a, req.user)), total })
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {
@@ -69,7 +85,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
     }
   }
 
-  res.json(application)
+  res.json(withVisibleProgram(application, req.user))
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
@@ -82,8 +98,8 @@ export async function create(req: Request, res: Response): Promise<void> {
   }
   const { programId, studentName, studentEmail, studentId } = body
 
-  // Verify program exists
-  const program = await Program.findById(programId)
+  // The program must exist and be one the caller may see: someone else's private program is "not found"
+  const program = await findVisibleProgram(req.user, programId)
   if (!program) {
     res.status(404).json({ message: "Program not found" })
     return
@@ -183,6 +199,13 @@ export async function update(req: Request, res: Response): Promise<void> {
       res.status(403).json({ message: "Forbidden" })
       return
     }
+  }
+
+  // Moving an application to another program needs that program to be visible too
+  const newProgramId = req.body["programId"] as string | undefined
+  if (newProgramId !== undefined && newProgramId !== String(existing.programId) && !(await findVisibleProgram(req.user, newProgramId))) {
+    res.status(404).json({ message: "Program not found" })
+    return
   }
 
   const newStatus = req.body["applicationStatus"] as string | undefined

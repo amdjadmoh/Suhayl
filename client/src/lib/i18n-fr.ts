@@ -500,6 +500,8 @@ export const FR: Record<string, string> = {
   "Their email": "Son e-mail",
   "Their name": "Son nom",
   "These requirements were compiled with AI. Confirm tuition, deadlines and documents with the university before you rely on them.": "Ces exigences ont été compilées par IA. Confirmez les frais, les échéances et les documents auprès de l'université avant de vous y fier.",
+  "They open it and choose a new password. It works once, for 24 hours, and signs them out everywhere else.": "Ils l'ouvrent et choisissent un nouveau mot de passe. Le lien sert une fois, pendant 24 heures, et les déconnecte partout ailleurs.",
+  "They open it, choose a password and they're in. It works once, for 7 days; make a new one any time from this page.": "Ils l'ouvrent, choisissent un mot de passe et c'est fait. Le lien sert une fois, pendant 7 jours ; vous pouvez en créer un nouveau ici à tout moment.",
   "They open it, choose a password and they're in. It works once; make a new one any time from this page.": "Il l'ouvre, choisit un mot de passe, et c'est fait. Le lien ne sert qu'une fois ; vous pouvez en créer un nouveau ici.",
   "They'll sign in with this.": "Il se connectera avec cette adresse.",
   "This is the address you sign in with.": "C'est l'adresse de connexion.",

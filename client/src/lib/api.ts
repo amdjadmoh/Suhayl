@@ -1013,7 +1013,9 @@ export function useChangePassword(): UseMutationResult<void, Error, { currentPas
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (data) => {
-      await api.put("/auth/password", data)
+      // Changing the password ends every other session; this one continues on the new token
+      const { token } = (await api.put("/auth/password", data)).data as { token?: string }
+      if (token) localStorage.setItem("token", token)
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
   })

@@ -1,50 +1,22 @@
 import dotenv from "dotenv"
 dotenv.config()
-
-import express, { type Request, type Response, type NextFunction } from "express"
-import helmet from "helmet"
-import cors from "cors"
-import rateLimit, { ipKeyGenerator } from "express-rate-limit"
-import jwt from "jsonwebtoken"
-import { ZodError } from "zod"
 import path from "path"
 import fs from "fs"
 import mongoose from "mongoose"
-import { universityRouter } from "./routes/universityRoutes"
-import { statsRouter } from "./routes/statsRoutes"
-import { countryRouter } from "./routes/countryRoutes"
-import { cityRouter } from "./routes/cityRoutes"
-import { seedIfEmpty } from "./seed"
-import { authRouter } from "./routes/authRoutes"
-import { agencyRouter } from "./routes/agencyRoutes"
-import { studentRouter } from "./routes/studentRoutes"
-import { adminRouter } from "./routes/adminRoutes"
-import { applicationRouter } from "./routes/applicationRoutes"
-import { programRouter } from "./routes/programRoutes"
-import favoriteRoutes from "./routes/favoriteRoutes"
-import notificationRoutes from "./routes/notificationRoutes"
-import { budgetRouter } from "./routes/budgetRoutes"
-import { savedSearchRouter } from "./routes/savedSearchRoutes"
-import { recommendationRouter } from "./routes/recommendationRoutes"
-import { reviewRouter } from "./routes/reviewRoutes"
-import { documentRouter } from "./routes/documentRoutes"
-import { portalRouter } from "./routes/portalRoutes"
+import { bootstrapAdmin, seedIfEmpty } from "./seed"
 import { Application } from "./models/Application"
 import { Notification } from "./models/Notification"
 import { sendEmail, isEmailEnabled } from "./services/email"
 import { renderDeadlineReminder } from "./templates/email/render"
 import { initSentry } from "./services/sentry"
-import { checkConfig, isProduction } from "./config"
-import { rateLimitStore } from "./services/rateLimitStore"
+import { checkConfig, describeMongoUri, isProduction } from "./config"
+import { createApp } from "./app"
 
 // In-memory email dedup — tracks (userId, applicationId) combos that have
 // received a deadline email. Resets on server restart (acceptable for MVP).
 const emailedDeadlines = new Set<string>()
 
-const app = express()
-// Behind a host's proxy (Render, Railway, Fly, nginx) the client's real IP is in
-// X-Forwarded-For; rate limits need it, so trust the first proxy in production.
-if (isProduction || process.env["TRUST_PROXY"]) app.set("trust proxy", 1)
+const app = createApp()
 const PORT = process.env["PORT"] ?? "5000"
 const MONGODB_URI =
   process.env["MONGODB_URI"] ?? "mongodb://localhost:27017/wannaout"
@@ -55,135 +27,6 @@ const MONGODB_URI =
 //   Dev  (ts-node-dev): __dirname = <repo>/server/src  -> ../.. -> <repo>
 //   Prod (tsc):         __dirname = <repo>/server/dist -> ../.. -> <repo>
 const DATA_DIR = path.resolve(__dirname, "..", "..", "data", "db")
-
-// ── CORS ───────────────────────────────────────────────────────────────────
-// The env var is a comma-separated list of allowed origins (e.g. web app +
-// chrome-extension://<id> for the unpacked dev extension).
-//   Dev:   .env.example includes chrome-extension://cgahnajflkjbbbpnmennbfpojdpahfdg
-//   Prod:  Replace the dev extension ID with the Chrome Web Store ID.
-const corsOrigins = process.env["CORS_ORIGINS"]
-  ? process.env["CORS_ORIGINS"].split(",").map((s) => s.trim())
-  : ["http://localhost:5173"]
-
-// A missing CORS_ORIGINS in production is reported by checkConfig() with the other settings
-
-// ── Security headers (before CORS so helmet sets headers first) ─────────
-app.use(
-  helmet({
-    crossOriginOpenerPolicy: { policy: "unsafe-none" },
-    contentSecurityPolicy: {
-      directives: {
-        "default-src": ["'self'"],
-        "script-src": ["'self'", "https://accounts.google.com"],
-        "frame-src": ["'self'", "https://accounts.google.com"],
-        "connect-src": ["'self'", "https://accounts.google.com", "https://*.sentry.io", "https://*.ingest.sentry.io"],
-        "img-src": ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://accounts.google.com"],
-        "style-src": ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://fonts.googleapis.com"],
-        "font-src": ["'self'", "https://fonts.gstatic.com"],
-      },
-    },
-  })
-)
-app.use(cors({ origin: corsOrigins }))
-app.use(express.json())
-
-// ── Rate limiting ─────────────────────────────────────────────────────────
-// Signed-in people are counted one by one, so a whole agency office behind one
-// connection doesn't share a single allowance; anonymous traffic is counted by IP.
-function signedInUserId(req: Request): string | null {
-  const header = req.headers["authorization"]
-  if (!header?.startsWith("Bearer ")) return null
-  try {
-    return (jwt.verify(header.slice(7), process.env["JWT_SECRET"]!) as { _id: string })._id
-  } catch {
-    return null
-  }
-}
-
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: (req: Request) => (signedInUserId(req) ? 1500 : 300),
-  ...rateLimitStore("global"),
-  keyGenerator: (req: Request) => {
-    const userId = signedInUserId(req)
-    return userId ? `user:${userId}` : ipKeyGenerator(req.ip ?? "")
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Too many requests, please try again later." },
-})
-app.use("/api/", globalLimiter)
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  ...rateLimitStore("auth"),
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  message: { message: "Too many requests, please try again later." },
-})
-app.use("/api/auth/login", authLimiter)
-app.use("/api/auth/register", authLimiter)
-
-// For uptime monitors and the host's health check
-app.get("/api/health", (_req: Request, res: Response) => {
-  const dbUp = mongoose.connection.readyState === 1
-  res.status(dbUp ? 200 : 503).json({ ok: dbUp, db: dbUp ? "up" : "down", uptime: Math.round(process.uptime()) })
-})
-
-app.use("/api/universities", universityRouter)
-app.use("/api/stats", statsRouter)
-app.use("/api/countries", countryRouter)
-app.use("/api/cities", cityRouter)
-app.use("/api/auth", authRouter)
-app.use("/api/agency", agencyRouter)
-app.use("/api/students", studentRouter)
-app.use("/api/admin", adminRouter)
-app.use("/api/applications", applicationRouter)
-app.use("/api/programs", programRouter)
-app.use("/api/favorites", favoriteRoutes)
-app.use("/api/notifications", notificationRoutes)
-app.use("/api/budget", budgetRouter)
-app.use("/api/saved-searches", savedSearchRouter)
-app.use("/api/recommendations", recommendationRouter)
-app.use("/api/reviews", reviewRouter)
-app.use("/api/documents", documentRouter)
-app.use("/api/portal", portalRouter)
-
-if (process.env["NODE_ENV"] === "production") {
-  const clientDist = path.join(__dirname, "../../client/dist")
-  app.use(express.static(clientDist))
-  app.get("/{*splat}", (_req: Request, res: Response) => {
-    res.sendFile(path.join(clientDist, "index.html"))
-  })
-}
-
-app.use(
-  (err: Error, _req: Request, res: Response, _next: NextFunction): void => {
-    if (err instanceof ZodError) {
-      res.status(400).json({
-        message: "Validation failed",
-        errors: err.issues.map((i) => ({
-          path: i.path,
-          message: i.message,
-        })),
-      })
-      return
-    }
-    // A malformed id in the URL is a missing record, not a server fault
-    if (err.name === "CastError") {
-      res.status(404).json({ message: "Not found" })
-      return
-    }
-    if ((err as { code?: number }).code === 11000) {
-      res.status(409).json({ message: "That already exists" })
-      return
-    }
-    console.error("Unhandled error:", err.message)
-    res.status(500).json({ message: "Internal server error" })
-  }
-)
 
 async function start(): Promise<void> {
   // ── Sentry initialization ──────────────────────────────────────────────
@@ -196,7 +39,7 @@ async function start(): Promise<void> {
 
   try {
     await mongoose.connect(MONGODB_URI)
-    console.log("Connected to MongoDB at", MONGODB_URI)
+    console.log("Connected to MongoDB at", describeMongoUri(MONGODB_URI))
   } catch (err: unknown) {
     // Production never falls back to a local copy: losing real data silently is worse than not starting
     if (isProduction) throw err
@@ -216,6 +59,7 @@ async function start(): Promise<void> {
   }
 
   await seedIfEmpty()
+  await bootstrapAdmin()
 
   const server = app.listen(parseInt(PORT, 10), () => {
     console.log(`Server running on http://localhost:${PORT}`)

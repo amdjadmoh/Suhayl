@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { authenticate } from "../middleware/auth"
+import { authenticate, optionalAuth } from "../middleware/auth"
 import { validate } from "../middleware/validate"
 import {
   upsertReviewSchema,
@@ -15,6 +15,7 @@ export const reviewRouter = Router()
 
 reviewRouter.get(
   "/",
+  optionalAuth,
   validate(listReviewsQuerySchema, "query"),
   listReviews
 )

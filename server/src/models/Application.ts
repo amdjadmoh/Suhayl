@@ -102,6 +102,8 @@ applicationSchema.index({ applicationDeadline: 1 })
 applicationSchema.index({ applicationStatus: 1 })
 applicationSchema.index({ agencyId: 1 })
 applicationSchema.index({ createdBy: 1 })
+applicationSchema.index({ agencyId: 1, createdAt: -1 })
+applicationSchema.index({ createdBy: 1, createdAt: -1 })
 
 export const Application = model<IApplicationDocument>(
   "Application",

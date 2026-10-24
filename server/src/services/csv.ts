@@ -31,6 +31,15 @@ interface CsvRow {
 }
 
 /**
+ * Spreadsheet apps run a cell that starts with = + - @ (or a tab or carriage return)
+ * as a formula, so text a student or agency typed could execute on whoever opens the
+ * export. Such cells get a leading single quote, which shows the text as typed.
+ */
+export function neutralizeFormula(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
+}
+
+/**
  * applicationsToCsv — converts an array of populated application objects
  * (returned by Application.find().populate(POPULATE_PROGRAM)) into a CSV string.
  *
@@ -75,5 +84,8 @@ export function applicationsToCsv(applications: unknown[]): string {
     }
   })
 
-  return papaparse.unparse(rows, { header: true })
+  const safe = rows.map((row) =>
+    Object.fromEntries(Object.entries(row).map(([key, value]) => [key, neutralizeFormula(String(value))])),
+  )
+  return papaparse.unparse(safe, { header: true })
 }

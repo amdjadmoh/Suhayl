@@ -2,6 +2,9 @@ import type { Request, Response } from "express"
 import { Program } from "../models/Program"
 import { University } from "../models/University"
 import { Application } from "../models/Application"
+import { canViewProgram, canViewUniversity, visibleFilter } from "../services/visibility"
+import { findVisibleUniversity } from "../services/visibility"
+import { containsText, paging, searchText } from "../services/query"
 
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter: Record<string, unknown> = {}
@@ -14,16 +17,17 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   if (typeof degreeLevel === "string") filter["degreeLevel"] = degreeLevel
 
   // Search via $text index for fast ranked results
-  const search = query["search"]
-  const hasTextSearch = typeof search === "string" && search.length > 0
+  const search = searchText(query["search"])
+  const hasTextSearch = search !== null
   if (hasTextSearch) {
     filter["$text"] = { $search: search }
   }
 
   // Field filter — $regex fallback for name
-  const field = query["field"]
-  if (typeof field === "string" && field.length > 0) {
-    const nameConditions: Record<string, unknown>[] = [{ name: { $regex: field, $options: "i" } }]
+  // User text is matched literally, never run as a pattern
+  const field = containsText(query["field"])
+  if (field) {
+    const nameConditions: Record<string, unknown>[] = [{ name: field }]
     if (hasTextSearch) {
       // Combine with $text via $and
       if (!filter["$and"]) {
@@ -37,9 +41,9 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   }
 
   // Country filter – resolve country name to universities whose country matches
-  const country = query["country"]
-  if (typeof country === "string" && country.length > 0) {
-    const matchingUnis = await University.find({ country: { $regex: country, $options: "i" } }).select("_id")
+  const country = containsText(query["country"])
+  if (country) {
+    const matchingUnis = await University.find({ $and: [{ country }, visibleFilter(req.user)] }).select("_id")
     const uniIds = matchingUnis.map((u) => u._id)
     if (uniIds.length > 0) {
       filter["universityId"] = { $in: uniIds }
@@ -91,9 +95,9 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   }
 
   // City filter
-  const city = query["city"]
-  if (typeof city === "string" && city.length > 0) {
-    const matchingUnis = await University.find({ city: { $regex: city, $options: "i" } }).select("_id")
+  const city = containsText(query["city"])
+  if (city) {
+    const matchingUnis = await University.find({ $and: [{ city }, visibleFilter(req.user)] }).select("_id")
     const uniIds = matchingUnis.map((u) => u._id)
     if (uniIds.length > 0) {
       if (Array.isArray(filter["universityId"])) {
@@ -121,17 +125,12 @@ export async function getAll(req: Request, res: Response): Promise<void> {
   if (customOnly === "true" && req.user) {
     filter["isOfficial"] = false
     if (req.user.role !== "admin") filter["createdBy"] = req.user._id
-  } else if (req.user?.role !== "admin") {
-    const visFilter: Record<string, unknown>[] = [{ isOfficial: true }]
-    if (req.user) visFilter.push({ createdBy: req.user._id })
-    if (filter["$or"]) {
-      filter["$and"] = [{ $or: visFilter }, { $or: filter["$or"] }]
-      delete filter["$or"]
-    } else {
-      filter["$or"] = visFilter
-    }
+  } else {
+    // Official programs, the caller's (or their agency's) own, or everything for an admin
+    filter["$and"] = [...((filter["$and"] as Record<string, unknown>[] | undefined) ?? []), visibleFilter(req.user)]
   }
 
+  const { limit, skip } = paging(query, { limit: 500, max: 500 })
   const programs = await Program.find(
     filter,
     hasTextSearch ? ({ score: { $meta: "textScore" } } as Record<string, unknown>) : undefined
@@ -142,6 +141,8 @@ export async function getAll(req: Request, res: Response): Promise<void> {
         ? ({ score: { $meta: "textScore" } } as unknown as Record<string, 1 | -1>)
         : ({ name: 1 } as Record<string, 1 | -1>)
     )
+    .skip(skip)
+    .limit(limit)
 
   const total = await Program.countDocuments(filter)
 
@@ -162,25 +163,29 @@ export async function getMatches(req: Request, res: Response): Promise<void> {
   if (prefBudget > 0) {
     filter["tuitionFee"] = { $lte: prefBudget }
   }
+  const requirements: Record<string, unknown>[] = []
   if (prefGpa > 0) {
-    filter["$or"] = [
+    requirements.push({ $or: [
       { testRequirements: { $elemMatch: { name: { $regex: /^gpa$/i }, minimumScore: { $lte: prefGpa } } } },
       { testRequirements: { $exists: false } },
       { testRequirements: { $size: 0 } },
-    ]
+    ] })
   }
   if (prefIelts > 0) {
-    filter["$or"] = [
+    requirements.push({ $or: [
       { testRequirements: { $elemMatch: { name: { $regex: /^ielts$/i }, minimumScore: { $lte: prefIelts } } } },
       { testRequirements: { $exists: false } },
       { testRequirements: { $size: 0 } },
-    ]
+    ] })
   }
+  if (requirements.length) filter["$and"] = requirements
 
   // If countries specified, resolve to university IDs
   if (typeof prefsCountries === "string" && prefsCountries.length > 0) {
-    const countryList = prefsCountries.split(",").map((s: string) => s.trim())
-    const matchingUnis = await University.find({ country: { $in: countryList.map((c: string) => new RegExp(c, "i")) } }).select("_id")
+    // At most ten countries, each matched literally
+    const countryList = prefsCountries.split(",").map((s: string) => s.trim()).filter(Boolean).slice(0, 10)
+    const patterns = countryList.map((c: string) => containsText(c)).filter((r): r is RegExp => r !== null)
+    const matchingUnis = await University.find({ $and: [{ country: { $in: patterns } }, visibleFilter(req.user)] }).select("_id")
     const uniIds = matchingUnis.map((u: any) => u._id)
     if (uniIds.length > 0) {
       filter["universityId"] = { $in: uniIds }
@@ -190,17 +195,9 @@ export async function getMatches(req: Request, res: Response): Promise<void> {
     }
   }
 
-  // Visibility: show official OR created by current user OR admin sees all
-  if (req.user?.role !== "admin") {
-    const visFilter: Record<string, unknown>[] = [{ isOfficial: true }]
-    if (req.user) visFilter.push({ createdBy: req.user._id })
-    if (filter["$or"]) {
-      filter["$and"] = [{ $or: visFilter }, { $or: filter["$or"] }]
-      delete filter["$or"]
-    } else {
-      filter["$or"] = visFilter
-    }
-  }
+  // Visibility: official programs, the caller's own, or everything for an admin (whose filter stays empty)
+  const visible = visibleFilter(req.user)
+  if (Object.keys(visible).length) filter["$and"] = [...((filter["$and"] as Record<string, unknown>[] | undefined) ?? []), visible]
 
   if (Object.keys(filter).length === 0) {
     res.status(400).json({ message: "Provide at least one preference: budget, gpa, ielts, or countries" })
@@ -294,9 +291,9 @@ export async function getById(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: "Program not found" })
     return
   }
-  // Non-admin users can only see official or their own
-  if (req.user?.role !== "admin" && !program.isOfficial && program.createdBy?.toString() !== req.user?._id) {
-    res.status(403).json({ message: "Forbidden" })
+  // Non-admin users can only see official or their own; anything else is simply not found
+  if (!canViewProgram(req.user, program)) {
+    res.status(404).json({ message: "Program not found" })
     return
   }
   res.json(program)
@@ -308,7 +305,12 @@ export async function getByUniversity(req: Request, res: Response): Promise<void
     res.status(400).json({ message: "Missing universityId" })
     return
   }
-  const programs = await Program.find({ universityId: uniId })
+  // A private university, and other people's private programs, don't exist for this caller
+  if (!(await findVisibleUniversity(req.user, uniId))) {
+    res.status(404).json({ message: "University not found" })
+    return
+  }
+  const programs = await Program.find({ $and: [{ universityId: uniId }, visibleFilter(req.user)] })
     .populate("universityId", "name country city ranking")
     .sort({ name: 1 })
   res.json(programs)

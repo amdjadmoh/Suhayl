@@ -7,7 +7,7 @@ import { City } from "./models/City"
 import { User } from "./models/User"
 import { Student } from "./models/Student"
 import bcrypt from "bcryptjs"
-import { isProduction } from "./config"
+import { describeMongoUri, isProduction } from "./config"
 
 const countries = [
   {
@@ -1217,30 +1217,54 @@ export async function seedIfEmpty(): Promise<number> {
   await City.insertMany(cities)
   console.log(`Seeded ${cities.length} cities`)
 
-  // First admin account. In production it is created only from ADMIN_EMAIL and a
-  // strong ADMIN_PASSWORD, never with a default password.
-  const adminEmail = (process.env["ADMIN_EMAIL"] ?? "admin@admin.com").toLowerCase()
-  const adminPassword = process.env["ADMIN_PASSWORD"] ?? (isProduction ? "" : "admin123")
-  if (isProduction && adminPassword.length < 12) {
-    console.warn("WARNING: no admin account created. Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) to create one on first start.")
-  } else if (!(await User.findOne({ email: adminEmail }))) {
-    const hashedPassword = await bcrypt.hash(adminPassword, 10)
-    await User.create({ email: adminEmail, passwordHash: hashedPassword, name: "Admin", role: "admin" } as any)
-    console.log(`Created admin account: ${adminEmail}`)
-  }
-
   return countries.length
+}
+
+/** Why an admin bootstrap password is too weak, or null when it is acceptable. */
+export function adminPasswordProblem(password: string): string | null {
+  if (password.length < 12) return "ADMIN_PASSWORD must be at least 12 characters"
+  const classes = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((r) => r.test(password)).length
+  if (classes < 3) return "ADMIN_PASSWORD must mix at least three of: lowercase, uppercase, digits, symbols"
+  if (/^(admin|password|changeme|qwerty|123456)/i.test(password)) return "ADMIN_PASSWORD is too easy to guess"
+  return null
+}
+
+/**
+ * Creates the first admin from ADMIN_EMAIL and ADMIN_PASSWORD. There is no default
+ * account and no default password: without both settings nothing is created. Outside
+ * development and tests it also needs ALLOW_BOOTSTRAP_ADMIN=true, so a leftover
+ * password in a production environment can't quietly mint an admin.
+ */
+export async function bootstrapAdmin(): Promise<"created" | "exists" | "skipped"> {
+  const email = process.env["ADMIN_EMAIL"]?.trim().toLowerCase()
+  const password = process.env["ADMIN_PASSWORD"] ?? ""
+  if (!email || !password) return "skipped"
+  const env = process.env["NODE_ENV"] ?? "development"
+  if (!["development", "test"].includes(env) && process.env["ALLOW_BOOTSTRAP_ADMIN"] !== "true") {
+    console.warn("WARNING: ADMIN_EMAIL/ADMIN_PASSWORD are set but ALLOW_BOOTSTRAP_ADMIN is not true, so no admin was created.")
+    return "skipped"
+  }
+  const problem = adminPasswordProblem(password)
+  if (problem) {
+    console.warn(`WARNING: no admin created. ${problem}.`)
+    return "skipped"
+  }
+  if (await User.exists({ email })) return "exists"
+  await User.create({ email, passwordHash: await bcrypt.hash(password, 12), name: "Admin", role: "admin" } as any)
+  console.log(`Created admin account: ${email}`)
+  return "created"
 }
 
 // Standalone runner
 async function run(): Promise<void> {
+  if (isProduction) throw new Error("The demo seed deletes every record; it doesn't run with NODE_ENV=production")
   const mongoose = await import("mongoose")
   const { MongoMemoryServer } = await import("mongodb-memory-server")
 
   const MONGODB_URI = process.env["MONGODB_URI"] ?? "mongodb://localhost:27017/wannaout"
   try {
     await mongoose.connect(MONGODB_URI)
-    console.log(`Connected to ${MONGODB_URI}`)
+    console.log(`Connected to ${describeMongoUri(MONGODB_URI)}`)
   } catch {
     console.log("Local MongoDB not available, starting in-memory server...")
     const memServer = await MongoMemoryServer.create()

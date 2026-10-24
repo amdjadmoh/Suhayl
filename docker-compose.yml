@@ -14,7 +14,10 @@ services:
     ports:
       - "5000:5000"
     env_file: .env
+    # Secrets come from .env (never committed). NODE_ENV is pinned here so a stray
+    # value in .env can't switch off the production checks.
     environment:
+      NODE_ENV: production
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/suhayl}
     volumes:
       # Family uploads, when STORAGE_DRIVER=local

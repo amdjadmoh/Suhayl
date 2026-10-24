@@ -12,6 +12,7 @@
     "install:all": "npm install",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "check:extension": "node scripts/check-extension-release.mjs",
     "docker:build": "docker build -t wannaout .",
     "docker:run": "docker run -p 5000:5000 --env-file .env wannaout"
   },

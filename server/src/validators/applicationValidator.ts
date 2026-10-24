@@ -76,6 +76,8 @@ export const updateApplicationSchema = z
   .strict()
 
 export const listApplicationsQuerySchema = z.object({
-  status: z.string().optional(),
-  search: z.string().optional(),
+  status: z.string().max(40).optional(),
+  search: z.string().max(100).optional(),
+  limit: z.coerce.number().int().optional(),
+  page: z.coerce.number().int().optional(),
 })

@@ -48,7 +48,8 @@ export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 /** Accepts one file of up to 10 MB in memory; the handler decides whether to keep it. */
 export const documentUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },
+  // One file and nothing else of note: every part of the body is bounded
+  limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 5, parts: 6, fieldNameSize: 100, fieldSize: 1024, headerPairs: 50 },
 })
 
 /** True when the declared type is allowed and the bytes actually start like that type. */

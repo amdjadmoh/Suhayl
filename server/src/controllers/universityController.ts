@@ -1,6 +1,8 @@
 import type { Request, Response } from "express"
 import { University } from "../models/University"
 import { Program } from "../models/Program"
+import { canViewUniversity, visibleFilter } from "../services/visibility"
+import { paging, searchText } from "../services/query"
 
 function buildFilter(query: Request["query"]): Record<string, unknown> {
   const filter: Record<string, unknown> = {}
@@ -20,20 +22,18 @@ function buildFilter(query: Request["query"]): Record<string, unknown> {
 
 export async function getAll(req: Request, res: Response): Promise<void> {
   const filter = buildFilter(req.query)
+  const { limit, skip } = paging(req.query as Record<string, unknown>, { limit: 500, max: 500 })
 
-  const search = req.query["search"]
-  const hasTextSearch = typeof search === "string" && search.length > 0
+  const hasTextSearch = searchText(req.query["search"]) !== null
 
   // Visibility: show official OR created by current user OR admin sees all
   const customOnly = req.query["customOnly"]
   if (customOnly === "true" && req.user) {
     filter["isOfficial"] = false
     if (req.user.role !== "admin") filter["createdBy"] = req.user._id
-  } else if (req.user?.role !== "admin") {
-    filter["$or"] = [
-      { isOfficial: true },
-      ...(req.user ? [{ createdBy: req.user._id }] : []),
-    ]
+  } else {
+    // Official universities, the caller's (or their agency's) own, or everything for an admin
+    Object.assign(filter, { $and: [visibleFilter(req.user)] })
   }
 
   const universities = await University.find(
@@ -44,6 +44,8 @@ export async function getAll(req: Request, res: Response): Promise<void> {
       ? ({ score: { $meta: "textScore" } } as unknown as Record<string, 1 | -1>)
       : ({ name: 1 } as Record<string, 1 | -1>)
   )
+    .skip(skip)
+    .limit(limit)
 
   const total = await University.countDocuments(filter)
 
@@ -57,8 +59,8 @@ export async function getById(req: Request, res: Response): Promise<void> {
     return
   }
   // Non-admin users can only see official or their own
-  if (req.user?.role !== "admin" && !university.isOfficial && university.createdBy?.toString() !== req.user?._id) {
-    res.status(403).json({ message: "Forbidden" })
+  if (!canViewUniversity(req.user, university)) {
+    res.status(404).json({ message: "University not found" })
     return
   }
   res.json(university)

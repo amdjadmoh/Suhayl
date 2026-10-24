@@ -23,7 +23,7 @@ async function findOwnStudent(req: Request, res: Response) {
 export async function listForStudent(req: Request, res: Response): Promise<void> {
   const student = await findOwnStudent(req, res)
   if (!student) return
-  const documents = await DocumentRequest.find({ studentId: student._id }).sort({ createdAt: 1 })
+  const documents = await DocumentRequest.find({ studentId: student._id }).sort({ createdAt: 1 }).limit(500)
   res.json(documents)
 }
 
@@ -49,7 +49,7 @@ export async function listForAgency(req: Request, res: Response): Promise<void> 
   const filter: Record<string, unknown> = { agencyId: agencyOf(req) }
   const status = req.query["status"]
   if (typeof status === "string" && status) filter["status"] = status
-  const documents = await DocumentRequest.find(filter).sort({ updatedAt: -1 }).populate("studentId", "name email")
+  const documents = await DocumentRequest.find(filter).sort({ updatedAt: -1 }).limit(1000).populate("studentId", "name email")
   res.json(documents)
 }
 

@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express"
-import jwt from "jsonwebtoken"
 import { User } from "../models/User"
+import { verifySession } from "../services/tokens"
 
 declare global {
   namespace Express {
@@ -17,55 +17,60 @@ declare global {
   }
 }
 
-const JWT_SECRET: string = process.env["JWT_SECRET"]!
-
-export interface JwtPayload {
-  _id: string
-  role: string
-}
+type SessionUser = NonNullable<Request["user"]>
+const resolved = new WeakMap<Request, Promise<SessionUser | null>>()
 
 /**
- * authenticate — requires a valid Bearer token.
- * Attaches decoded payload to req.user on success.
- * Returns 401 if token is missing or invalid.
+ * The signed-in user for this request, read from the database: the account must
+ * still exist, still have the role in the token, and the token's version must match
+ * (a password change, reset, role change or removal bumps it). Resolved once per
+ * request, so the rate limiter and authenticate share one lookup.
  */
-export async function authenticate(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export function sessionUser(req: Request): Promise<SessionUser | null> {
+  let found = resolved.get(req)
+  if (!found) {
+    found = lookup(req)
+    resolved.set(req, found)
+  }
+  return found
+}
+
+async function lookup(req: Request): Promise<SessionUser | null> {
   const header = req.headers["authorization"]
-  if (!header || !header.startsWith("Bearer ")) {
+  if (!header?.startsWith("Bearer ")) return null
+  const claims = verifySession(header.slice(7))
+  if (!claims) return null
+  const user = await User.findById(claims._id).select("role tokenVersion agencyOwnerId").lean().catch(() => null)
+  if (!user || user.role !== claims.role || (user.tokenVersion ?? 0) !== claims.v) return null
+  return {
+    _id: String(user._id),
+    role: user.role,
+    ...(user.role === "agency" ? { agencyId: String(user.agencyOwnerId ?? user._id), isAgencyOwner: !user.agencyOwnerId } : {}),
+  }
+}
+
+/** authenticate — requires a valid, current session; req.user comes from the database, not the token. */
+export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const header = req.headers["authorization"]
+  if (!header?.startsWith("Bearer ")) {
     res.status(401).json({ message: "Missing or malformed authorization header" })
     return
   }
-
-  const token = header.slice(7)
-  let decoded: JwtPayload
-  try {
-    decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
-  } catch {
+  const user = await sessionUser(req)
+  if (!user) {
     res.status(401).json({ message: "Invalid or expired token" })
     return
   }
-  req.user = { _id: decoded._id, role: decoded.role }
-  if (decoded.role === "agency" && !(await attachAgency(req))) {
-    res.status(401).json({ message: "This account no longer has access" })
-    return
-  }
+  req.user = user
   next()
 }
 
-/**
- * Agency users act for one agency: their own if they own it, the owner's if they're a
- * counsellor. Looked up per request so a removed counsellor loses access straight away.
- */
-async function attachAgency(req: Request): Promise<boolean> {
-  const user = await User.findById(req.user!._id).select("agencyOwnerId")
-  if (!user) return false
-  req.user!.agencyId = String(user.agencyOwnerId ?? user._id)
-  req.user!.isAgencyOwner = !user.agencyOwnerId
-  return true
+/** optionalAuth — sets req.user for a valid, current session; anything else continues anonymously. */
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  const user = await sessionUser(req)
+  if (user) req.user = user
+  else delete req.user
+  next()
 }
 
 /** The agency whose data an agency user may see; for anyone else, their own id. */
@@ -91,31 +96,8 @@ export function authorize(...roles: string[]) {
   }
 }
 
-/**
- * optionalAuth — verifies token if present, but does not fail if absent.
- * Useful for endpoints that work differently for authenticated vs anonymous users.
- */
-export async function optionalAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): Promise<void> {
-  const header = req.headers["authorization"]
-  if (!header || !header.startsWith("Bearer ")) {
-    next()
-    return
-  }
-
-  const token = header.slice(7)
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
-    req.user = {
-      _id: decoded._id,
-      role: decoded.role,
-    }
-  } catch {
-    // Token invalid — silently continue without user
-  }
-  if (req.user?.role === "agency" && !(await attachAgency(req))) delete req.user
-  next()
+/** Ends every session this user has open, e.g. after a password change or a role change. */
+export async function revokeSessions(userId: unknown): Promise<number> {
+  const user = await User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } }, { new: true }).select("tokenVersion")
+  return user?.tokenVersion ?? 0
 }

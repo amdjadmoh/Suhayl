@@ -15,6 +15,17 @@ export function initSentry(): void {
     dsn,
     environment: import.meta.env["MODE"] as string | undefined,
     tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    // Reset, invite and family-link tokens travel in URLs; never send them, or any request body
+    beforeSend(event) {
+      if (event.request) {
+        delete event.request.data;
+        delete event.request.cookies;
+        delete event.request.query_string;
+        if (event.request.url) event.request.url = event.request.url.replace(/\/(portal|join|recommendation)\/[^/?#]+/g, "/$1/[token]").split("?")[0];
+      }
+      return event;
+    },
   })
 
   _initialized = true

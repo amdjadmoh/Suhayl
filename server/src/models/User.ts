@@ -18,8 +18,11 @@ export interface IUser {
   // One-time code a new counsellor uses to set their password
   inviteToken?: string
   invitedAt?: Date
+  inviteExpiresAt?: Date
   // When the person agreed to the terms and privacy policy
   acceptedTermsAt?: Date
+  // Bumped to end every session issued before: password change or reset, role change, removal
+  tokenVersion: number
   createdAt: Date
   updatedAt: Date
 }
@@ -45,7 +48,9 @@ const userSchema = new Schema<IUserDocument>(
     agencyOwnerId: { type: Schema.Types.ObjectId, ref: "User" },
     inviteToken: { type: String, select: false },
     invitedAt: { type: Date },
+    inviteExpiresAt: { type: Date },
     acceptedTermsAt: { type: Date },
+    tokenVersion: { type: Number, default: 0 },
   },
   { timestamps: true }
 )

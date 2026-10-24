@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Check, Copy, Link2, Loader2, UserPlus } from "lucide-react";
-import { joinUrl, useAgencyActivity, useInviteMember, useRemoveMember, useRenewInvite, useTeam, type TeamMember } from "@/lib/api-team";
+import { joinUrl, useAgencyActivity, useInviteMember, useRemoveMember, useRenewInvite, useResetMemberPassword, useTeam, type TeamMember } from "@/lib/api-team";
 import { ActivityLog } from "@/components/ActivityLog";
 import { useAuth } from "@/lib/authContext";
 import { getErrorMessage } from "@/lib/utils";
@@ -30,7 +30,7 @@ async function copy(text: string): Promise<boolean> {
 }
 
 /** Shows a join link once, with a copy button, after inviting or renewing. */
-function LinkDialog({ link, name, emailed, onClose }: { link: string | null; name: string; emailed?: boolean; onClose: () => void }): React.ReactElement {
+function LinkDialog({ link, name, emailed, reset, onClose }: { link: string | null; name: string; emailed?: boolean; reset?: boolean; onClose: () => void }): React.ReactElement {
   const [copied, setCopied] = useState(false);
   return (
     <Dialog open={!!link} onOpenChange={(o) => !o && onClose()}>
@@ -39,7 +39,9 @@ function LinkDialog({ link, name, emailed, onClose }: { link: string | null; nam
           <DialogTitle>{t("Send this link to {name}", { name })}</DialogTitle>
           <DialogDescription>
             {emailed ? `${t("We also emailed it to {name}.", { name })} ` : ""}
-            {t("They open it, choose a password and they're in. It works once; make a new one any time from this page.")}
+            {reset
+              ? t("They open it and choose a new password. It works once, for 24 hours, and signs them out everywhere else.")
+              : t("They open it, choose a password and they're in. It works once, for 7 days; make a new one any time from this page.")}
           </DialogDescription>
         </DialogHeader>
         <p className="rounded-xl bg-paper-sunken px-3 py-2.5 text-[13px] break-all text-ink-2 select-all">{link}</p>
@@ -62,15 +64,21 @@ function LinkDialog({ link, name, emailed, onClose }: { link: string | null; nam
   );
 }
 
-function MemberRow({ m, canManage, onLink }: { m: TeamMember; canManage: boolean; onLink: (link: string, name: string, emailed?: boolean) => void }): React.ReactElement {
+function MemberRow({ m, canManage, onLink }: { m: TeamMember; canManage: boolean; onLink: (link: string, name: string, emailed?: boolean, reset?: boolean) => void }): React.ReactElement {
   const renew = useRenewInvite();
+  const resetPassword = useResetMemberPassword();
   const remove = useRemoveMember();
   const [confirming, setConfirming] = useState(false);
 
   async function newLink(): Promise<void> {
     try {
-      const r = await renew.mutateAsync(m._id);
-      onLink(joinUrl(r.inviteToken), m.name, r.emailSent);
+      if (m.joined) {
+        const r = await resetPassword.mutateAsync(m._id);
+        onLink(r.resetUrl, m.name, r.emailSent, true);
+      } else {
+        const r = await renew.mutateAsync(m._id);
+        onLink(joinUrl(r.inviteToken), m.name, r.emailSent);
+      }
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, t("Couldn't make a new link")));
     }
@@ -108,7 +116,7 @@ function MemberRow({ m, canManage, onLink }: { m: TeamMember; canManage: boolean
       </Link>
       {canManage && !m.isOwner && (
         <div className="flex w-full justify-end gap-1 sm:w-auto">
-          <Button variant="ghost" size="sm" onClick={newLink} disabled={renew.isPending}>
+          <Button variant="ghost" size="sm" onClick={newLink} disabled={renew.isPending || resetPassword.isPending}>
             <Link2 />
             {m.joined ? t("Password reset link") : t("New invite link")}
           </Button>
@@ -141,7 +149,7 @@ export default function AgencyTeam(): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [shown, setShown] = useState<{ link: string; name: string; emailed?: boolean } | null>(null);
+  const [shown, setShown] = useState<{ link: string; name: string; emailed?: boolean; reset?: boolean } | null>(null);
 
   async function onInvite(e: React.FormEvent): Promise<void> {
     e.preventDefault();
@@ -184,7 +192,7 @@ export default function AgencyTeam(): React.ReactElement {
         <div className="max-w-3xl">
           <ul className="card divide-y divide-rule-soft overflow-hidden">
             {members.map((m) => (
-              <MemberRow key={m._id} m={m} canManage={isOwner} onLink={(link, n, emailed) => setShown({ link, name: n, emailed })} />
+              <MemberRow key={m._id} m={m} canManage={isOwner} onLink={(link, n, emailed, reset) => setShown({ link, name: n, emailed, reset })} />
             ))}
           </ul>
           {!!team?.unassigned && (
@@ -233,7 +241,7 @@ export default function AgencyTeam(): React.ReactElement {
         </DialogContent>
       </Dialog>
 
-      <LinkDialog link={shown?.link ?? null} name={shown?.name ?? ""} emailed={shown?.emailed} onClose={() => setShown(null)} />
+      <LinkDialog link={shown?.link ?? null} name={shown?.name ?? ""} emailed={shown?.emailed} reset={shown?.reset} onClose={() => setShown(null)} />
     </>
   );
 }

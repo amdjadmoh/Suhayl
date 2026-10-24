@@ -58,7 +58,7 @@ export const createPaymentSchema = z
 
 export const bulkDocumentSchema = z
   .object({
-    studentIds: z.array(z.string()).min(1).max(500),
+    studentIds: z.array(z.string().regex(/^[a-f0-9]{24}$/i, "Not a student id")).min(1).max(500),
     title: z.string().trim().min(1).max(120),
     note: z.string().trim().max(500).optional(),
     dueDate: dateSchema.optional(),
@@ -67,7 +67,7 @@ export const bulkDocumentSchema = z
 
 export const bulkAssignSchema = z
   .object({
-    studentIds: z.array(z.string()).min(1).max(500),
-    counsellorId: z.string().nullable(),
+    studentIds: z.array(z.string().regex(/^[a-f0-9]{24}$/i, "Not a student id")).min(1).max(500),
+    counsellorId: z.string().regex(/^[a-f0-9]{24}$/i, "Not a team member id").nullable(),
   })
   .strict()

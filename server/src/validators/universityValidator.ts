@@ -37,7 +37,9 @@ export const updateRankingsSchema = z
   .strict()
 
 export const listUniversitiesQuerySchema = z.object({
-  country: z.string().optional(),
-  search: z.string().optional(),
-  customOnly: z.string().optional(),
+  country: z.string().max(100).optional(),
+  search: z.string().max(100).optional(),
+  customOnly: z.string().max(5).optional(),
+  limit: z.coerce.number().int().optional(),
+  page: z.coerce.number().int().optional(),
 })

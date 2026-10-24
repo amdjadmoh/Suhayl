@@ -45,7 +45,11 @@ const documentRequestSchema = new Schema<IDocumentRequestDocument>(
           size: { type: Number, required: true },
           uploadedAt: { type: Date, required: true },
         },
-        { _id: false },
+        {
+          _id: false,
+          // The storage key never leaves the server; files are fetched through the download routes
+          toJSON: { transform: (_doc, ret: Partial<IStoredFile>) => { delete ret.storedName; return ret } },
+        },
       ),
     },
   },

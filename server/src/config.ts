@@ -4,6 +4,8 @@
  * later in front of a user.
  */
 
+import { jwtSecretProblem } from "./services/tokens"
+
 export const isProduction = process.env["NODE_ENV"] === "production"
 
 /** Public address of the web app, used in every link we send (resets, invites, family links). */
@@ -11,14 +13,25 @@ export function appUrl(): string {
   return (process.env["APP_URL"] ?? process.env["CLIENT_URL"] ?? "http://localhost:5173").replace(/\/+$/, "")
 }
 
+/** Host and database name only: a connection string can carry a username and password. */
+export function describeMongoUri(uri: string): string {
+  try {
+    const u = new URL(uri)
+    return `${u.protocol}//${u.host}${u.pathname}`
+  } catch {
+    return "(unparseable MONGODB_URI)"
+  }
+}
+
 export function checkConfig(): void {
+  // Every environment signs real tokens, so none may run on a missing or guessable secret
+  const secretProblem = jwtSecretProblem(process.env["JWT_SECRET"])
   if (!isProduction) {
-    if (!process.env["JWT_SECRET"]) console.warn("WARNING: JWT_SECRET is not set. Auth tokens will fail to sign/verify.")
+    if (secretProblem) throw new Error(`The server can't start:\n  - ${secretProblem}. Generate one with: openssl rand -hex 32`)
     return
   }
   const problems: string[] = []
-  const secret = process.env["JWT_SECRET"] ?? ""
-  if (secret.length < 32 || /change_me/i.test(secret)) problems.push("JWT_SECRET must be a random string of at least 32 characters")
+  if (secretProblem) problems.push(`${secretProblem} (generate one with: openssl rand -hex 32)`)
   if (!process.env["MONGODB_URI"]) problems.push("MONGODB_URI must point at your production database")
   if (!process.env["CORS_ORIGINS"]) problems.push("CORS_ORIGINS must list the web app's address")
   if (!process.env["APP_URL"]) problems.push("APP_URL must be the web app's public address, e.g. https://suhayl.online")

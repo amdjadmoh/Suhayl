@@ -4,7 +4,7 @@ Suhayl ships as one Docker image. The Express server serves the API under `/api`
 
 The server checks its settings when it starts. In production (`NODE_ENV=production`, which the image sets) it refuses to start, and lists what is missing, when:
 
-- `JWT_SECRET` is shorter than 32 characters or still says `change_me`
+- `JWT_SECRET` is shorter than 32 bytes or still a placeholder (this check also runs in development)
 - `MONGODB_URI`, `CORS_ORIGINS` or `APP_URL` is not set
 - `STORAGE_DRIVER=s3` is set but the bucket or keys are missing
 
@@ -30,7 +30,8 @@ Copy `.env.example` to `.env` and fill it in. Each variable is explained there. 
 NODE_ENV=production
 JWT_SECRET=<openssl rand -hex 32>
 ADMIN_EMAIL=you@example.com
-ADMIN_PASSWORD=<12+ characters, used once to create the first admin>
+ADMIN_PASSWORD=<12+ characters, mixed case, digits or symbols>
+ALLOW_BOOTSTRAP_ADMIN=true   # first start only; remove all three afterwards
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/suhayl
 APP_URL=https://app.example.com
 CORS_ORIGINS=https://app.example.com

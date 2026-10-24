@@ -1,4 +1,4 @@
-import type { Request, Response } from "express"
+import type { NextFunction, Request, Response } from "express"
 import { Student } from "../models/Student"
 import { User } from "../models/User"
 import { Application } from "../models/Application"
@@ -13,15 +13,52 @@ import { isAllowedFile, removeFile, sendStoredFile, storeFile } from "../service
  * Only what a family needs is returned: no agency notes, no other students.
  */
 
-async function studentForToken(req: Request, res: Response) {
+const PORTAL_LINK_DAYS = Number(process.env["PORTAL_LINK_DAYS"] ?? 180)
+
+/** When a link stops working. Links made before expiry was stored run out PORTAL_LINK_DAYS after they were turned on. */
+function linkExpiry(student: { portalExpiresAt?: Date | null; portalEnabledAt?: Date | null }): number {
+  if (student.portalExpiresAt) return student.portalExpiresAt.getTime()
+  if (student.portalEnabledAt) return student.portalEnabledAt.getTime() + PORTAL_LINK_DAYS * 24 * 60 * 60 * 1000
+  return 0
+}
+
+type PortalStudent = NonNullable<Awaited<ReturnType<typeof Student.findOne>>>
+
+/**
+ * Resolves the link before anything else runs, uploads included: an unknown link is
+ * a 404 and an expired one a 410, both answered before a single byte of the body is
+ * read. The student is kept on res.locals for the handler.
+ */
+export async function requirePortalLink(req: Request, res: Response, next: NextFunction): Promise<void> {
   const token = String(req.params["token"] ?? "")
-  const student = token.length >= 20 ? await Student.findOne({ portalToken: token }) : null
-  // Links made before expiry existed have no date and keep working until replaced
-  if (!student || (student.portalExpiresAt && student.portalExpiresAt.getTime() < Date.now())) {
+  const student = /^[A-Za-z0-9_-]{20,128}$/.test(token) ? await Student.findOne({ portalToken: token }) : null
+  if (!student) {
     res.status(404).json({ message: "This link isn't active. Ask your agency for a new one." })
-    return null
+    return
   }
-  return student
+  if (linkExpiry(student) < Date.now()) {
+    res.status(410).json({ message: "This link has expired. Ask your agency for a new one." })
+    return
+  }
+  res.locals["student"] = student
+  next()
+}
+
+const portalStudent = (res: Response): PortalStudent => res.locals["student"] as PortalStudent
+
+/** For uploads: the document must belong to this link's student and still take a file, checked before the body is read. */
+export async function requireOpenDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const document = await DocumentRequest.findOne({ _id: String(req.params["docId"]), studentId: portalStudent(res)._id })
+  if (!document) {
+    res.status(404).json({ message: "Document not found" })
+    return
+  }
+  if (document.status === "accepted") {
+    res.status(400).json({ message: "Your agency already accepted this document" })
+    return
+  }
+  res.locals["document"] = document
+  next()
 }
 
 function publicDocument(d: InstanceType<typeof DocumentRequest>) {
@@ -44,9 +81,8 @@ interface PopulatedProgram {
 }
 
 /** GET /api/portal/:token */
-export async function getPortal(req: Request, res: Response): Promise<void> {
-  const student = await studentForToken(req, res)
-  if (!student) return
+export async function getPortal(_req: Request, res: Response): Promise<void> {
+  const student = portalStudent(res)
 
   const [agency, applications, documents] = await Promise.all([
     User.findById(student.agencyId).select("name email"),
@@ -93,17 +129,8 @@ export async function getPortal(req: Request, res: Response): Promise<void> {
 
 /** POST /api/portal/:token/documents/:docId (multipart field "file") */
 export async function upload(req: Request, res: Response): Promise<void> {
-  const student = await studentForToken(req, res)
-  if (!student) return
-  const document = await DocumentRequest.findOne({ _id: String(req.params["docId"]), studentId: student._id })
-  if (!document) {
-    res.status(404).json({ message: "Document not found" })
-    return
-  }
-  if (document.status === "accepted") {
-    res.status(400).json({ message: "Your agency already accepted this document" })
-    return
-  }
+  const student = portalStudent(res)
+  const document = res.locals["document"] as InstanceType<typeof DocumentRequest>
   const file = req.file
   if (!file) {
     res.status(400).json({ message: "Choose a file to send" })
@@ -143,8 +170,7 @@ export async function upload(req: Request, res: Response): Promise<void> {
 
 /** GET /api/portal/:token/documents/:docId/file */
 export async function download(req: Request, res: Response): Promise<void> {
-  const student = await studentForToken(req, res)
-  if (!student) return
+  const student = portalStudent(res)
   const document = await DocumentRequest.findOne({ _id: String(req.params["docId"]), studentId: student._id })
   if (!document?.file) {
     res.status(404).json({ message: "File not found" })

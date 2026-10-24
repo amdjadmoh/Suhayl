@@ -1,9 +1,9 @@
 import type { Request, Response } from "express"
 import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
 import crypto from "crypto"
 import { OAuth2Client } from "google-auth-library"
-import "../middleware/auth"
+import { revokeSessions } from "../middleware/auth"
+import { hashToken, signSession } from "../services/tokens"
 import { User, type IUserDocument } from "../models/User"
 import { Application } from "../models/Application"
 import { PasswordResetToken } from "../models/PasswordResetToken"
@@ -12,16 +12,11 @@ import { deleteUserData } from "../services/accounts"
 import { appUrl } from "../config"
 import { renderForgotPassword } from "../templates/email/render"
 
-const JWT_SECRET: string = process.env["JWT_SECRET"]!
 const GOOGLE_CLIENT_ID: string = process.env["GOOGLE_CLIENT_ID"] ?? ""
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID)
 
 function signToken(user: IUserDocument): string {
-  return jwt.sign(
-    { _id: user._id.toString(), role: user.role },
-    JWT_SECRET,
-    { expiresIn: "7d" }
-  )
+  return signSession(user)
 }
 
 // Emails match regardless of case, including accounts saved before they were lowercased
@@ -178,8 +173,9 @@ export async function googleAuth(req: Request, res: Response): Promise<void> {
       audience: GOOGLE_CLIENT_ID,
     })
     const p = ticket.getPayload()
-    if (!p?.sub || !p.email || !p.name) throw new Error("Incomplete payload")
-    payload = { sub: p.sub, email: p.email, name: p.name }
+    // Google must vouch for the address itself, or anyone could claim someone else's email
+    if (!p?.sub || !p.email || p.email_verified !== true) throw new Error("Incomplete payload")
+    payload = { sub: p.sub, email: p.email.toLowerCase(), name: (p.name ?? p.email.split("@")[0] ?? "").slice(0, 120) }
   } catch {
     res.status(401).json({ message: "Invalid Google credential" })
     return
@@ -188,11 +184,20 @@ export async function googleAuth(req: Request, res: Response): Promise<void> {
   // Find by googleId first, then fall back to email
   let user = await User.findOne({ googleId: payload.sub }).select("+googleId")
   if (!user) {
-    user = await User.findOne({ email: payload.email }).collation(ANY_CASE).select("+googleId")
-    if (user) {
-      // Link existing email account to Google
-      user.googleId = payload.sub
-      await user.save()
+    const existing = await User.findOne({ email: payload.email }).collation(ANY_CASE).select("+googleId +passwordHash +inviteToken")
+    if (existing?.passwordHash || existing?.googleId) {
+      // A verified Google address isn't proof of owning an account that signs in another way
+      res.status(409).json({ message: "An account with this email already exists. Sign in with your password instead." })
+      return
+    }
+    if (existing) {
+      // An invited counsellor who never set a password: the verified address is theirs, and the invite link is spent
+      existing.googleId = payload.sub
+      existing.set("inviteToken", undefined)
+      existing.set("inviteExpiresAt", undefined)
+      existing.acceptedTermsAt ??= new Date()
+      await existing.save()
+      user = existing
     } else {
       // New user — create with student role
       user = await User.create({
@@ -228,7 +233,7 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
   const rawToken = crypto.randomBytes(32).toString("hex")
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
-  await PasswordResetToken.create({ userId: user._id as any, expiresAt, token: rawToken })
+  await PasswordResetToken.create({ userId: user._id as any, expiresAt, token: hashToken(rawToken) })
 
   const resetUrl = `${appUrl()}/reset-password?token=${rawToken}`
 
@@ -245,7 +250,8 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   const { token, password } = req.body as { token: string; password: string }
 
-  const record = await PasswordResetToken.findOne({ token })
+  // Single use: the record is taken in the same step it is read, so a link can't be replayed
+  const record = await PasswordResetToken.findOneAndDelete({ token: hashToken(token) })
   if (!record || record.expiresAt < new Date()) {
     res.status(400).json({ message: "Reset link is invalid or has expired." })
     return
@@ -258,10 +264,12 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
   }
 
   user.passwordHash = await bcrypt.hash(password, 10)
+  // A pending team invite is a second way in; a reset closes it, and ends every session
+  user.set("inviteToken", undefined)
+  user.set("inviteExpiresAt", undefined)
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1
   await user.save()
-
-  // Consume the token
-  await PasswordResetToken.deleteOne({ _id: record._id })
+  await PasswordResetToken.deleteMany({ userId: user._id as any })
 
   res.json({ message: "Password reset successfully. You can now log in." })
 }
@@ -299,9 +307,11 @@ export async function changePassword(req: Request, res: Response): Promise<void>
     return
   }
   user.passwordHash = await bcrypt.hash(newPassword, 10)
+  // Every other session ends; this one carries on with the token returned here
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1
   await user.save()
   await PasswordResetToken.deleteMany({ userId: user._id as any })
-  res.json({ message: "Password updated" })
+  res.json({ message: "Password updated", token: signToken(user) })
 }
 
 /**
@@ -327,6 +337,7 @@ export async function deleteAccount(req: Request, res: Response): Promise<void> 
     res.status(400).json({ message: user.passwordHash ? "That password isn't right" : "Type your email to confirm" })
     return
   }
+  await revokeSessions(user._id)
   await deleteUserData(String(user._id))
   await User.findByIdAndDelete(user._id)
   res.json({ message: "Account deleted" })

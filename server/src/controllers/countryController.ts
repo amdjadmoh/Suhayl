@@ -2,6 +2,7 @@ import type { Request, Response } from "express"
 import { Country } from "../models/Country"
 import { University } from "../models/University"
 import { City } from "../models/City"
+import { visibleFilter } from "../services/visibility"
 
 export async function getAll(_req: Request, res: Response): Promise<void> {
   const countries = await Country.find().sort({ name: 1 })
@@ -27,7 +28,7 @@ export async function getWithUniversities(
     return
   }
 
-  const universities = await University.find({ country: country.name }).sort({
+  const universities = await University.find({ $and: [{ country: country.name }, visibleFilter(req.user)] }).sort({
     name: 1,
   })
 

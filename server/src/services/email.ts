@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer"
+import nodemailer, { type Mail } from "nodemailer"
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -16,26 +16,45 @@ export interface EmailResult {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+function isDevelopment(): boolean {
+  return (process.env["NODE_ENV"] ?? "development") === "development"
+}
+
 export function isEmailEnabled(): boolean {
   return !!(process.env["SMTP_USER"] && process.env["SMTP_PASS"])
 }
 
 // ── Transport (lazy singleton) ───────────────────────────────────────────────
 
-let _transporter: nodemailer.Transporter | null = null
+let _transporter: Mail | null = null
 
-function getTransporter(): nodemailer.Transporter | null {
-  if (_transporter) return _transporter
+/** SMTP settings from the environment, or null when email is off. Credentials only ever come from env. */
+export function smtpOptions() {
   const user = process.env["SMTP_USER"]
   const pass = process.env["SMTP_PASS"]
   if (!user || !pass) return null
-  _transporter = nodemailer.createTransport({
+  const port = Number(process.env["SMTP_PORT"] ?? 587)
+  // 465 is TLS from the start; 587 and 25 must upgrade with STARTTLS
+  const secure = process.env["SMTP_SECURE"] ? process.env["SMTP_SECURE"] === "true" : port === 465
+  // Only a local test server in development may skip TLS (e.g. MailHog); credentials never go out in clear otherwise
+  const allowPlain = isDevelopment() && process.env["SMTP_REQUIRE_TLS"] === "false"
+  return {
     host: process.env["SMTP_HOST"] ?? "smtp.gmail.com",
-    port: Number(process.env["SMTP_PORT"] ?? 587),
-    // 465 is TLS from the start; 587 and 25 upgrade with STARTTLS
-    secure: process.env["SMTP_SECURE"] ? process.env["SMTP_SECURE"] === "true" : Number(process.env["SMTP_PORT"] ?? 587) === 465,
+    port,
+    secure,
+    requireTLS: !secure && !allowPlain,
+    tls: { minVersion: "TLSv1.2" as const, rejectUnauthorized: true },
     auth: { user, pass },
-  })
+    logger: false,
+    debug: false,
+  }
+}
+
+function getTransporter(): Mail | null {
+  if (_transporter) return _transporter
+  const options = smtpOptions()
+  if (!options) return null
+  _transporter = nodemailer.createTransport(options)
   return _transporter
 }
 
@@ -46,8 +65,9 @@ export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
   try {
     const transporter = getTransporter()
     if (!transporter) {
-      if (process.env["NODE_ENV"] !== "production") {
-        // In development, print the email so its links (resets, invites) can still be followed
+      if (isDevelopment()) {
+        // Development only: print the email so its links (resets, invites) can still be followed.
+        // Never in production, staging or tests, where the body holds live reset links.
         console.log(`
 ── Email (not sent, SMTP is off) ──
 To: ${msg.to}
@@ -73,7 +93,9 @@ ${msg.text ?? msg.html.replace(/<[^>]+>/g, " ")}
 
     return { ok: true }
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : String(err)
+    // The code and response line only: never the message, the recipient or the credentials
+    const e = err as { code?: string; responseCode?: number; message?: string }
+    const errorMessage = e.code ? `${e.code}${e.responseCode ? ` ${e.responseCode}` : ""}` : "send failed"
     console.error("Failed to send email:", errorMessage)
     return { ok: false, error: errorMessage }
   }

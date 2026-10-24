@@ -6,14 +6,16 @@ import { Student } from "../models/Student"
 import { University } from "../models/University"
 import { Application } from "../models/Application"
 import { applicationsToCsv } from "../services/csv"
+import { visibleFilter } from "../services/visibility"
 
 export async function getMyStudents(req: Request, res: Response): Promise<void> {
   const students = await Student.find({ agencyId: agencyScope(req) }).sort({ name: 1 })
   res.json(students)
 }
 
-export async function getUniversities(_req: Request, res: Response): Promise<void> {
-  const universities = await University.find().sort({ name: 1 })
+export async function getUniversities(req: Request, res: Response): Promise<void> {
+  // Official universities plus the agency's own custom ones; never other accounts' private records
+  const universities = await University.find(visibleFilter(req.user)).sort({ name: 1 })
   res.json(universities)
 }
 
@@ -28,9 +30,12 @@ export async function getApplications(req: Request, res: Response): Promise<void
 }
 
 // ── Multer config for CSV file upload ──────────────────────────────────────────
+const MAX_IMPORT_ROWS = 1000
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  // A thousand students fit in well under 1 MB of CSV
+  limits: { fileSize: 1024 * 1024, files: 1, fields: 5, parts: 6, fieldNameSize: 100, fieldSize: 1024 },
 })
 
 interface ImportRow {
@@ -75,6 +80,12 @@ export async function importStudents(req: Request, res: Response): Promise<void>
     // Fallback: JSON body with { students: [...] }
     const body = req.body as { students?: ImportRow[] }
     rows = body["students"] ?? []
+  }
+
+  if (!Array.isArray(rows)) rows = []
+  if (rows.length > MAX_IMPORT_ROWS) {
+    res.status(413).json({ message: `Import at most ${MAX_IMPORT_ROWS} students at a time` })
+    return
   }
 
   if (rows.length === 0) {

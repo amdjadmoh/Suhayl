@@ -56,16 +56,18 @@ export const updateProgramSchema = z
   .strict()
 
 export const listProgramsQuerySchema = z.object({
-  universityId: z.string().optional(),
-  degreeLevel: z.string().optional(),
-  search: z.string().optional(),
-  field: z.string().optional(),
-  country: z.string().optional(),
+  universityId: z.string().max(24).optional(),
+  degreeLevel: z.string().max(40).optional(),
+  search: z.string().max(100).optional(),
+  field: z.string().max(100).optional(),
+  country: z.string().max(100).optional(),
   minTuition: z.coerce.number().optional(),
   maxTuition: z.coerce.number().optional(),
   minGpa: z.coerce.number().optional(),
   maxIelts: z.coerce.number().optional(),
   scholarshipOnly: z.string().optional(),
-  city: z.string().optional(),
-  customOnly: z.string().optional(),
+  city: z.string().max(100).optional(),
+  customOnly: z.string().max(5).optional(),
+  limit: z.coerce.number().int().optional(),
+  page: z.coerce.number().int().optional(),
 })

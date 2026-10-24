@@ -3,15 +3,16 @@ import { Types } from "mongoose"
 import { Review, type ReviewTargetType } from "../models/Review"
 import { University } from "../models/University"
 import { Program } from "../models/Program"
+import { findVisibleProgram, findVisibleUniversity } from "../services/visibility"
 
+/** Whether the target exists and this caller may see it (private records are only their owner's). */
 async function targetExists(
   targetType: ReviewTargetType,
-  targetId: string
+  targetId: string,
+  viewer?: Request["user"]
 ): Promise<boolean> {
-  if (targetType === "university") {
-    return (await University.exists({ _id: targetId })) != null
-  }
-  return (await Program.exists({ _id: targetId })) != null
+  if (targetType === "university") return (await findVisibleUniversity(viewer, targetId)) != null
+  return (await findVisibleProgram(viewer, targetId)) != null
 }
 
 /**
@@ -24,11 +25,16 @@ export async function listReviews(req: Request, res: Response): Promise<void> {
     targetType: ReviewTargetType
     targetId: string
   }
+  if (!(await targetExists(targetType, targetId, req.user))) {
+    res.status(404).json({ message: "Not found" })
+    return
+  }
 
   const [reviews, agg] = await Promise.all([
     Review.find({ targetType, targetId })
       .populate("userId", "name")
-      .sort({ createdAt: -1 }),
+      .sort({ createdAt: -1 })
+      .limit(200),
     Review.aggregate([
       { $match: { targetType, targetId: new Types.ObjectId(targetId) } },
       { $group: { _id: null, avg: { $avg: "$rating" }, count: { $sum: 1 } } },
@@ -58,7 +64,7 @@ export async function upsertReview(req: Request, res: Response): Promise<void> {
     comment: string
   }
 
-  if (!(await targetExists(targetType, targetId))) {
+  if (!(await targetExists(targetType, targetId, req.user))) {
     res.status(404).json({ message: "Review target not found" })
     return
   }

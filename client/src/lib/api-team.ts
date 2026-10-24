@@ -44,6 +44,13 @@ export function useRenewInvite(): UseMutationResult<{ _id: string; inviteToken: 
   })
 }
 
+/** For someone who has joined: a single-use password reset link (24 hours) to pass on */
+export function useResetMemberPassword(): UseMutationResult<{ _id: string; resetUrl: string; emailSent?: boolean }, Error, string> {
+  return useMutation({
+    mutationFn: async (id) => (await api.post(`/agency/team/${id}/password-reset`)).data,
+  })
+}
+
 export function useRemoveMember(): UseMutationResult<{ studentsUnassigned: number }, Error, string> {
   const qc = useQueryClient()
   return useMutation({

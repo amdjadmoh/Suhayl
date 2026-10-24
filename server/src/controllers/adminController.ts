@@ -21,7 +21,8 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: "Cannot delete yourself" })
     return
   }
-  const user = await User.findByIdAndDelete(id)
+  const user = await User.findByIdAndUpdate(id, { $inc: { tokenVersion: 1 } })
+  if (user) await User.findByIdAndDelete(id)
   if (!user) {
     res.status(404).json({ message: "User not found" })
     return
@@ -117,7 +118,19 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
   // req.body is pre-validated by validate(updateUserSchema, "body")
   const updates = req.body as Record<string, unknown>
 
-  const user = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).select("-passwordHash")
+  // A new role or email ends the person's sessions, so no token keeps the old access
+  const current = await User.findById(id).select("role email")
+  if (!current) {
+    res.status(404).json({ message: "User not found" })
+    return
+  }
+  const revoke = (updates["role"] !== undefined && updates["role"] !== current.role) ||
+    (typeof updates["email"] === "string" && updates["email"].toLowerCase() !== current.email)
+  const user = await User.findByIdAndUpdate(
+    id,
+    { $set: updates, ...(revoke ? { $inc: { tokenVersion: 1 } } : {}) },
+    { new: true, runValidators: true },
+  ).select("-passwordHash")
   if (!user) {
     res.status(404).json({ message: "User not found" })
     return
